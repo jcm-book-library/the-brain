@@ -87,6 +87,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('ticked countdown shown', (await page.locator('#chips').innerText()).includes('Dinner with friends'));
   check('today items rendered', (await page.locator('#focusPanel').innerText()).includes('Strength & Conditioning'));
   check('six day cards', await page.locator('.dcard').count() === 6);
+  check('day cards stack in one column', await page.evaluate(() => getComputedStyle(document.getElementById('days')).gridTemplateColumns.split(' ').length === 1));
   check('pinned links', await page.locator('#links a').count() === 2);
 
   // tick an item
@@ -106,12 +107,6 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   // delete
   await page.click('[data-edit="e3"]'); await page.click('#itemDel'); await page.waitForSelector('#status[data-state=live]');
   check('delete removed row', !db.Plan.some(r => r[0] === 'e3'));
-
-  // log today
-  await page.fill('#lSteps', '9876'); await page.fill('#lKm', '7.1'); await page.click('.mood[data-m=G]'); await page.fill('#lNote', 'good day');
-  await page.click('#logForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
-  const lrow = db.Log.find(r => r[0] === serial(T));
-  check('log saved with mood + weather prefill', !!lrow && lrow[1] === 9876 && lrow[7] === 'G' && lrow[5] != null && lrow[5] !== '');
 
   // plan my week
   const before = db.Plan.length;
@@ -135,7 +130,36 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.click('.tab[data-tab=paper]'); await page.waitForTimeout(400);
   check('paper tab embeds the paper', (await page.locator('#paperFrame').getAttribute('src')) === 'https://jcm-book-library.github.io/daily-paper/' && (await page.frameLocator('#paperFrame').locator('h1').innerText()).includes('Sentinel'));
   await page.screenshot({ path: path.join(OUT, 'shot-paper.png') });
-  for (const t of ['calendar', 'stats', 'people', 'lists', 'notes', 'links']) {
+  check('calendar sits on the week tab', await page.locator('#v-week #cal .c').count() > 300 && await page.locator('.tab[data-tab=calendar]').count() === 0);
+
+  // stats tab: backdate a log
+  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(200);
+  const missingBtns = await page.locator('[data-logday]').count();
+  check('missing days offered', missingBtns >= 1);
+  await page.fill('#logDate', add(-5)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
+  await page.fill('#lSteps', '9876'); await page.fill('#lKm', '7.1'); await page.click('.mood[data-m=G]'); await page.fill('#lNote', 'backdated');
+  await page.click('#logForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  const lrow = db.Log.find(r => r[0] === serial(add(-5)));
+  check('backdated log saved with mood + weather prefill', !!lrow && lrow[1] === 9876 && lrow[7] === 'G' && lrow[8] === 'backdated' && lrow[5] != null && lrow[5] !== '');
+  await page.fill('#logDate', add(-1)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
+  check('existing day loads its saved values', (await page.inputValue('#lSteps')) === '14000');
+
+  // people: birthday without a year
+  await page.click('.tab[data-tab=people]'); await page.click('[data-new-person]');
+  await page.fill('#pName', 'Kirby'); await page.selectOption('#pDay', '17'); await page.selectOption('#pMon', '10');
+  await page.click('#personForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  const kr = db.People.find(r => r[1] === 'Kirby');
+  check('birthday saved without year (1904 placeholder)', !!kr && kr[2] === serial('1904-10-17'));
+  check('catch-ups above everyone', await page.evaluate(() => { const a = document.getElementById('catchups').getBoundingClientRect(), b = document.getElementById('peopleList').getBoundingClientRect(); return a.bottom < b.top; }));
+  await page.click('[data-person]:text("Kirby")'); await page.waitForTimeout(100);
+  check('no-year birthday reopens blank year', (await page.inputValue('#pYear')) === '' && (await page.inputValue('#pDay')) === '17');
+  await page.click('#personDlg [data-close]');
+
+  // lists: status dropdown
+  await page.click('.tab[data-tab=lists]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
+  check('list status dropdown saves', db.Lists.find(r => r[0] === 'l1')[3] === 'Done');
+
+  for (const t of ['week', 'stats', 'people', 'lists', 'notes', 'links']) {
     await page.click(`.tab[data-tab=${t}]`); await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(OUT, `shot-${t}.png`), fullPage: true });
   }

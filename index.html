@@ -101,7 +101,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .item .ty{font-size:11px;color:var(--muted)}
 .empty{font-size:13px;color:var(--muted);padding:6px 0}
 
-.days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.days{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
 .dcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;display:flex;flex-direction:column;gap:6px}
 .dcard[data-past=true]{opacity:.62}
 .dcard[data-today=true]{border-color:var(--accent)}
@@ -118,7 +118,8 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .dcard .add{align-self:flex-start;font-size:12px;color:var(--muted);border:0;background:transparent;padding:2px 0}
 .dcard .add:hover{color:var(--accent)}
 
-.logform{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.logform{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+@media (max-width:900px){.logform{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .logform .f{display:flex;flex-direction:column;gap:3px;min-width:0}
 .logform label,.field label{font-size:12px;color:var(--muted);font-weight:600}
 .logform input{width:100%}
@@ -139,14 +140,14 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 
 /* calendar */
 .cal-scroll{overflow-x:auto}
-.cal{display:grid;grid-template-columns:42px repeat(31,minmax(22px,1fr));gap:2px;min-width:760px;font-size:10px}
+.cal{display:grid;grid-template-columns:30px repeat(31,minmax(0,1fr));gap:2px;min-width:520px;font-size:9px}
 .cal .h{color:var(--muted);text-align:center;font-weight:600}
-.cal .m{color:var(--muted);font-weight:700;font-size:12px;display:flex;align-items:center}
-.cal .c{height:24px;border-radius:4px;background:var(--raise);border:0;padding:0 2px;font-size:9px;font-weight:700;color:#15141c;overflow:hidden;white-space:nowrap;text-align:left}
+.cal .m{color:var(--muted);font-weight:700;font-size:11px;display:flex;align-items:center}
+.cal .c{height:16px;border-radius:3px;background:var(--raise);border:0;padding:0;position:relative}
 .cal .c[data-x]{background:transparent}
 .cal .c[data-past]{opacity:.45}
 .cal .c[data-today]{outline:2px solid var(--accent);outline-offset:-1px}
-.cal .c[data-pay]::after{content:"$";color:var(--ok);float:right;font-size:9px}
+.cal .c[data-pay]::after{content:"";position:absolute;right:2px;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--ok)}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
 .legend span{display:inline-flex;gap:6px;align-items:center}
 .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
@@ -172,7 +173,7 @@ td.up{color:var(--ok)} td.down{color:var(--m-P)}
 .li{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);min-width:0}
 .li:first-child{border-top:0}
 .li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pill{border:1px solid var(--line);background:transparent;border-radius:999px;font-size:11px;font-weight:700;padding:2px 9px;color:var(--muted);white-space:nowrap}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;font-size:11px;font-weight:700;padding:2px 9px;color:var(--muted);white-space:nowrap}
 .pill[data-s=Current]{color:var(--fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,transparent)}
 .pill[data-s=Done]{opacity:.6}
 .inline-add{display:flex;gap:6px;margin-top:10px}
@@ -200,7 +201,6 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 
 @media (max-width:900px){.week{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){
-  .days{grid-template-columns:minmax(0,1fr)}
   .addrow select{max-width:none}
   .logform{grid-template-columns:repeat(2,minmax(0,1fr))}
   .fields{grid-template-columns:minmax(0,1fr)}
@@ -227,7 +227,6 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="week" aria-selected="true">Week</button>
     <button class="tab" role="tab" data-tab="paper">Paper</button>
-    <button class="tab" role="tab" data-tab="calendar">Calendar</button>
     <button class="tab" role="tab" data-tab="stats">Stats</button>
     <button class="tab" role="tab" data-tab="people">People</button>
     <button class="tab" role="tab" data-tab="lists">Lists</button>
@@ -248,8 +247,12 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
     <div class="week">
       <div class="stack">
         <div class="panel" id="focusPanel"></div>
-        <div class="panel" id="logPanel"></div>
         <div class="panel" id="upPanel"></div>
+        <div class="panel">
+          <div class="panel-head"><h2>Year calendar</h2><select id="calYear" aria-label="Year"></select></div>
+          <div class="cal-scroll"><div class="cal" id="cal"></div></div>
+          <div class="legend" id="calLegend"></div>
+        </div>
       </div>
       <div class="days" id="days"></div>
     </div>
@@ -262,15 +265,9 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
     </div>
   </section>
 
-  <section id="v-calendar" hidden>
-    <div class="panel">
-      <div class="panel-head"><h2>Year calendar</h2><select id="calYear" aria-label="Year"></select></div>
-      <div class="cal-scroll"><div class="cal" id="cal"></div></div>
-      <div class="legend" id="calLegend"></div>
-    </div>
-  </section>
 
   <section id="v-stats" hidden>
+    <div class="panel" id="logPanel" style="margin-bottom:16px"></div>
     <div class="panel">
       <div class="panel-head"><h2>Monthly stats</h2><select id="statYear" aria-label="Year"></select></div>
       <div class="table-wrap"><table id="statTable"></table></div>
@@ -279,7 +276,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   </section>
 
   <section id="v-people" hidden>
-    <div class="grid2">
+    <div class="stack">
       <div class="panel"><div class="panel-head"><h2>Catch-ups</h2><button class="btn" type="button" data-new-person>Add person</button></div><div id="catchups"></div></div>
       <div class="panel"><div class="panel-head"><h2>Everyone</h2></div><input class="search" id="peopleSearch" type="search" placeholder="Search people" aria-label="Search people"><div id="peopleList"></div></div>
     </div>
@@ -309,12 +306,18 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   <h2>Person</h2>
   <div class="fields">
     <div class="field w2"><label for="pName">Name</label><input id="pName" required></div>
-    <div class="field"><label for="pBday">Birthday</label><input id="pBday" type="date"></div>
+    <div class="field w2"><label for="pDay">Birthday (year optional)</label>
+      <div style="display:grid;grid-template-columns:72px minmax(0,1fr) 96px;gap:6px">
+        <select id="pDay" aria-label="Birthday day"><option value="">Day</option></select>
+        <select id="pMon" aria-label="Birthday month"><option value="">Month</option></select>
+        <input id="pYear" type="number" inputmode="numeric" placeholder="Year" aria-label="Birth year (optional)" min="1900" max="2100">
+      </div></div>
     <div class="field"><label for="pSeen">Last seen</label><input id="pSeen" type="date"></div>
     <div class="field"><label for="pEvery">See every (days)</label><input id="pEvery" type="number" min="0" inputmode="numeric"></div>
     <div class="field" style="justify-content:flex-end"><label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--fg)"><input type="checkbox" id="pToSee"> Want to see soon</label></div>
     <div class="field w2"><label for="pNotes">Notes</label><textarea id="pNotes"></textarea></div>
   </div>
+  <p class="muted" id="personMsg" style="margin:0;font-size:13px;color:var(--danger)"></p>
   <div class="dlg-acts"><button class="btn btn-danger" type="button" id="personDel">Delete</button><div><button class="btn" type="button" data-close>Cancel</button><button class="btn btn-primary" type="submit">Save</button></div></div>
 </form></dialog>
 
@@ -357,6 +360,7 @@ const CATVAR = c => `var(--c-${(CATS.includes(c) ? c : 'Other').toLowerCase()})`
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const COUNTDOWN_TYPES = ['Travel', 'Event'];
+const NO_YEAR = 1904; // birthdays saved without a year use 1904 (a leap year, so 29 Feb works)
 
 /* Each tab: sheetId (fixed when the sheet was set up), columns in order, and the key column that marks a real row. */
 const TABS = {
@@ -561,7 +565,7 @@ function nextBday(p, from) {
   if (!p.bday) return null;
   const [, m, d] = p.bday.split('-').map(Number), y = Number(from.slice(0, 4));
   let n = `${y}-${pad(m)}-${pad(d)}`; if (n < from) n = `${y + 1}-${pad(m)}-${pad(d)}`;
-  const by = Number(p.bday.slice(0, 4)), turning = by > 1900 && by < y - 1 ? Number(n.slice(0, 4)) - by : null;
+  const by = Number(p.bday.slice(0, 4)), turning = by > NO_YEAR && by < y - 1 ? Number(n.slice(0, 4)) - by : null;
   return { date: n, days: dayDiff(from, n), turning };
 }
 function birthdays(windowDays) {
@@ -574,6 +578,7 @@ const daysWord = n => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n + ' days';
 function setStatus(s, text) { $('status').dataset.state = s; $('statusText').textContent = text; }
 function notice(msg, kind) { const n = $('notice'); n.textContent = msg; n.dataset.kind = kind || ''; n.hidden = false; }
 function hideNotice() { $('notice').hidden = true; }
+function alertMsg(m) { const el = $('personMsg'); el.textContent = m; }
 let toastT; function toast(m) { const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
 
 function renderChips() {
@@ -627,19 +632,23 @@ function renderWeek() {
       <button class="add" type="button" data-add="${d}">+ Add</button></div>`);
   }
   $('days').innerHTML = cards.join('');
-  renderLog(f); renderUp();
+  renderUp(); renderCalendar();
 }
 function itemHtml(i) {
   return `<li class="item" data-done="${i.done}"><input type="checkbox" ${i.done ? 'checked' : ''} data-tick="${esc(i.id)}" aria-label="Done: ${esc(i.title)}">
     <span class="tm">${esc(i.time || '')}</span><span class="t" data-edit="${esc(i.id)}" title="${esc(i.notes || i.title)}">${esc(i.title)}${i.end && i.end !== i.date ? ` <span class="ty">until ${esc(fmt(i.end, { weekday: 'short', day: 'numeric' }))}</span>` : ''}</span>
     <span class="ty">${esc(i.type || '')}</span></li>`;
 }
-function renderLog(f) {
-  const t = todayIso();
-  if (f > t) { $('logPanel').innerHTML = `<div class="panel-head"><h2>Daily log</h2></div><p class="empty">You can log this day once it arrives.</p>`; return; }
+function renderLog() {
+  const t = todayIso(); if (!state.logDate || state.logDate > t) state.logDate = t;
+  const f = state.logDate, logged = new Set((state.data.Log || []).filter(r => r.steps != null || r.mood).map(r => r.date));
+  const missing = []; for (let k = 1; k <= 14; k++) { const d = addDays(t, -k); if (!logged.has(d)) missing.push(d); }
   const row = (state.data.Log || []).find(r => r.date === f) || {}, w = state.wx[f] || {};
   const v = (k, alt) => row[k] != null && row[k] !== '' ? row[k] : (alt ?? '');
-  $('logPanel').innerHTML = `<div class="panel-head"><h2>Daily log</h2><span class="muted" style="font-size:13px">${row.date ? 'Saved · edit and save again' : 'Not logged yet'}</span></div>
+  $('logPanel').innerHTML = `<div class="panel-head"><h2>Daily log</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label for="logDate" class="muted" style="font-size:13px">Day</label><input type="date" id="logDate" value="${f}" max="${t}">
+      <span class="muted" style="font-size:13px">${row.date ? 'Saved · edit and save again' : 'Not logged yet'}</span></div></div>
+    ${missing.length ? `<div class="chips" style="margin:-2px 0 12px"><span class="muted" style="font-size:13px;align-self:center">Not logged:</span>${missing.slice(0, 7).reverse().map(d => `<button type="button" class="pill" data-logday="${d}" ${d === f ? 'data-s="Current"' : ''}>${esc(fmt(d, { weekday: 'short', day: 'numeric' }))}</button>`).join('')}</div>` : ''}
     <form class="logform" id="logForm">
       <div class="f"><label for="lSteps">Steps</label><input id="lSteps" type="number" inputmode="numeric" value="${esc(v('steps'))}"></div>
       <div class="f"><label for="lKm">KM</label><input id="lKm" type="number" step="0.01" inputmode="decimal" value="${esc(v('km'))}"></div>
@@ -650,7 +659,7 @@ function renderLog(f) {
       <div class="moods" role="group" aria-label="Mood"><span class="muted" style="font-size:12px;font-weight:600">Mood</span>
         ${[['G', 'Good'], ['F', 'Fair'], ['P', 'Poor'], ['B', 'Bad']].map(([k, n]) => `<button type="button" class="mood" data-m="${k}" aria-pressed="${row.mood === k}">${n}</button>`).join('')}</div>
       <div class="f note"><label for="lNote">Note</label><input id="lNote" value="${esc(v('note'))}" placeholder="Meds, sleep, anything"></div>
-      <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Save log</button></div>
+      <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Save ${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'short' }))}</button></div>
     </form>`;
 }
 function renderUp() {
@@ -674,7 +683,7 @@ function renderCalendar() {
   const sel = $('calYear'), y = Number(sel.value) || Number(todayIso().slice(0, 4)); yearOptions(sel, y);
   const t = todayIso(), pay = paydayInfo();
   const plan = (state.data.Plan || []).filter(p => p.date && p.type !== 'Routine' && !(p.cat === 'Sport' && p.type !== 'Sport'));
-  let h = '<div></div>' + Array.from({ length: 31 }, (_, i) => `<div class="h">${i + 1}</div>`).join('');
+  let h = '<div></div>' + Array.from({ length: 31 }, (_, i) => `<div class="h">${(i + 1) % 5 === 0 || i === 0 ? i + 1 : ''}</div>`).join('');
   for (let m = 1; m <= 12; m++) {
     h += `<div class="m">${MONTHS[m - 1]}</div>`;
     const dim = new Date(y, m, 0).getDate();
@@ -682,13 +691,13 @@ function renderCalendar() {
       if (d > dim) { h += '<div class="c" data-x></div>'; continue; }
       const s = `${y}-${pad(m)}-${pad(d)}`;
       const hit = plan.filter(p => p.date <= s && (p.end || p.date) >= s);
-      const first = hit[0], label = first && (first.date === s || d === 1) ? first.title : '';
+      const first = hit[0];
       h += `<button type="button" class="c" data-focus="${s}" ${s < t ? 'data-past' : ''} ${s === t ? 'data-today' : ''} ${pay.is(s) ? 'data-pay' : ''}
-        style="${first ? `background:${CATVAR(first.cat)}` : ''}" title="${esc(fmt(s, { weekday: 'short', day: 'numeric', month: 'short' }) + (hit.length ? ': ' + hit.map(x => x.title).join(', ') : ''))}">${esc(label.slice(0, 6))}</button>`;
+        style="${first ? `background:${CATVAR(first.cat)}` : ''}" title="${esc(fmt(s, { weekday: 'short', day: 'numeric', month: 'short' }) + (hit.length ? ': ' + hit.map(x => x.title).join(', ') : ''))}" aria-label="${esc(fmt(s, { day: 'numeric', month: 'long' }) + (hit.length ? ': ' + hit.map(x => x.title).join(', ') : ''))}"></button>`;
     }
   }
   $('cal').innerHTML = h;
-  $('calLegend').innerHTML = CATS.map(c => `<span><i style="background:${CATVAR(c)}"></i>${c}</span>`).join('') + '<span><b style="color:var(--ok)">$</b> Payday</span><span>Routine items and sport fixtures stay off the calendar (set a fixture\'s type to "Sport" to show it). Click a day to plan it.</span>';
+  $('calLegend').innerHTML = CATS.map(c => `<span><i style="background:${CATVAR(c)}"></i>${c}</span>`).join('') + '<span><i style="background:var(--ok);border-radius:50%;width:6px;height:6px"></i>Payday</span><span>Routine items and sport fixtures stay off the calendar (set a fixture\'s type to "Sport" to show it). Hover for details, click a day to plan it.</span>';
 }
 
 /* ---------- render: stats ---------- */
@@ -736,7 +745,7 @@ function renderLists() {
   const order = { Current: 0, Open: 0, 'Up next': 1, Done: 2 };
   $('lists').innerHTML = names.map(n => { const items = all.filter(l => l.list === n).sort((a, b) => (order[a.status] ?? 1) - (order[b.status] ?? 1));
     return `<div class="panel"><div class="panel-head"><h2>${esc(n)}</h2><span class="muted" style="font-size:13px">${items.filter(i => i.status !== 'Done').length}</span></div>
-      ${items.map(i => `<div class="li"><span title="${esc(i.notes || '')}">${esc(i.item)}</span><button type="button" class="pill" data-s="${esc(i.status)}" data-cycle="${esc(i.id)}">${esc(i.status || 'Up next')}</button><button type="button" class="iconbtn" data-ldel="${esc(i.id)}" aria-label="Remove ${esc(i.item)}">×</button></div>`).join('') || '<p class="empty">Empty.</p>'}
+      ${items.map(i => `<div class="li"><span title="${esc(i.notes || '')}">${esc(i.item)}</span><select class="pill" data-s="${esc(i.status)}" data-status="${esc(i.id)}" aria-label="Status of ${esc(i.item)}">${(n === 'To book' ? ['Open', 'Done'] : ['Current', 'Up next', 'Done']).concat(i.status && !['Open', 'Done', 'Current', 'Up next'].includes(i.status) ? [i.status] : []).map(o => `<option ${o === (i.status || (n === 'To book' ? 'Open' : 'Up next')) ? 'selected' : ''}>${o}</option>`).join('')}</select><button type="button" class="iconbtn" data-ldel="${esc(i.id)}" aria-label="Remove ${esc(i.item)}">×</button></div>`).join('') || '<p class="empty">Empty.</p>'}
       <form class="inline-add" data-list="${esc(n)}"><input placeholder="Add to ${esc(n)}" aria-label="Add to ${esc(n)}" required><button class="btn" type="submit">Add</button></form></div>`; }).join('');
 }
 function renderNotes() {
@@ -758,7 +767,7 @@ function renderPaper() {
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
   renderChips(); renderLinks();
-  ({ week: renderWeek, paper: renderPaper, calendar: renderCalendar, stats: renderStats, people: renderPeople, lists: renderLists, notes: renderNotes, links: renderLinkTab })[state.tab]();
+  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderStats(); }, people: renderPeople, lists: renderLists, notes: renderNotes, links: renderLinkTab })[state.tab]();
 }
 
 /* ---------- dialogs ---------- */
@@ -794,13 +803,19 @@ $('itemDel').addEventListener('click', async () => { if (!editing) return; const
 let editingP = null;
 function openPerson(p) {
   editingP = p || null;
-  $('pName').value = p ? p.name : ''; $('pBday').value = p ? p.bday : ''; $('pSeen').value = p ? p.seen : '';
+  $('pName').value = p ? p.name : ''; $('pSeen').value = p ? p.seen : '';
+  if ($('pDay').options.length < 2) { for (let d = 1; d <= 31; d++) $('pDay').add(new Option(d, d)); MONTHS.forEach((m, i) => $('pMon').add(new Option(m, i + 1))); }
+  const bd = p && p.bday ? p.bday.split('-').map(Number) : null;
+  $('pDay').value = bd ? bd[2] : ''; $('pMon').value = bd ? bd[1] : ''; $('pYear').value = bd && bd[0] > NO_YEAR ? bd[0] : '';
   $('pEvery').value = p && p.every != null ? p.every : ''; $('pToSee').checked = !!(p && p.tosee); $('pNotes').value = p ? p.notes : '';
-  $('personDel').hidden = !p; $('personDlg').showModal();
+  $('personDel').hidden = !p; $('personMsg').textContent = ''; $('personDlg').showModal();
 }
 $('personForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const o = { ...(editingP || { id: newId('p') }), name: $('pName').value.trim(), bday: $('pBday').value, seen: $('pSeen').value, every: $('pEvery').value === '' ? null : Number($('pEvery').value), tosee: $('pToSee').checked, notes: $('pNotes').value };
+  const dd = Number($('pDay').value), mm = Number($('pMon').value), yy = Number($('pYear').value) || NO_YEAR;
+  if ((dd && !mm) || (mm && !dd)) { alertMsg('Pick both a day and a month for the birthday, or leave both blank.'); return; }
+  if (dd && new Date(yy, mm - 1, dd).getDate() !== dd) { alertMsg('That date doesn’t exist.'); return; }
+  const o = { ...(editingP || { id: newId('p') }), name: $('pName').value.trim(), bday: dd ? `${yy}-${pad(mm)}-${pad(dd)}` : '', seen: $('pSeen').value, every: $('pEvery').value === '' ? null : Number($('pEvery').value), tosee: $('pToSee').checked, notes: $('pNotes').value };
   $('personDlg').close(); await withBusy('Saving…', () => editingP ? updateRow('People', o) : addRows('People', [o]));
 });
 $('personDel').addEventListener('click', async () => { const p = editingP; if (!p) return; $('personDlg').close(); await withBusy('Deleting…', () => deleteRow('People', p)); });
@@ -851,8 +866,9 @@ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click
 /* ---------- events ---------- */
 const findPlan = id => (state.data.Plan || []).find(p => p.id === id);
 document.addEventListener('click', async e => {
-  const el = e.target.closest('[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
+  const el = e.target.closest('[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
   if (!el) return;
+  if (el.dataset.logday) { state.logDate = el.dataset.logday; renderLog(); return; }
   if (el.dataset.focus) { state.focus = el.dataset.focus; if (state.tab !== 'week') showTab('week'); else renderWeek(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   if (el.dataset.edit) { const o = findPlan(el.dataset.edit); if (o) openItem(o); return; }
   if (el.dataset.add) { openItem(null, el.dataset.add); return; }
@@ -869,6 +885,8 @@ document.addEventListener('click', async e => {
 });
 document.addEventListener('change', async e => {
   const t = e.target;
+  if (t.id === 'logDate' && t.value) { state.logDate = t.value; renderLog(); return; }
+  if (t.dataset.status) { const l = (state.data.Lists || []).find(x => x.id === t.dataset.status); if (l) await withBusy('Saving…', () => updateRow('Lists', { ...l, status: t.value })); return; }
   if (t.dataset.tick) { const o = findPlan(t.dataset.tick); if (o) await withBusy('Saving…', () => updateRow('Plan', { ...o, done: t.checked })); }
   if (t.dataset.booked) { const l = (state.data.Lists || []).find(x => x.id === t.dataset.booked); if (l && await withBusy('Saving…', () => updateRow('Lists', { ...l, status: 'Done' }))) toast(l.item + ' booked'); }
   if (t.dataset.pin) { const l = (state.data.Links || []).find(x => String(x._row) === t.dataset.row); if (l) await withBusy('Saving…', () => updateRow('Links', { ...l, pin: t.checked })); }
@@ -879,10 +897,13 @@ document.addEventListener('submit', async e => {
     const o = { id: newId('e'), date: state.focus || todayIso(), end: '', time: normTime($('qaTime').value), title: $('qaTitle').value.trim(), cat: $('qaCat').value, type: '', done: false, cd: false, notes: '' };
     if (o.title) await withBusy('Adding…', () => addRows('Plan', [o])); }
   if (f.id === 'logForm') { e.preventDefault();
-    const d = state.focus || todayIso(), ex = (state.data.Log || []).find(r => r.date === d), num = id => $(id).value === '' ? null : Number($(id).value);
+    const d = state.logDate || todayIso(), ex = (state.data.Log || []).find(r => r.date === d), num = id => $(id).value === '' ? null : Number($(id).value);
     const mood = (f.querySelector('.mood[aria-pressed=true]') || {}).dataset;
     const o = { ...(ex || {}), date: d, steps: num('lSteps'), km: num('lKm'), act: num('lAct'), pages: num('lPages'), tmax: num('lMax'), tmin: num('lMin'), mood: mood ? mood.m : '', note: $('lNote').value.trim() };
-    if (await withBusy('Saving log…', () => ex ? updateRow('Log', o) : addRows('Log', [o]))) toast('Logged ' + fmt(d, { weekday: 'long' })); }
+    if (await withBusy('Saving log…', () => ex ? updateRow('Log', o) : addRows('Log', [o]))) { toast('Logged ' + fmt(d, { weekday: 'long', day: 'numeric' }));
+      const next = (state.data.Log || []); const logged = new Set(next.filter(r => r.steps != null || r.mood).map(r => r.date));
+      for (let k = dayDiff(d, todayIso()) - 1; k >= 0; k--) { const n = addDays(todayIso(), -k); if (!logged.has(n)) { state.logDate = n; break; } }
+      if (state.tab === 'stats') renderLog(); } }
   if (f.dataset.list) { e.preventDefault(); const inp = f.querySelector('input'), v = inp.value.trim(); if (!v) return;
     const n = f.dataset.list, o = { id: newId('l'), list: n, item: v, status: n === 'To book' ? 'Open' : 'Up next', added: todayIso(), notes: '' };
     await withBusy('Adding…', () => addRows('Lists', [o])); }

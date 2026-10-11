@@ -22,6 +22,8 @@ A week planner and daily log that reads and writes a Google Sheet. One page (`in
 | Links | Name, Category, URL, Pin, Order, Notes |
 | Settings | Key, Value, Notes |
 
+Birthdays saved without a year are stored as 1904 (for example 1904-10-17); the page hides that year. The sheet's Birthday column shows day and month only.
+
 Keep the column order. Rows can be added, edited or sorted by hand in the sheet; the page finds rows by ID.
 
 ## Testing
