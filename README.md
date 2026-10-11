@@ -1,0 +1,32 @@
+# The Brain
+
+A week planner and daily log that reads and writes a Google Sheet. One page (`index.html`), no build step, hosted on GitHub Pages.
+
+## How it works
+- You sign in with Google in the browser. The page then reads and writes the sheet directly through the Google Sheets API.
+- No personal data is stored in this repo. Everything loads from the sheet after sign-in.
+- The sheet link and OAuth Client ID are saved in your browser (Settings). The Client ID is picked up from the book library automatically when both run on `jcm-book-library.github.io`.
+- Weather comes from Open-Meteo (no key needed).
+- The **Paper** tab shows [The Overnight Sentinel](https://jcm-book-library.github.io/daily-paper/) inside the page. To point it somewhere else, add a `paper_url` row to the sheet's Settings tab.
+
+## Sheet tabs
+| Tab | Columns |
+|---|---|
+| Plan | ID, Date, End, Time, Title, Category, Type, Done, Countdown, Notes |
+| Routine | Day, Category, Time, Title, Active |
+| Log | Date, Steps, KM, Active mins, Pages, Max °C, Min °C, Mood, Note |
+| Goals | Year, Month, Steps, KM, Active mins, Pages |
+| People | ID, Name, Birthday, Last seen, To see, See every (days), Notes |
+| Lists | ID, List, Item, Status, Added, Notes |
+| Notes | ID, Date, Topic, Note |
+| Links | Name, Category, URL, Pin, Order, Notes |
+| Settings | Key, Value, Notes |
+
+Keep the column order. Rows can be added, edited or sorted by hand in the sheet; the page finds rows by ID.
+
+## Testing
+`tools/test.js` runs the page in headless Chromium against a fake, in-memory Sheets API:
+
+```
+NODE_PATH=$(npm root -g) node tools/test.js /tmp/shots
+```
