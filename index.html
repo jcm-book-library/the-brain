@@ -140,10 +140,10 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 
 /* calendar */
 .cal-scroll{overflow-x:auto}
-.cal{display:grid;grid-template-columns:30px repeat(31,minmax(0,1fr));gap:2px;min-width:520px;font-size:9px}
+.cal{display:grid;grid-template-columns:36px repeat(31,minmax(0,1fr));gap:3px;min-width:560px;font-size:10px}
 .cal .h{color:var(--muted);text-align:center;font-weight:600}
 .cal .m{color:var(--muted);font-weight:700;font-size:11px;display:flex;align-items:center}
-.cal .c{height:16px;border-radius:3px;background:var(--raise);border:0;padding:0;position:relative}
+.cal .c{height:22px;border-radius:3px;background:var(--raise);border:0;padding:0;position:relative}
 .cal .c[data-x]{background:transparent}
 .cal .c[data-past]{opacity:.45}
 .cal .c[data-today]{outline:2px solid var(--accent);outline-offset:-1px}
@@ -248,13 +248,13 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
       <div class="stack">
         <div class="panel" id="focusPanel"></div>
         <div class="panel" id="upPanel"></div>
-        <div class="panel">
-          <div class="panel-head"><h2>Year calendar</h2><select id="calYear" aria-label="Year"></select></div>
-          <div class="cal-scroll"><div class="cal" id="cal"></div></div>
-          <div class="legend" id="calLegend"></div>
-        </div>
       </div>
       <div class="days" id="days"></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="panel-head"><h2>Year calendar</h2><select id="calYear" aria-label="Year"></select></div>
+      <div class="cal-scroll"><div class="cal" id="cal"></div></div>
+      <div class="legend" id="calLegend"></div>
     </div>
   </section>
 
@@ -683,7 +683,7 @@ function renderCalendar() {
   const sel = $('calYear'), y = Number(sel.value) || Number(todayIso().slice(0, 4)); yearOptions(sel, y);
   const t = todayIso(), pay = paydayInfo();
   const plan = (state.data.Plan || []).filter(p => p.date && p.type !== 'Routine' && !(p.cat === 'Sport' && p.type !== 'Sport'));
-  let h = '<div></div>' + Array.from({ length: 31 }, (_, i) => `<div class="h">${(i + 1) % 5 === 0 || i === 0 ? i + 1 : ''}</div>`).join('');
+  let h = '<div></div>' + Array.from({ length: 31 }, (_, i) => `<div class="h">${i + 1}</div>`).join('');
   for (let m = 1; m <= 12; m++) {
     h += `<div class="m">${MONTHS[m - 1]}</div>`;
     const dim = new Date(y, m, 0).getDate();
