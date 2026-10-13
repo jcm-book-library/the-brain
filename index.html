@@ -152,6 +152,30 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .legend span{display:inline-flex;gap:6px;align-items:center}
 .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
 
+/* this month */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.tile{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.tile .num{font-size:26px;font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.tile .sub{font-size:13px;color:var(--muted)}
+.tile .od{font-size:13px;font-weight:700}
+.tile .od.up{color:var(--ok)} .tile .od.down{color:var(--m-P)}
+.gbar{height:6px;border-radius:3px;background:var(--bg);overflow:hidden;margin-top:4px;position:relative}
+.gbar i{display:block;height:100%;border-radius:3px}
+.mgrid-wrap{overflow-x:auto}
+.mgrid{display:grid;grid-template-columns:78px repeat(var(--n),minmax(30px,1fr));gap:2px;min-width:calc(78px + var(--n) * 32px);font-size:11px}
+.mgrid .rh{color:var(--muted);font-weight:700;display:flex;align-items:center;font-size:12px}
+.mgrid .dh{color:var(--muted);text-align:center;font-weight:600;padding-bottom:2px}
+.mgrid .dh[data-today]{color:var(--accent)}
+.mgrid .v{height:26px;border:0;border-radius:4px;background:var(--raise);color:var(--fg);font:inherit;font-size:11px;font-variant-numeric:tabular-nums;padding:0;text-align:center;white-space:nowrap;overflow:hidden}
+.mgrid .v[data-g=up]{background:color-mix(in srgb,var(--ok) 32%,var(--raise))}
+.mgrid .v[data-g=down]{background:color-mix(in srgb,var(--m-P) 28%,var(--raise))}
+.mgrid .v[data-m]{color:#15141c;font-weight:700}
+.mgrid .v[data-m=G]{background:var(--m-G)} .mgrid .v[data-m=F]{background:var(--m-F)} .mgrid .v[data-m=P]{background:var(--m-P)} .mgrid .v[data-m=B]{background:var(--m-B)}
+.mgrid .v[data-future]{background:transparent;outline:1px dashed var(--line);outline-offset:-1px}
+.mgrid .v:hover:not([data-future]){outline:2px solid var(--accent);outline-offset:-2px}
+.ytd{font-size:13px;color:var(--muted);margin:0 0 12px}
+.ytd b{color:var(--fg)}
+
 /* tables */
 .table-wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -268,6 +292,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 
   <section id="v-stats" hidden>
     <div class="panel" id="logPanel" style="margin-bottom:16px"></div>
+    <div class="panel" id="monthPanel" style="margin-bottom:16px"></div>
     <div class="panel">
       <div class="panel-head"><h2>Monthly stats</h2><select id="statYear" aria-label="Year"></select></div>
       <div class="table-wrap"><table id="statTable"></table></div>
@@ -701,6 +726,54 @@ function renderCalendar() {
 }
 
 /* ---------- render: stats ---------- */
+/* This month: totals, averages vs goal and a day-by-day grid, like the old 💪 tab */
+function renderMonth() {
+  const t = todayIso(); if (!state.month) state.month = t.slice(0, 7);
+  const [y, m] = state.month.split('-').map(Number), dim = new Date(y, m, 0).getDate();
+  const log = (state.data.Log || []).filter(r => r.date.startsWith(state.month));
+  const byDay = {}; log.forEach(r => { byDay[Number(r.date.slice(8, 10))] = r; });
+  const goal = (state.data.Goals || []).find(gg => gg.year === y && gg.month === m) || {};
+  const sum = k => log.reduce((a, r) => a + (r[k] || 0), 0), cnt = k => log.filter(r => r[k] != null).length;
+  const avg = k => cnt(k) ? sum(k) / cnt(k) : null;
+  const nf = (x, d = 0) => x == null ? '–' : x.toLocaleString('en-AU', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const mets = [['steps', 'Steps', 0, 0], ['km', 'KM', 2, 2], ['act', 'Active mins', 0, 1], ['pages', 'Pages', 0, 1]];
+  const tiles = mets.map(([k, label, dt, da]) => {
+    const a = avg(k), g = goal[k], diff = a != null && g ? a - g : null, pct = a != null && g ? Math.min(a / g, 1.25) / 1.25 * 100 : 0;
+    return `<div class="tile"><span class="eyebrow">${label}</span><span class="num">${nf(sum(k), dt)}</span>
+      <span class="sub">Avg ${nf(a, da)}${g ? ' · goal ' + nf(g, da) : ''}</span>
+      ${diff != null ? `<span class="od ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${nf(diff, da)} a day</span><div class="gbar" title="Average as a share of goal (line = goal)"><i style="width:${pct}%;background:${diff >= 0 ? 'var(--ok)' : 'var(--m-P)'}"></i><span style="position:absolute;top:0;bottom:0;left:80%;border-left:2px solid var(--fg);opacity:.5"></span></div>` : ''}</div>`;
+  });
+  const moods = ['G', 'F', 'P', 'B'].map(k => log.filter(r => r.mood === k).length), mt = moods.reduce((a, b) => a + b, 0);
+  const tmx = avg('tmax'), tmn = avg('tmin'), hot = log.reduce((a, r) => r.tmax != null && r.tmax > a ? r.tmax : a, -99);
+  tiles.push(`<div class="tile"><span class="eyebrow">Weather</span><span class="num">${tmx == null ? '–' : nf(tmx, 1) + '°'}</span><span class="sub">Avg max${tmn != null ? ' · avg min ' + nf(tmn, 1) + '°' : ''}</span>${hot > -99 ? `<span class="sub">Hottest ${nf(hot, 1)}°</span>` : ''}</div>`);
+  tiles.push(`<div class="tile"><span class="eyebrow">Mood</span>${mt ? `<span class="num" style="color:var(--m-${'GFPB'[moods.indexOf(Math.max(...moods))]})">${['Good', 'Fair', 'Poor', 'Bad'][moods.indexOf(Math.max(...moods))]}</span>
+    <span class="sub">${moods.map((n, i) => n ? ['Good', 'Fair', 'Poor', 'Bad'][i] + ' ' + Math.round(n / mt * 100) + '%' : '').filter(Boolean).join(' · ')}</span>
+    <div class="moodbar" style="margin-top:4px">${moods.map((n, i) => `<i style="width:${n / mt * 100}%;background:var(--m-${'GFPB'[i]})"></i>`).join('')}</div>` : '<span class="num">–</span><span class="sub">No moods logged</span>'}</div>`);
+  // year to date, like the totals across the top of the old tab
+  const yl = (state.data.Log || []).filter(r => r.date.startsWith(y + '-') && r.date <= t);
+  const ys = k => yl.reduce((a, r) => a + (r[k] || 0), 0);
+  const ytd = yl.length ? `<p class="ytd">${y} so far: <b>${nf(ys('steps'))}</b> steps · <b>${nf(ys('km'), 1)}</b> km · <b>${nf(ys('act'))}</b> active mins · <b>${nf(ys('pages'))}</b> pages</p>` : '';
+  // day grid
+  const rows = [['steps', 'Steps', v => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v], ['km', 'KM', v => v.toFixed(1)], ['act', 'Active', v => v], ['pages', 'Pages', v => v], ['tmax', 'Max °C', v => Math.round(v)], ['mood', 'Mood', v => v]];
+  let g = '<div></div>';
+  for (let d = 1; d <= dim; d++) { const ds = `${state.month}-${pad(d)}`; g += `<div class="dh" ${ds === t ? 'data-today' : ''}>${d}<br><span style="font-weight:400">${'MTWTFSS'[(new Date(y, m - 1, d).getDay() + 6) % 7]}</span></div>`; }
+  rows.forEach(([k, label, f]) => {
+    g += `<div class="rh">${label}</div>`;
+    for (let d = 1; d <= dim; d++) {
+      const ds = `${state.month}-${pad(d)}`, r = byDay[d], v = r ? r[k] : null;
+      if (ds > t) { g += '<div class="v" data-future></div>'; continue; }
+      const gl = goal[k], gattr = v != null && gl && k !== 'mood' && k !== 'tmax' ? `data-g="${v >= gl ? 'up' : 'down'}"` : '';
+      g += `<button type="button" class="v" ${gattr} ${k === 'mood' && v ? `data-m="${v}"` : ''} data-logday="${ds}" title="${esc(fmt(ds, { weekday: 'short', day: 'numeric', month: 'short' }))}${r && r.note ? ': ' + esc(r.note) : ''}">${v == null || v === '' ? '' : esc(f(v))}</button>`;
+    }
+  });
+  const label = fromIso(state.month + '-01').toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  $('monthPanel').innerHTML = `<div class="panel-head"><div class="nav" style="display:flex;gap:6px;align-items:center">
+      <button class="btn" type="button" data-month="-1" aria-label="Previous month">‹</button><h2>${esc(label)}</h2><button class="btn" type="button" data-month="1" aria-label="Next month">›</button></div>
+      <span class="muted" style="font-size:13px">${cnt('steps')} of ${state.month === t.slice(0, 7) ? Number(t.slice(8, 10)) : dim} days logged</span></div>
+    ${ytd}<div class="tiles">${tiles.join('')}</div>
+    <div class="mgrid-wrap"><div class="mgrid" style="--n:${dim}">${g}</div></div>
+    <div class="legend"><span><i style="background:color-mix(in srgb,var(--ok) 32%,var(--raise))"></i>At or over goal</span><span><i style="background:color-mix(in srgb,var(--m-P) 28%,var(--raise))"></i>Under goal</span><span>Click a day to edit its log.</span></div>`;
+}
 function renderStats() {
   const sel = $('statYear'), y = Number(sel.value) || Number(todayIso().slice(0, 4)); yearOptions(sel, y);
   const log = (state.data.Log || []).filter(r => r.date.startsWith(y + '-'));
@@ -767,7 +840,7 @@ function renderPaper() {
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
   renderChips(); renderLinks();
-  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderStats(); }, people: renderPeople, lists: renderLists, notes: renderNotes, links: renderLinkTab })[state.tab]();
+  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: renderLists, notes: renderNotes, links: renderLinkTab })[state.tab]();
 }
 
 /* ---------- dialogs ---------- */
@@ -866,9 +939,10 @@ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click
 /* ---------- events ---------- */
 const findPlan = id => (state.data.Plan || []).find(p => p.id === id);
 document.addEventListener('click', async e => {
-  const el = e.target.closest('[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
+  const el = e.target.closest('[data-month],[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
   if (!el) return;
-  if (el.dataset.logday) { state.logDate = el.dataset.logday; renderLog(); return; }
+  if (el.dataset.logday) { state.logDate = el.dataset.logday; renderLog(); if (el.closest('#monthPanel')) $('logPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  if (el.dataset.month) { const [yy, mm] = state.month.split('-').map(Number), d = new Date(yy, mm - 1 + Number(el.dataset.month), 1); state.month = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; renderMonth(); return; }
   if (el.dataset.focus) { state.focus = el.dataset.focus; if (state.tab !== 'week') showTab('week'); else renderWeek(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   if (el.dataset.edit) { const o = findPlan(el.dataset.edit); if (o) openItem(o); return; }
   if (el.dataset.add) { openItem(null, el.dataset.add); return; }
@@ -903,7 +977,7 @@ document.addEventListener('submit', async e => {
     if (await withBusy('Saving log…', () => ex ? updateRow('Log', o) : addRows('Log', [o]))) { toast('Logged ' + fmt(d, { weekday: 'long', day: 'numeric' }));
       const next = (state.data.Log || []); const logged = new Set(next.filter(r => r.steps != null || r.mood).map(r => r.date));
       for (let k = dayDiff(d, todayIso()) - 1; k >= 0; k--) { const n = addDays(todayIso(), -k); if (!logged.has(n)) { state.logDate = n; break; } }
-      if (state.tab === 'stats') renderLog(); } }
+      if (state.tab === 'stats') { renderLog(); renderMonth(); } } }
   if (f.dataset.list) { e.preventDefault(); const inp = f.querySelector('input'), v = inp.value.trim(); if (!v) return;
     const n = f.dataset.list, o = { id: newId('l'), list: n, item: v, status: n === 'To book' ? 'Open' : 'Up next', added: todayIso(), notes: '' };
     await withBusy('Adding…', () => addRows('Lists', [o])); }

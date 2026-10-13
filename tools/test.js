@@ -144,6 +144,17 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.fill('#logDate', add(-1)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
   check('existing day loads its saved values', (await page.inputValue('#lSteps')) === '14000');
 
+  // this month panel
+  check('this month panel shows totals', (await page.locator('#monthPanel .tile').count()) === 6 && (await page.locator('#monthPanel').innerText()).includes('so far'));
+  const cellsWithSteps = await page.locator('#monthPanel .v[data-g]').count();
+  check('day grid colours days against goal', cellsWithSteps >= 3);
+  await page.locator('#monthPanel .v[data-logday]').first().click(); await page.waitForTimeout(100);
+  check('clicking a day opens it in the log', (await page.inputValue('#logDate')).endsWith('-01'));
+  await page.click('[data-month="-1"]'); await page.waitForTimeout(100);
+  check('month nav goes back', !(await page.locator('#monthPanel h2').innerText()).startsWith(new Date().toLocaleDateString('en-AU', { month: 'long' })));
+  await page.click('[data-month="1"]');
+  await page.screenshot({ path: path.join(OUT, 'shot-month.png'), fullPage: true });
+
   // people: birthday without a year
   await page.click('.tab[data-tab=people]'); await page.click('[data-new-person]');
   await page.fill('#pName', 'Kirby'); await page.selectOption('#pDay', '17'); await page.selectOption('#pMon', '10');
