@@ -202,11 +202,26 @@ td.up{color:var(--ok)} td.down{color:var(--m-P)}
 .linkedit .lrow span{flex:1}
 .linkadd{display:grid;grid-template-columns:minmax(0,1fr) 120px auto;gap:6px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-.person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.person{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:4px 16px;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);align-items:start}
+.person .who{display:flex;flex-direction:column;gap:2px;min-width:0}
+.person .nx,.person .pn{font-size:13px;min-width:0}
+.person .lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);display:block;margin-bottom:2px}
+.person .nx b{font-weight:600}
+.person .nx .when{color:var(--accent);font-weight:600}
+.person .nx .past{color:var(--m-P);font-weight:600}
+.person .pn{color:var(--muted);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.person .pn:hover{color:var(--fg)}
+.person .linkish{border:0;background:transparent;color:var(--accent);padding:0;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.person .due{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#15141c;background:var(--c-social);border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:2px}
+.nxform{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:6px}
+.nxform input[type=date]{min-width:0}
+.nxform .wide{grid-column:1/-1}
+.nxform .acts2{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:900px){.person{grid-template-columns:minmax(0,1fr) auto}.person .nx,.person .pn{grid-column:1/-1}.person .acts{grid-row:1;grid-column:2}}
 .person:first-child{border-top:0}
 .person .n{font-weight:600;cursor:pointer}
 .person .meta{font-size:13px;color:var(--muted)}
-.person .acts{display:flex;gap:6px;align-items:center;grid-row:1/3;grid-column:2}
+.person .acts{display:flex;gap:6px;align-items:center}
 .search{width:100%;margin-bottom:10px}
 .li{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);min-width:0}
 .li:first-child{border-top:0}
@@ -314,13 +329,12 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   </section>
 
   <section id="v-people" hidden>
-    <div class="stack">
-      <div class="panel"><div class="panel-head"><h2>Catch-ups</h2><button class="btn" type="button" data-new-person>Add person</button></div><div id="catchups"></div></div>
-      <div class="panel"><div class="panel-head"><h2>Everyone</h2>
-          <div class="seg" role="group" aria-label="View"><button type="button" class="chip-t" data-pview="az" aria-pressed="true">A–Z</button><button type="button" class="chip-t" data-pview="groups" aria-pressed="false">By group</button></div></div>
-        <input class="search" id="peopleSearch" type="search" placeholder="Search people" aria-label="Search people">
-        <div class="gchips" id="groupChips"></div>
-        <div id="peopleList"></div></div>
+    <div class="panel"><div class="panel-head"><h2>People</h2>
+        <div class="seg" role="group" aria-label="View"><button type="button" class="chip-t" data-pview="az" aria-pressed="true">Catch-ups first</button><button type="button" class="chip-t" data-pview="groups" aria-pressed="false">By group</button></div></div>
+      <form class="inline-add" id="personQuick" style="margin:0 0 10px" autocomplete="off"><input id="pqName" placeholder="Add a new person (name)" aria-label="New person's name" required><button class="btn btn-primary" type="submit">Add person</button><button class="btn" type="button" data-new-person>More details…</button></form>
+      <input class="search" id="peopleSearch" type="search" placeholder="Search people, groups or notes" aria-label="Search people">
+      <div class="gchips" id="groupChips"></div>
+      <div id="peopleList"></div>
     </div>
   </section>
 
@@ -413,13 +427,13 @@ const TABS = {
   Routine:  { sid: 1, key: 'title', cols: ['day', 'cat', 'time', 'title', 'active'] },
   Log:      { sid: 2, key: 'date', cols: ['date', 'steps', 'km', 'act', 'pages', 'tmax', 'tmin', 'mood', 'note'] },
   Goals:    { sid: 3, key: 'year', cols: ['year', 'month', 'steps', 'km', 'act', 'pages'] },
-  People:   { sid: 4, key: 'id',   cols: ['id', 'name', 'bday', 'seen', 'tosee', 'every', 'notes', 'groups', 'links'] },
+  People:   { sid: 4, key: 'id',   cols: ['id', 'name', 'bday', 'seen', 'tosee', 'every', 'notes', 'groups', 'links', 'ndate', 'ntime', 'nplan', 'nid'] },
   Lists:    { sid: 5, key: 'id',   cols: ['id', 'list', 'item', 'status', 'added', 'notes'] },
   Notes:    { sid: 6, key: 'id',   cols: ['id', 'date', 'topic', 'note'] },
   Links:    { sid: 7, key: 'name', cols: ['name', 'cat', 'url', 'pin', 'order', 'notes'] },
   Settings: { sid: 8, key: 'key',  cols: ['key', 'value', 'notes'] }
 };
-const DATE_COLS = new Set(['date', 'end', 'bday', 'seen', 'added']);
+const DATE_COLS = new Set(['date', 'end', 'bday', 'seen', 'added', 'ndate']);
 const BOOL_COLS = new Set(['done', 'cd', 'active', 'tosee', 'pin']);
 const NUM_COLS = new Set(['steps', 'km', 'act', 'pages', 'tmax', 'tmin', 'year', 'month', 'every', 'order']);
 const colLetter = i => String.fromCharCode(65 + i);
@@ -834,25 +848,58 @@ function renderPeople() {
   const t = todayIso(), q = $('peopleSearch').value.trim().toLowerCase();
   const ppl = state.data.People || [];
   const since = p => p.seen ? dayDiff(p.seen, t) : null;
-  const due = ppl.filter(p => p.tosee || (p.every && since(p) != null && since(p) >= p.every)).sort((a, b) => (since(b) ?? 1e9) - (since(a) ?? 1e9));
-  const ago = n => n == null ? 'not logged' : n < 14 ? n + ' days ago' : n < 60 ? Math.round(n / 7) + ' weeks ago' : Math.round(n / 30.4) + ' months ago';
+  const isDue = p => p.tosee || (p.every && (since(p) == null || since(p) >= p.every));
+  const planned = p => p.ndate && p.ndate >= t;
+  const ago = n => n == null ? 'not logged' : n === 0 ? 'today' : n < 14 ? n + ' days ago' : n < 60 ? Math.round(n / 7) + ' weeks ago' : Math.round(n / 30.4) + ' months ago';
+  const relLabel = r => ({ 'Parent of': 'parent of', 'Child of': 'child of', Partner: 'partner', Sibling: 'sibling', Family: 'family', Friend: 'friend' }[r] || r.toLowerCase());
+  const nextCell = p => {
+    if (state.pEditNext === p.id) return `<form class="nxform" data-nxform="${esc(p.id)}" autocomplete="off">
+        <input type="date" name="d" value="${esc(p.ndate || '')}" aria-label="Catch-up date" required><input name="tm" value="${esc(p.ntime || '')}" placeholder="Time" aria-label="Time">
+        <input class="wide" name="pl" value="${esc(p.nplan || '')}" placeholder="What's the plan? (dinner, walk, call…)" aria-label="Plan">
+        <div class="acts2"><button class="btn btn-primary" type="submit">Save</button><button class="btn" type="button" data-nxcancel>Cancel</button>${p.ndate ? `<button class="btn btn-danger" type="button" data-nxclear="${esc(p.id)}">Remove</button>` : ''}</div></form>`;
+    if (!p.ndate) return `<button type="button" class="linkish" data-nxedit="${esc(p.id)}">+ Plan a catch-up</button>`;
+    const d = dayDiff(t, p.ndate), dl = esc(fmt(p.ndate, { weekday: 'short', day: 'numeric', month: 'short' }));
+    const when = d < 0 ? `<span class="past">${dl} · passed</span>` : `<span class="when">${dl}${p.ntime ? ' · ' + esc(p.ntime) : ''} · ${daysWord(d).toLowerCase()}</span>`;
+    return `${when}${p.nplan ? `<br><b>${esc(p.nplan)}</b>` : ''}<br><button type="button" class="linkish" data-nxedit="${esc(p.id)}">Change</button>${d < 0 ? ` · <button type="button" class="linkish" data-seen="${esc(p.id)}">Mark as seen</button>` : ''}`;
+  };
   const row = p => { const b = nextBday(p, t), rels = relationsOf(p);
-    const relLabel = r => ({ 'Parent of': 'parent of', 'Child of': 'child of', Partner: 'partner', Sibling: 'sibling', Family: 'family', Friend: 'friend' }[r] || r.toLowerCase());
-    return `<div class="person"><span class="n" data-person="${esc(p.id)}">${esc(p.name)}${splitGroups(p.groups).map(gp => `<span class="gtag">${esc(gp)}</span>`).join('')}</span>
-      <div class="acts"><button class="btn" type="button" data-seen="${esc(p.id)}">Seen today</button></div>
-      <span class="meta">Last seen ${ago(since(p))}${b ? ' · birthday ' + esc(fmt(b.date, { day: 'numeric', month: 'short' })) + ' (' + daysWord(b.days).toLowerCase() + ')' : ''}</span>
-      ${rels.length ? `<span class="rel">${rels.map(r => `${relLabel(r.rel)}: <button type="button" data-person="${esc(r.p.id)}">${esc(r.p.name)}</button>`).join(' · ')}</span>` : ''}</div>`; };
-  $('catchups').innerHTML = due.length ? due.map(row).join('') : '<p class="empty">Nobody flagged. Tick "Want to see soon" on a person, or give them a "See every" number.</p>';
-  const groups = allGroups(); if (state.pGroup && !groups.includes(state.pGroup)) state.pGroup = '';
-  $('groupChips').innerHTML = groups.length ? [['', 'All']].concat(groups.map(gp => [gp, gp])).map(([v, l]) => `<button type="button" class="gchip" data-pgroup="${esc(v)}" aria-pressed="${(state.pGroup || '') === v}">${esc(l)} <span class="muted">${v ? ppl.filter(p => splitGroups(p.groups).includes(v)).length : ppl.length}</span></button>`).join('') : '';
+    return `<div class="person">
+      <div class="who"><span class="n" data-person="${esc(p.id)}">${esc(p.name)}${isDue(p) && !planned(p) ? '<span class="due">Due</span>' : ''}${splitGroups(p.groups).map(gp => `<span class="gtag">${esc(gp)}</span>`).join('')}</span>
+        <span class="meta">Last seen ${ago(since(p))}${b ? ' · birthday ' + esc(fmt(b.date, { day: 'numeric', month: 'short' })) + (b.days <= 31 ? ' (' + daysWord(b.days).toLowerCase() + ')' : '') : ''}</span>
+        ${rels.length ? `<span class="rel">${rels.map(r => `${relLabel(r.rel)}: <button type="button" data-person="${esc(r.p.id)}">${esc(r.p.name)}</button>`).join(' · ')}</span>` : ''}</div>
+      <div class="nx"><span class="lab">Next catch-up</span>${nextCell(p)}</div>
+      <div class="pn" data-person="${esc(p.id)}" title="Edit notes"><span class="lab">Notes</span>${p.notes ? esc(p.notes) : '<span style="opacity:.6">Add notes…</span>'}</div>
+      <div class="acts"><button class="btn" type="button" data-seen="${esc(p.id)}">Seen today</button></div></div>`; };
+  const groups = allGroups(); if (state.pGroup && state.pGroup !== '__due' && !groups.includes(state.pGroup)) state.pGroup = '';
+  const nDue = ppl.filter(p => isDue(p) || planned(p)).length;
+  $('groupChips').innerHTML = [['', 'All', ppl.length], ['__due', 'Catch-ups', nDue]].concat(groups.map(gp => [gp, gp, ppl.filter(p => splitGroups(p.groups).includes(gp)).length]))
+    .map(([v, l, n]) => `<button type="button" class="gchip" data-pgroup="${esc(v)}" aria-pressed="${(state.pGroup || '') === v}">${esc(l)} <span class="muted">${n}</span></button>`).join('');
   document.querySelectorAll('[data-pview]').forEach(bn => bn.setAttribute('aria-pressed', String(bn.dataset.pview === (state.pView || 'az'))));
-  const match = p => (!q || p.name.toLowerCase().includes(q) || (p.notes || '').toLowerCase().includes(q) || (p.groups || '').toLowerCase().includes(q)) && (!state.pGroup || splitGroups(p.groups).includes(state.pGroup));
-  const list = ppl.filter(match).sort((a, b) => a.name.localeCompare(b.name));
-  if ((state.pView || 'az') === 'groups') {
+  const inGroup = p => !state.pGroup || (state.pGroup === '__due' ? (isDue(p) || planned(p)) : splitGroups(p.groups).includes(state.pGroup));
+  const match = p => (!q || p.name.toLowerCase().includes(q) || (p.notes || '').toLowerCase().includes(q) || (p.groups || '').toLowerCase().includes(q) || (p.nplan || '').toLowerCase().includes(q)) && inGroup(p);
+  /* order: planned catch-ups by date, then due (longest since seen first), then everyone else A–Z */
+  const rank = p => planned(p) ? 0 : isDue(p) ? 1 : 2;
+  const sortP = (a, b) => rank(a) - rank(b) || (rank(a) === 0 ? a.ndate.localeCompare(b.ndate) : 0) || (rank(a) === 1 ? (since(b) ?? 1e9) - (since(a) ?? 1e9) : 0) || a.name.localeCompare(b.name);
+  const list = ppl.filter(match).sort(sortP);
+  const withBreaks = arr => { let out = '', last = -1; const mixed = new Set(arr.map(rank)).size > 1; arr.forEach(p => { const r = rank(p); if (mixed && r !== last) out += `<div class="ghead">${['Planned catch-ups', 'Due a catch-up', 'Everyone else'][r]}</div>`; last = r; out += row(p); }); return out; };
+  if ((state.pView || 'az') === 'groups' && state.pGroup !== '__due') {
     const gs = (state.pGroup ? [state.pGroup] : groups).map(gp => [gp, list.filter(p => splitGroups(p.groups).includes(gp))]).filter(([, m]) => m.length);
     const none = state.pGroup ? [] : list.filter(p => !splitGroups(p.groups).length);
     $('peopleList').innerHTML = gs.map(([gp, m]) => `<div class="ghead">${esc(gp)} · ${m.length}</div>${m.map(row).join('')}`).join('') + (none.length ? `<div class="ghead">No group · ${none.length}</div>${none.map(row).join('')}` : '') || '<p class="empty">No matches.</p>';
-  } else $('peopleList').innerHTML = list.map(row).join('') || '<p class="empty">No matches.</p>';
+  } else $('peopleList').innerHTML = withBreaks(list) || '<p class="empty">No matches.</p>';
+}
+/* Save a person's next catch-up and keep a matching item on the week plan in step with it. */
+async function saveNext(p, nd) {
+  const plan = state.data.Plan || [], existing = p.nid ? plan.find(x => x.id === p.nid) : null;
+  const title = nd.plan ? `${p.name}: ${nd.plan}` : `Catch-up with ${p.name}`;
+  const o = { ...p, ndate: nd.date || '', ntime: nd.date ? normTime(nd.time) : '', nplan: nd.date ? nd.plan : '' };
+  return withBusy('Saving…', async () => {
+    if (nd.date) {
+      if (existing) await updateRow('Plan', { ...existing, date: nd.date, end: '', time: o.ntime, title });
+      else { o.nid = newId('e'); await addRows('Plan', [{ id: o.nid, date: nd.date, end: '', time: o.ntime, title, cat: 'Social', type: 'Catch up', done: false, cd: false, notes: '' }]); }
+    } else { if (existing) await deleteRow('Plan', existing); o.nid = ''; }
+    await updateRow('People', o);
+  });
 }
 function renderLists() {
   const all = state.data.Lists || [];
@@ -1000,8 +1047,11 @@ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click
 /* ---------- events ---------- */
 const findPlan = id => (state.data.Plan || []).find(p => p.id === id);
 document.addEventListener('click', async e => {
-  const el = e.target.closest('[data-gpick],[data-unlink],[data-pgroup],[data-pview],[data-month],[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
+  const el = e.target.closest('[data-nxedit],[data-nxcancel],[data-nxclear],[data-gpick],[data-unlink],[data-pgroup],[data-pview],[data-month],[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
   if (!el) return;
+  if (el.dataset.nxedit) { state.pEditNext = el.dataset.nxedit; renderPeople(); const f = document.querySelector(`[data-nxform="${el.dataset.nxedit}"] input`); if (f) f.focus(); return; }
+  if (el.hasAttribute('data-nxcancel')) { state.pEditNext = null; renderPeople(); return; }
+  if (el.dataset.nxclear) { const p = (state.data.People || []).find(x => x.id === el.dataset.nxclear); state.pEditNext = null; if (p) await saveNext(p, { date: '' }); return; }
   if (el.dataset.gpick) { const cur = splitGroups($('pGroups').value), gp = el.dataset.gpick; $('pGroups').value = (cur.includes(gp) ? cur.filter(x => x !== gp) : cur.concat(gp)).join(', '); drawGroupPick(); return; }
   if (el.dataset.unlink != null) { pLinks.splice(Number(el.dataset.unlink), 1); drawLinks(); return; }
   if (el.dataset.pgroup != null) { state.pGroup = el.dataset.pgroup; renderPeople(); return; }
@@ -1014,7 +1064,8 @@ document.addEventListener('click', async e => {
   if (el.dataset.person) { openPerson((state.data.People || []).find(p => p.id === el.dataset.person)); return; }
   if (el.hasAttribute('data-new-person')) { openPerson(null); return; }
   if (el.dataset.note) { openNote((state.data.Notes || []).find(n => n.id === el.dataset.note)); return; }
-  if (el.dataset.seen) { const p = (state.data.People || []).find(x => x.id === el.dataset.seen); if (p && await withBusy('Saving…', () => updateRow('People', { ...p, seen: todayIso(), tosee: false }))) toast('Marked ' + p.name + ' as seen today'); return; }
+  if (el.dataset.seen) { const p = (state.data.People || []).find(x => x.id === el.dataset.seen); const clr = p && p.ndate && p.ndate <= todayIso() ? { ndate: '', ntime: '', nplan: '', nid: '' } : {};
+    if (p && await withBusy('Saving…', () => updateRow('People', { ...p, seen: todayIso(), tosee: false, ...clr }))) toast('Marked ' + p.name + ' as seen today'); return; }
   if (el.dataset.cycle) { const l = (state.data.Lists || []).find(x => x.id === el.dataset.cycle); if (!l) return;
     const seq = l.list === 'To book' ? ['Open', 'Done'] : ['Current', 'Up next', 'Done']; const nx = seq[(seq.indexOf(l.status) + 1) % seq.length];
     await withBusy('Saving…', () => updateRow('Lists', { ...l, status: nx })); return; }
@@ -1032,6 +1083,13 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('submit', async e => {
   const f = e.target;
+  if (f.dataset.nxform) { e.preventDefault(); const p = (state.data.People || []).find(x => x.id === f.dataset.nxform); if (!p) return;
+    const nd = { date: f.elements.d.value, time: f.elements.tm.value, plan: f.elements.pl.value.trim() }; state.pEditNext = null;
+    if (await saveNext(p, nd)) toast('Catch-up with ' + p.name + ' added to ' + fmt(nd.date, { weekday: 'long', day: 'numeric', month: 'short' })); return; }
+  if (f.id === 'personQuick') { e.preventDefault(); const n = $('pqName').value.trim(); if (!n) return;
+    const dupe = (state.data.People || []).some(p => p.name.toLowerCase() === n.toLowerCase());
+    const o = { id: newId('p'), name: n, bday: '', seen: '', tosee: false, every: null, notes: '', groups: state.pGroup && state.pGroup !== '__due' ? state.pGroup : '', links: '', ndate: '', ntime: '', nplan: '', nid: '' };
+    if (await withBusy('Adding…', () => addRows('People', [o]))) $('pqName').value = '', toast(`Added ${n}${o.groups ? ' to ' + o.groups : ''}${dupe ? ' (you already had someone with that name)' : ''}`); return; }
   if (f.id === 'quickAdd') { e.preventDefault();
     const o = { id: newId('e'), date: state.focus || todayIso(), end: '', time: normTime($('qaTime').value), title: $('qaTitle').value.trim(), cat: $('qaCat').value, type: '', done: false, cd: false, notes: '' };
     if (o.title) await withBusy('Adding…', () => addRows('Plan', [o])); }

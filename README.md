@@ -16,7 +16,7 @@ A week planner and daily log that reads and writes a Google Sheet. One page (`in
 | Routine | Day, Category, Time, Title, Active |
 | Log | Date, Steps, KM, Active mins, Pages, Max °C, Min °C, Mood, Note |
 | Goals | Year, Month, Steps, KM, Active mins, Pages |
-| People | ID, Name, Birthday, Last seen, To see, See every (days), Notes, Groups, Links |
+| People | ID, Name, Birthday, Last seen, To see, See every (days), Notes, Groups, Links, Next catch-up, Time, Catch-up plan, Plan ID |
 | Lists | ID, List, Item, Status, Added, Notes |
 | Notes | ID, Date, Topic, Note |
 | Links | Name, Category, URL, Pin, Order, Notes |
@@ -24,7 +24,7 @@ A week planner and daily log that reads and writes a Google Sheet. One page (`in
 
 Birthdays saved without a year are stored as 1904 (for example 1904-10-17); the page hides that year. The sheet's Birthday column shows day and month only.
 
-People: **Groups** is a comma-separated list (for example `IV, HFP`). **Links** connects people as `ID:Relationship`, separated by semicolons (for example `p008:Partner; p016:Parent of`). A link only needs to be on one person; the other side shows it in reverse.
+People: **Groups** is a comma-separated list (for example `IV, HFP`). **Links** connects people as `ID:Relationship`, separated by semicolons (for example `p008:Partner; p016:Parent of`). A link only needs to be on one person; the other side shows it in reverse. A planned catch-up also creates an item on the Plan tab; **Plan ID** keeps the two in step, so change or remove catch-ups from the People tab on the page.
 
 Keep the column order. Rows can be added, edited or sorted by hand in the sheet; the page finds rows by ID.
 

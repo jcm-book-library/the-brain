@@ -27,7 +27,7 @@ const db = {
   Log: [['Date', 'Steps', 'KM', 'Active mins', 'Pages', 'Max', 'Min', 'Mood', 'Note'],
     [serial(add(-3)), 10000, 7.2, 60, 100, 18, 9, 'G', ''], [serial(add(-2)), 4000, 2.9, 30, 120, 15, 8, 'F', 'Rain'], [serial(add(-1)), 14000, 10.1, 120, 90, 20, 10, 'G', '']],
   Goals: [['Year', 'Month', 'Steps', 'KM', 'Active', 'Pages'], [today.getFullYear(), today.getMonth() + 1, 11000, 8, 90, 100]],
-  People: [['ID', 'Name', 'Birthday', 'Last seen', 'To see', 'Every', 'Notes', 'Groups', 'Links'], ['p1', 'Sam', serial(`1990-${pad(new Date(add(5)).getMonth() + 1)}-${pad(new Date(add(5)).getDate())}`), '', true, '', 'Ask about the new job', 'IV', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP, IV', 'p3:Parent of'], ['p3', 'Jo', '', '', false, '', '', 'HFP', ''], ['', '', '', '', false, '', '', '', '']],
+  People: [['ID', 'Name', 'Birthday', 'Last seen', 'To see', 'Every', 'Notes', 'Groups', 'Links', 'Next', 'Time', 'Plan', 'PlanID'], ['p1', 'Sam', serial(`1990-${pad(new Date(add(5)).getMonth() + 1)}-${pad(new Date(add(5)).getDate())}`), '', true, '', 'Ask about the new job', 'IV', '', '', '', '', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP, IV', 'p3:Parent of', '', '', '', ''], ['p3', 'Jo', '', '', false, '', '', 'HFP', '', '', '', '', ''], ['', '', '', '', false, '', '', '', '', '', '', '', '']],
   Lists: [['ID', 'List', 'Item', 'Status', 'Added', 'Notes'], ['l1', 'Reading', 'A Book', 'Current', serial(T), ''], ['l2', 'To book', 'Dentist', 'Open', serial(add(-10)), '']],
   Notes: [['ID', 'Date', 'Topic', 'Note'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two']],
   Links: [['Name', 'Category', 'URL', 'Pin', 'Order', 'Notes'], ['Books', 'Entertainment', 'https://example.com/books', true, 1, ''], ['NRL', 'Sport', 'https://example.com/nrl', true, 2, ''], ['Other', 'Sport', '', false, '', '']],
@@ -161,15 +161,34 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.click('#personForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   const kr = db.People.find(r => r[1] === 'Kirby');
   check('birthday saved without year (1904 placeholder)', !!kr && kr[2] === serial('1904-10-17'));
-  check('catch-ups above everyone', await page.evaluate(() => { const a = document.getElementById('catchups').getBoundingClientRect(), b = document.getElementById('peopleList').getBoundingClientRect(); return a.bottom < b.top; }));
+  check('due people listed before everyone else', await page.evaluate(() => { const n = [...document.querySelectorAll('#peopleList .person .n')].map(x => x.textContent); return n.indexOf('Sam') < n.indexOf('Kirby') && n.indexOf('Alex') < n.indexOf('Kirby'); }));
   await page.click('[data-person]:text("Kirby")'); await page.waitForTimeout(100);
   check('no-year birthday reopens blank year', (await page.inputValue('#pYear')) === '' && (await page.inputValue('#pDay')) === '17');
   await page.click('#personDlg [data-close]');
 
+  // people: quick add (into the selected group)
+  await page.click('[data-pgroup="HFP"]'); await page.fill('#pqName', 'Morgan'); await page.click('#personQuick button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  const mg = db.People.find(r => r[1] === 'Morgan');
+  check('quick add person (joins selected group)', !!mg && mg[7] === 'HFP' && /^p/.test(mg[0]) && (await page.inputValue('#pqName')) === '');
+  await page.click('[data-pgroup=""]');
+
+  // people: plan a catch-up -> saved on person + on the week plan
+  await page.click('[data-nxedit="p3"]'); await page.fill('[data-nxform="p3"] input[name=d]', add(4)); await page.fill('[data-nxform="p3"] input[name=tm]', '630pm'); await page.fill('[data-nxform="p3"] input[name=pl]', 'Dinner at Mama\'s');
+  await page.click('[data-nxform="p3"] button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  let jo0 = db.People.find(r => r[0] === 'p3'); const pid = jo0[12];
+  const pi = db.Plan.find(r => r[0] === pid);
+  check('catch-up saved on person and added to the week', jo0[9] === serial(add(4)) && jo0[10] === '18:30' && jo0[11] === "Dinner at Mama's" && !!pi && pi[4] === "Jo: Dinner at Mama's" && pi[1] === serial(add(4)) && pi[5] === 'Social');
+  check('planned person sorts to the top', (await page.locator('#peopleList .person .n').first().innerText()).startsWith('Jo'));
+  await page.click('[data-nxedit="p3"]'); await page.fill('[data-nxform="p3"] input[name=d]', add(6)); await page.click('[data-nxform="p3"] button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('changing the catch-up moves the week item', db.Plan.find(r => r[0] === pid)[1] === serial(add(6)) && db.Plan.filter(r => r[4] && String(r[4]).startsWith('Jo:')).length === 1);
+  await page.click('[data-nxedit="p3"]'); await page.click('[data-nxclear="p3"]'); await page.waitForSelector('#status[data-state=live]');
+  jo0 = db.People.find(r => r[0] === 'p3');
+  check('removing the catch-up clears person and week item', !db.Plan.some(r => r[0] === pid) && !jo0[9] && !jo0[12]);
+
   // people: groups and links
-  check('group chips listed', (await page.locator('#groupChips .gchip').count()) === 3);
+  check('group chips listed', (await page.locator('#groupChips .gchip').count()) === 4);
   await page.click('[data-pgroup="HFP"]'); await page.waitForTimeout(100);
-  check('group filter narrows list', (await page.locator('#peopleList .person').count()) === 2);
+  check('group filter narrows list', (await page.locator('#peopleList .person').count()) === 3);
   await page.click('[data-pgroup=""]'); await page.click('[data-pview="groups"]'); await page.waitForTimeout(100);
   check('by-group view has headings', (await page.locator('#peopleList .ghead').count()) >= 3);
   const joText = await page.locator('#peopleList .person:has(.n[data-person="p3"])').first().innerText();
