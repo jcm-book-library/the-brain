@@ -27,7 +27,7 @@ const db = {
   Log: [['Date', 'Steps', 'KM', 'Active mins', 'Pages', 'Max', 'Min', 'Mood', 'Note'],
     [serial(add(-3)), 10000, 7.2, 60, 100, 18, 9, 'G', ''], [serial(add(-2)), 4000, 2.9, 30, 120, 15, 8, 'F', 'Rain'], [serial(add(-1)), 14000, 10.1, 120, 90, 20, 10, 'G', '']],
   Goals: [['Year', 'Month', 'Steps', 'KM', 'Active', 'Pages'], [today.getFullYear(), today.getMonth() + 1, 11000, 8, 90, 100]],
-  People: [['ID', 'Name', 'Birthday', 'Last seen', 'To see', 'Every', 'Notes'], ['p1', 'Sam', serial(`1990-${pad(new Date(add(5)).getMonth() + 1)}-${pad(new Date(add(5)).getDate())}`), '', true, '', 'Ask about the new job'], ['p2', 'Alex', '', serial(add(-100)), false, 60, ''], ['p3', 'Jo', '', '', false, '', ''], ['', '', '', '', false, '', '']],
+  People: [['ID', 'Name', 'Birthday', 'Last seen', 'To see', 'Every', 'Notes', 'Groups', 'Links'], ['p1', 'Sam', serial(`1990-${pad(new Date(add(5)).getMonth() + 1)}-${pad(new Date(add(5)).getDate())}`), '', true, '', 'Ask about the new job', 'IV', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP, IV', 'p3:Parent of'], ['p3', 'Jo', '', '', false, '', '', 'HFP', ''], ['', '', '', '', false, '', '', '', '']],
   Lists: [['ID', 'List', 'Item', 'Status', 'Added', 'Notes'], ['l1', 'Reading', 'A Book', 'Current', serial(T), ''], ['l2', 'To book', 'Dentist', 'Open', serial(add(-10)), '']],
   Notes: [['ID', 'Date', 'Topic', 'Note'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two']],
   Links: [['Name', 'Category', 'URL', 'Pin', 'Order', 'Notes'], ['Books', 'Entertainment', 'https://example.com/books', true, 1, ''], ['NRL', 'Sport', 'https://example.com/nrl', true, 2, ''], ['Other', 'Sport', '', false, '', '']],
@@ -166,11 +166,36 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('no-year birthday reopens blank year', (await page.inputValue('#pYear')) === '' && (await page.inputValue('#pDay')) === '17');
   await page.click('#personDlg [data-close]');
 
+  // people: groups and links
+  check('group chips listed', (await page.locator('#groupChips .gchip').count()) === 3);
+  await page.click('[data-pgroup="HFP"]'); await page.waitForTimeout(100);
+  check('group filter narrows list', (await page.locator('#peopleList .person').count()) === 2);
+  await page.click('[data-pgroup=""]'); await page.click('[data-pview="groups"]'); await page.waitForTimeout(100);
+  check('by-group view has headings', (await page.locator('#peopleList .ghead').count()) >= 3);
+  const joText = await page.locator('#peopleList .person:has(.n[data-person="p3"])').first().innerText();
+  check('reverse link shown (Jo is child of Alex)', /child of: Alex/i.test(joText));
+  await page.click('[data-pview="az"]');
+  await page.click('#peopleList [data-person="p3"].n'); await page.waitForTimeout(100);
+  await page.click('[data-gpick="IV"]'); await page.selectOption('#pLinkWho', 'p1'); await page.selectOption('#pLinkRel', 'Sibling'); await page.click('#pLinkAdd');
+  await page.click('#personForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  const jo = db.People.find(r => r[0] === 'p3');
+  check('groups and link saved to sheet', jo[7] === 'HFP, IV' && jo[8] === 'p1:Sibling');
+
+  // nav labels keep the arrows still
+  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(150);
+  const xs = []; for (let i = 0; i < 6; i++) { xs.push(Math.round((await page.locator('[data-month="1"]').boundingBox()).x)); await page.click('[data-month="-1"]'); await page.waitForTimeout(50); }
+  check('month arrow stays put (' + [...new Set(xs)].join(',') + ')', new Set(xs).size === 1);
+  await page.click('.tab[data-tab=week]'); await page.waitForTimeout(100);
+  const wx2 = []; for (let i = 0; i < 6; i++) { wx2.push(Math.round((await page.locator('#nextWk').boundingBox()).x)); await page.click('#nextWk'); await page.waitForTimeout(50); }
+  check('week arrow stays put (' + [...new Set(wx2)].join(',') + ')', new Set(wx2).size === 1);
+  await page.click('#todayBtn');
+
   // lists: status dropdown
   await page.click('.tab[data-tab=lists]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
   check('list status dropdown saves', db.Lists.find(r => r[0] === 'l1')[3] === 'Done');
 
-  for (const t of ['week', 'stats', 'people', 'lists', 'notes', 'links']) {
+  check('lists and notes share a tab', (await page.locator('.tab[data-tab=notes]').count()) === 0 && (await page.locator('#v-lists #notes').count()) === 1);
+  for (const t of ['week', 'stats', 'people', 'lists', 'links']) {
     await page.click(`.tab[data-tab=${t}]`); await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(OUT, `shot-${t}.png`), fullPage: true });
   }
