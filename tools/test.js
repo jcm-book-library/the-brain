@@ -87,6 +87,8 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('ticked countdown shown', (await page.locator('#chips').innerText()).includes('Dinner with friends'));
   check('today items rendered', (await page.locator('#focusPanel').innerText()).includes('Strength & Conditioning'));
   check('six day cards', await page.locator('.dcard').count() === 6);
+  check('multi-day item shows day number on focus day', /Day 1 of 3/.test(await page.locator('#days').innerText()) || /Day \d of 3/.test(await page.locator('#focusPanel').innerText()));
+  check('multi-day item counts up across days', await page.evaluate(() => { const t = document.getElementById('days').innerText; return /Day 1 of 3/.test(t) && /Day 2 of 3/.test(t) && /Day 3 of 3/.test(t); }));
   check('day cards stack in one column', await page.evaluate(() => getComputedStyle(document.getElementById('days')).gridTemplateColumns.split(' ').length === 1));
   check('pinned links', await page.locator('#links a').count() === 2);
 

@@ -100,6 +100,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .item .tm{font-size:12px;color:var(--muted);min-width:40px}
 .item[data-done=true] .t{text-decoration:line-through;color:var(--muted)}
 .item .ty{font-size:11px;color:var(--muted)}
+.dayn{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:999px;padding:0 7px;line-height:17px;vertical-align:1px}
 .empty{font-size:13px;color:var(--muted);padding:6px 0}
 
 .days{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
@@ -676,7 +677,7 @@ function renderWeek() {
       <select id="qaCat" aria-label="Category">${CATS.map(c => `<option>${c}</option>`).join('')}</select>
       <button class="btn btn-primary" type="submit">Add</button>
     </form>
-    ${byCat.length ? byCat.map(([c, a]) => `<div class="cat"><div class="cat-h"><i style="background:${CATVAR(c)}"></i>${c}</div><ul class="items">${a.map(itemHtml).join('')}</ul></div>`).join('') : '<p class="empty">Nothing planned yet. Add something above, or press Plan my week.</p>'}`;
+    ${byCat.length ? byCat.map(([c, a]) => `<div class="cat"><div class="cat-h"><i style="background:${CATVAR(c)}"></i>${c}</div><ul class="items">${a.map(i => itemHtml(i, f)).join('')}</ul></div>`).join('') : '<p class="empty">Nothing planned yet. Add something above, or press Plan my week.</p>'}`;
   // other six days
   const cards = [];
   for (let k = 1; k < 7; k++) {
@@ -687,15 +688,21 @@ function renderWeek() {
     const extra = di.length - shown.length;
     cards.push(`<div class="dcard" data-past="${d < t}" data-today="${d === t}">
       <div class="dcard-h"><button type="button" data-focus="${d}">${esc(fmt(d, { weekday: 'short', day: 'numeric' }))}${pay.is(d) ? ' <span class="tag pay">Payday</span>' : ''}</button><span class="w">${wx ? Math.round(wx.max) + '° · ' + (wx.rain ?? 0) + '%' : ''}</span></div>
-      ${shown.length ? `<ul class="mini">${shown.map(i => `<li data-done="${i.done}" data-edit="${esc(i.id)}"><i style="background:${CATVAR(i.cat)}"></i><span>${i.time ? esc(i.time) + ' ' : ''}${esc(i.title)}</span></li>`).join('')}${extra > 0 ? `<li class="more">+${extra} more</li>` : ''}</ul>` : '<span class="empty">Free</span>'}
+      ${shown.length ? `<ul class="mini">${shown.map(i => `<li data-done="${i.done}" data-edit="${esc(i.id)}"><i style="background:${CATVAR(i.cat)}"></i><span>${i.time ? esc(i.time) + ' ' : ''}${esc(i.title)}${dayOf(i, d) ? ` <span class="dayn">${dayTag(i, d)}</span>` : ''}</span></li>`).join('')}${extra > 0 ? `<li class="more">+${extra} more</li>` : ''}</ul>` : '<span class="empty">Free</span>'}
       <button class="add" type="button" data-add="${d}">+ Add</button></div>`);
   }
   $('days').innerHTML = cards.join('');
   renderUp(); renderCalendar();
 }
-function itemHtml(i) {
+/* "Day 2 of 5" for anything that spans several days */
+function dayOf(i, d) {
+  if (!i.end || i.end <= i.date) return null;
+  return { n: dayDiff(i.date, d) + 1, total: dayDiff(i.date, i.end) + 1 };
+}
+const dayTag = (i, d) => { const x = dayOf(i, d); return x ? `Day ${x.n} of ${x.total}` : ''; };
+function itemHtml(i, d) {
   return `<li class="item" data-done="${i.done}"><input type="checkbox" ${i.done ? 'checked' : ''} data-tick="${esc(i.id)}" aria-label="Done: ${esc(i.title)}">
-    <span class="tm">${esc(i.time || '')}</span><span class="t" data-edit="${esc(i.id)}" title="${esc(i.notes || i.title)}">${esc(i.title)}${i.end && i.end !== i.date ? ` <span class="ty">until ${esc(fmt(i.end, { weekday: 'short', day: 'numeric' }))}</span>` : ''}</span>
+    <span class="tm">${esc(i.time || '')}</span><span class="t" data-edit="${esc(i.id)}" title="${esc(i.notes || i.title)}">${esc(i.title)}${dayOf(i, d) ? ` <span class="dayn">${dayTag(i, d)}</span> <span class="ty">${esc(fmt(i.date, { day: 'numeric', month: 'short' }))} – ${esc(fmt(i.end, { day: 'numeric', month: 'short' }))}</span>` : ''}</span>
     <span class="ty">${esc(i.type || '')}</span></li>`;
 }
 function renderLog() {
@@ -752,7 +759,7 @@ function renderCalendar() {
       const hit = plan.filter(p => p.date <= s && (p.end || p.date) >= s);
       const first = hit[0];
       h += `<button type="button" class="c" data-focus="${s}" ${s < t ? 'data-past' : ''} ${s === t ? 'data-today' : ''} ${pay.is(s) ? 'data-pay' : ''}
-        style="${first ? `background:${CATVAR(first.cat)}` : ''}" title="${esc(fmt(s, { weekday: 'short', day: 'numeric', month: 'short' }) + (hit.length ? ': ' + hit.map(x => x.title).join(', ') : ''))}" aria-label="${esc(fmt(s, { day: 'numeric', month: 'long' }) + (hit.length ? ': ' + hit.map(x => x.title).join(', ') : ''))}"></button>`;
+        style="${first ? `background:${CATVAR(first.cat)}` : ''}" title="${esc(fmt(s, { weekday: 'short', day: 'numeric', month: 'short' }) + (hit.length ? ': ' + hit.map(x => x.title + (dayOf(x, s) ? ' (' + dayTag(x, s).toLowerCase() + ')' : '')).join(', ') : ''))}" aria-label="${esc(fmt(s, { day: 'numeric', month: 'long' }) + (hit.length ? ': ' + hit.map(x => x.title).join(', ') : ''))}"></button>`;
     }
   }
   $('cal').innerHTML = h;
