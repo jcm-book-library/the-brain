@@ -148,6 +148,15 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
 
   // this month panel
   check('this month panel shows totals', (await page.locator('#monthPanel .tile').count()) === 6 && (await page.locator('#monthPanel').innerText()).includes('so far'));
+  { // catch-up figure: (goal * (logged + h) - total) / h, h = next 5 days (or fewer left in month)
+    const ym = T.slice(0, 7), rows = db.Log.slice(1).filter(r => r[0] && (() => { const d = new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}` === ym; })() && r[1] != null && r[1] !== '');
+    const dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const logged = new Set(rows.map(r => r[0])); const fromDay = logged.has(serial(T)) ? today.getDate() + 1 : today.getDate();
+    const h = Math.min(5, dim - fromDay + 1), tot = rows.reduce((a, r) => a + r[1], 0);
+    const need = Math.ceil((11000 * (rows.length + h) - tot) / h);
+    const txt = await page.locator('#monthPanel .tile').first().innerText();
+    check('steps catch-up figure (' + need.toLocaleString('en-AU') + ' over ' + h + ' days)', h > 0 ? txt.includes(need.toLocaleString('en-AU')) : !/catch up/i.test(txt));
+  }
   const cellsWithSteps = await page.locator('#monthPanel .v[data-g]').count();
   check('day grid colours days against goal', cellsWithSteps >= 3);
   await page.locator('#monthPanel .v[data-logday]').first().click(); await page.waitForTimeout(100);

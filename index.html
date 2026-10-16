@@ -161,6 +161,9 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .tile .sub{font-size:13px;color:var(--muted)}
 .tile .od{font-size:13px;font-weight:700}
 .tile .od.up{color:var(--ok)} .tile .od.down{color:var(--m-P)}
+.tile .cu{font-size:13px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);color:var(--muted)}
+.tile .cu b{font-family:var(--display);font-size:16px;color:var(--fg)}
+.tile .cu.down b{color:var(--m-P)}
 .gbar{height:6px;border-radius:3px;background:var(--bg);overflow:hidden;margin-top:4px;position:relative}
 .gbar i{display:block;height:100%;border-radius:3px}
 .mgrid-wrap{overflow-x:auto}
@@ -778,11 +781,22 @@ function renderMonth() {
   const avg = k => cnt(k) ? sum(k) / cnt(k) : null;
   const nf = (x, d = 0) => x == null ? '–' : x.toLocaleString('en-AU', { minimumFractionDigits: d, maximumFractionDigits: d });
   const mets = [['steps', 'Steps', 0, 0], ['km', 'KM', 2, 2], ['act', 'Active mins', 0, 1], ['pages', 'Pages', 0, 1]];
+  /* Catch-up: the average needed over the next few days (up to 5, within this month) to bring the month's average back to goal. */
+  const isNow = state.month === t.slice(0, 7);
+  const lastLogged = log.reduce((a, r) => r.steps != null && r.date > a ? r.date : a, '');
+  const fromDay = isNow ? Math.max(Number(t.slice(8, 10)) - (lastLogged === t ? -1 : 0), lastLogged ? Number(lastLogged.slice(8, 10)) + 1 : 1) : dim + 1;
+  const h = Math.max(0, Math.min(5, dim - fromDay + 1));
+  const catchUp = (k, g, da) => {
+    if (!isNow || !h || !g || !cnt(k)) return '';
+    const need = (g * (cnt(k) + h) - sum(k)) / h, word = h === 1 ? 'tomorrow' : `next ${h} days`, rnd = x => k === 'km' ? Math.ceil(x * 10) / 10 : Math.ceil(x);
+    return need > g ? `<span class="cu down" title="Average needed over the ${word} to lift the month back to its goal">To catch up: <b>${nf(rnd(need), k === 'km' ? 1 : 0)}</b> a day, ${word}</span>`
+      : `<span class="cu up" title="The month stays on goal as long as the ${word} average at least this">On goal. ${word[0].toUpperCase() + word.slice(1)} can average <b>${nf(Math.max(0, rnd(need)), k === 'km' ? 1 : 0)}</b></span>`;
+  };
   const tiles = mets.map(([k, label, dt, da]) => {
     const a = avg(k), g = goal[k], diff = a != null && g ? a - g : null, pct = a != null && g ? Math.min(a / g, 1.25) / 1.25 * 100 : 0;
     return `<div class="tile"><span class="eyebrow">${label}</span><span class="num">${nf(sum(k), dt)}</span>
       <span class="sub">Avg ${nf(a, da)}${g ? ' · goal ' + nf(g, da) : ''}</span>
-      ${diff != null ? `<span class="od ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${nf(diff, da)} a day</span><div class="gbar" title="Average as a share of goal (line = goal)"><i style="width:${pct}%;background:${diff >= 0 ? 'var(--ok)' : 'var(--m-P)'}"></i><span style="position:absolute;top:0;bottom:0;left:80%;border-left:2px solid var(--fg);opacity:.5"></span></div>` : ''}</div>`;
+      ${diff != null ? `<span class="od ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${nf(diff, da)} a day</span><div class="gbar" title="Average as a share of goal (line = goal)"><i style="width:${pct}%;background:${diff >= 0 ? 'var(--ok)' : 'var(--m-P)'}"></i><span style="position:absolute;top:0;bottom:0;left:80%;border-left:2px solid var(--fg);opacity:.5"></span></div>` : ''}${catchUp(k, g, da)}</div>`;
   });
   const moods = ['G', 'F', 'P', 'B'].map(k => log.filter(r => r.mood === k).length), mt = moods.reduce((a, b) => a + b, 0);
   const tmx = avg('tmax'), tmn = avg('tmin'), hot = log.reduce((a, r) => r.tmax != null && r.tmax > a ? r.tmax : a, -99);
