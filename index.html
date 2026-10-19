@@ -41,6 +41,7 @@ button{font:inherit;cursor:pointer;color:inherit}
 .btn:disabled{opacity:.5;cursor:default}
 .sb-box{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px}
 .sb-acts{display:flex;flex-wrap:wrap;gap:6px}
+.sb-acts input{flex:1 1 180px;min-width:0}
 .btn-danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--line));background:transparent}
 .iconbtn{border:0;background:transparent;color:var(--muted);padding:4px 6px;border-radius:6px;line-height:1}
 .iconbtn:hover{color:var(--fg);background:var(--raise)}
@@ -411,7 +412,8 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   <div class="field"><label for="sSource">Where your data lives</label><select id="sSource"><option value="sheets">Google Sheet</option><option value="supabase">Supabase (pilot)</option></select></div>
   <div class="sb-box">
     <p class="muted" id="sbState" style="margin:0;font-size:13px"></p>
-    <div class="sb-acts"><button class="btn" type="button" id="sbIn">Sign in to Supabase</button><button class="btn btn-ghost" type="button" id="sbOut">Sign out of Supabase</button><button class="btn" type="button" id="sbCopy">Copy Sheet → Supabase</button></div>
+    <div class="sb-acts" id="sbEmailRow"><input id="sbEmail" type="email" autocomplete="email" placeholder="Your email" aria-label="Email for Supabase sign-in"><button class="btn" type="button" id="sbMail">Email me a sign-in link</button></div>
+    <div class="sb-acts"><button class="btn" type="button" id="sbIn">Sign in with Google</button><button class="btn btn-ghost" type="button" id="sbOut">Sign out of Supabase</button><button class="btn" type="button" id="sbCopy">Copy Sheet → Supabase</button></div>
     <p class="muted" id="sbMsg" style="margin:0;font-size:13px;white-space:pre-line"></p>
   </div>
   <p class="muted" id="setMsg" style="margin:0;font-size:13px"></p>
@@ -519,6 +521,13 @@ const sb = {
     try { localStorage.setItem(SB.sesKey, JSON.stringify(s)); } catch (e) {} return s; },
   forget() { try { localStorage.removeItem(SB.sesKey); } catch (e) {} },
   signedIn() { const s = this.ses(); return !!(s && s.rt); },
+  /* Email sign-in: Supabase emails a link that comes back here, the same way Google sign-in does. */
+  async emailLink(email) {
+    const r = await fetch(`${SB.url}/auth/v1/otp?redirect_to=${encodeURIComponent(location.origin + location.pathname)}`, { method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, create_user: true }) });
+    if (r.ok) return;
+    const b = await r.json().catch(() => ({}));
+    throw { message: r.status === 429 ? 'too many emails for now. Wait an hour, or use the last link you were sent.' : (b.msg || b.message || b.error_description || 'HTTP ' + r.status) };
+  },
   signIn() { location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + location.pathname)}`; },
   async signOut() { const s = this.ses(); this.forget();
     if (s) try { await fetch(`${SB.url}/auth/v1/logout?scope=local`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + s.at } }); } catch (e) {} },
@@ -587,7 +596,7 @@ function loadGis() {
   });
 }
 function connect() {
-  if (useSb()) { if (sb.signedIn()) refresh(); else sb.signIn(); return; }
+  if (useSb()) { if (sb.signedIn()) refresh(); else openSettings('Sign in to Supabase below.'); return; }
   const id = g.cfg().clientId;
   if (!id) { openSettings('Add your OAuth Client ID to connect.'); return; }
   if (!(window.google && google.accounts && google.accounts.oauth2)) { loadGis().then(connect, e => notice(e.message, 'error')); return; }
@@ -1170,7 +1179,7 @@ $('planForm').addEventListener('submit', async e => { e.preventDefault(); $('pla
 function drawSb() {
   const s = sb.ses();
   $('sbState').textContent = s && s.rt ? 'Supabase: signed in' + (s.email ? ' as ' + s.email : '') + '. You stay signed in on this device until you sign out.' : 'Supabase: not signed in on this device.';
-  $('sbIn').hidden = !!(s && s.rt); $('sbOut').hidden = $('sbCopy').hidden = !(s && s.rt);
+  $('sbIn').hidden = $('sbEmailRow').hidden = !!(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbCopy').hidden = !(s && s.rt);
 }
 function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend || 'sheets'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
 $('setForm').addEventListener('submit', e => {
@@ -1183,6 +1192,14 @@ $('setForm').addEventListener('submit', e => {
   connect();
 });
 $('sbIn').addEventListener('click', () => sb.signIn());
+$('sbMail').addEventListener('click', async () => {
+  const em = $('sbEmail').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('sbMsg').textContent = 'Type your email address first.'; return; }
+  g.saveCfg({ sbEmail: em }); $('sbMail').disabled = true; $('sbMsg').textContent = 'Sending…';
+  try { await sb.emailLink(em); $('sbMsg').textContent = 'Check your email and click the sign-in link. Open it on this device, in this browser: it brings you back here signed in.'; }
+  catch (err) { $('sbMsg').textContent = 'Couldn\'t send the link: ' + (err.message || err); }
+  $('sbMail').disabled = false;
+});
 $('sbOut').addEventListener('click', async () => { await sb.signOut(); drawSb(); $('sbMsg').textContent = 'Signed out of Supabase on this device.'; if (useSb()) signedOut(); });
 $('sbCopy').addEventListener('click', async e => {
   const b = e.currentTarget;

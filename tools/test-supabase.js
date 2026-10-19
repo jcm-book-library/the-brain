@@ -71,6 +71,7 @@ async function install(page, w) {
     const json = (o, status = 200) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(o) });
     if (u.pathname === '/auth/v1/token') { w.refreshes++; return json({ access_token: FRESH, refresh_token: 'rt2', expires_in: 3600 }); }
     if (u.pathname === '/auth/v1/logout') { w.logouts++; return r.fulfill({ status: 204, body: '' }); }
+    if (u.pathname === '/auth/v1/otp') { w.otp = (w.otp || []).concat({ url: req.url(), body: JSON.parse(req.postData()) }); return w.otpFail ? json({ msg: 'email rate limit exceeded' }, 429) : json({}); }
     if (u.pathname === '/auth/v1/authorize') { w.authorize.push(req.url()); return r.fulfill({ contentType: 'text/html', body: '<p>google</p>' }); }
     const m = u.pathname.match(/^\/rest\/v1\/(\w+)$/);
     if (!m || !w.sb[m[1]]) return json({ message: 'no such table' }, 404);
@@ -212,10 +213,23 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     await page.waitForSelector('#notice:not([hidden])');
     check('signed out: refresh button reads Connect', (await page.locator('#refreshBtn').innerText()) === 'Connect');
     check('signed out: notice mentions Supabase', (await page.locator('#notice').innerText()).includes('Supabase'));
-    const req = page.waitForRequest(r => r.url().includes('/auth/v1/authorize'));
     await page.click('#refreshBtn');
+    await page.waitForSelector('#setDlg[open]');
+    check('signed out: Connect opens Settings with sign-in options', await page.locator('#sbEmail').isVisible() && await page.locator('#sbIn').isVisible() && (await page.locator('#setMsg').innerText()).includes('Sign in to Supabase'));
+    await page.click('#sbMail');
+    check('email: asks for an address when empty', (await page.locator('#sbMsg').innerText()).includes('Type your email'));
+    await page.fill('#sbEmail', 'me@example.com'); await page.click('#sbMail');
+    await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Check your email'));
+    const o = (w.otp || [])[0], ou = o && new URL(o.url);
+    check('email: sends one link request to Supabase', w.otp && w.otp.length === 1 && o.body.email === 'me@example.com' && o.body.create_user === true && ou.searchParams.get('redirect_to') === 'https://brain.test/', o);
+    check('email: remembers the address in this browser', (await page.evaluate(() => JSON.parse(localStorage.getItem('brain_config')).sbEmail)) === 'me@example.com');
+    w.otpFail = true; await page.click('#sbMail');
+    await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Couldn'));
+    check('email: rate limit explained', (await page.locator('#sbMsg').innerText()).includes('too many emails'));
+    const req = page.waitForRequest(r => r.url().includes('/auth/v1/authorize'));
+    await page.click('#sbIn');
     const u = new URL((await req).url());
-    check('signed out: Connect goes to Supabase Google authorize', u.origin === SBU && u.pathname === '/auth/v1/authorize' && u.searchParams.get('provider') === 'google' && u.searchParams.get('redirect_to') === 'https://brain.test/', u.href);
+    check('signed out: Google button goes to Supabase Google authorize', u.origin === SBU && u.pathname === '/auth/v1/authorize' && u.searchParams.get('provider') === 'google' && u.searchParams.get('redirect_to') === 'https://brain.test/', u.href);
     check('signed out: no data calls made', w.sbCalls.length === 0 && w.sheetCalls.length === 0);
   } });
 
