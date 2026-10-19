@@ -19,9 +19,9 @@ You never need the `service_role` key or the database password for any of this. 
 
 Your project has auto-expose off, so the new schema has to be added by hand.
 
-1. Left sidebar: **Project Settings** (the cog at the bottom).
-2. Click **Data API**.
-3. Find **Exposed schemas**. Click the box, choose **brain**, so it shows next to `public` (and `graphql_public` if it's there).
+1. Open the **Data API** page: **Integrations → Data API** in the left sidebar (older screens: **Project Settings → Data API**).
+2. Leave **Enable Data API** on, and click the **Settings** tab at the top.
+3. Find **Exposed schemas**. Click the box and choose **brain**, so it shows next to `public`. (If `brain` isn't listed, step 1 hasn't run yet.)
 4. Click **Save**.
 
 If you can't find it, press **Ctrl+K** (Cmd+K on a Mac) in the dashboard and type `Exposed schemas`.
