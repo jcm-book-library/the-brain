@@ -13,7 +13,7 @@ You never need the `service_role` key or the database password for any of this. 
 3. Click **+ New query** (top left).
 4. Open [`01-schema.sql`](01-schema.sql) on GitHub, click the **Copy raw file** button (two squares, top right of the file), and paste it into the editor.
 5. Click **Run** (bottom right). You should see "Success. No rows returned".
-   - If a box warns about "destructive operations" or "RLS", click **Run this query** anyway: the script only creates things and turns RLS on.
+   - A **Potential issues detected** box will appear (destructive operations, tables without RLS). Click **Run and enable RLS** (green). Both warnings are false alarms: the script turns RLS on in a loop the checker can't read, and the "destructive" part only resets access rules on brand-new, empty tables.
 
 ## 2. Let the app reach the `brain` tables (Supabase, 1 minute)
 
