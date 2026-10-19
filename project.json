@@ -1,0 +1,10 @@
+{
+  "name": "The Brain",
+  "repo": "the-brain",
+  "purpose": "Week planner, daily log and people tracker on one page; data in a Google Sheet, with a Supabase pilot running alongside.",
+  "family": "Life",
+  "stage": "Working",
+  "live": "https://jcm-book-library.github.io/the-brain/",
+  "tags": [],
+  "updated": "2026-10-19"
+}

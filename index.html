@@ -39,6 +39,8 @@ button{font:inherit;cursor:pointer;color:inherit}
 .btn-primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn-ghost{background:transparent}
 .btn:disabled{opacity:.5;cursor:default}
+.sb-box{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px}
+.sb-acts{display:flex;flex-wrap:wrap;gap:6px}
 .btn-danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--line));background:transparent}
 .iconbtn{border:0;background:transparent;color:var(--muted);padding:4px 6px;border-radius:6px;line-height:1}
 .iconbtn:hover{color:var(--fg);background:var(--raise)}
@@ -406,8 +408,14 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   <div class="field"><label for="sSheet">Google Sheet link or ID</label><input id="sSheet" required></div>
   <div class="field"><label for="sClient">OAuth Client ID</label><input id="sClient" placeholder="….apps.googleusercontent.com"></div>
   <p class="muted" style="margin:0;font-size:13px">Both are saved in this browser only. The Client ID is the same one your book library uses. Paydays, weather location and birthday window live on the sheet's Settings tab.</p>
+  <div class="field"><label for="sSource">Where your data lives</label><select id="sSource"><option value="sheets">Google Sheet</option><option value="supabase">Supabase (pilot)</option></select></div>
+  <div class="sb-box">
+    <p class="muted" id="sbState" style="margin:0;font-size:13px"></p>
+    <div class="sb-acts"><button class="btn" type="button" id="sbIn">Sign in to Supabase</button><button class="btn btn-ghost" type="button" id="sbOut">Sign out of Supabase</button><button class="btn" type="button" id="sbCopy">Copy Sheet → Supabase</button></div>
+    <p class="muted" id="sbMsg" style="margin:0;font-size:13px;white-space:pre-line"></p>
+  </div>
   <p class="muted" id="setMsg" style="margin:0;font-size:13px"></p>
-  <div class="dlg-acts"><div><button class="btn btn-ghost" type="button" id="signOut">Sign out</button><a class="btn btn-ghost" id="openSheet" target="_blank" rel="noopener" style="text-decoration:none">Open sheet ↗</a></div><div><button class="btn" type="button" data-close>Cancel</button><button class="btn btn-primary" type="submit">Save &amp; connect</button></div></div>
+  <div class="dlg-acts"><div><button class="btn btn-ghost" type="button" id="signOut">Sign out of Google</button><a class="btn btn-ghost" id="openSheet" target="_blank" rel="noopener" style="text-decoration:none">Open sheet ↗</a></div><div><button class="btn" type="button" data-close>Cancel</button><button class="btn btn-primary" type="submit">Save &amp; connect</button></div></div>
 </form></dialog>
 
 <div class="toast" id="toast" hidden></div>
@@ -486,6 +494,90 @@ const g = {
   }
 };
 
+/* ---------- Supabase (pilot: switched on in Settings; the Sheet stays the default until switch-over) ---------- */
+// The publishable key is meant to be public: Row Level Security only lets a signed-in owner see their own rows.
+const SB = { url: 'https://apeflgdzclpxiktaxyfk.supabase.co', key: 'sb_publishable_AHVRXW-Zi3lLaHilBab1Sg_fPzPvWcg', schema: 'brain', sesKey: 'brain-sb-session' };
+/* Each tab's table, and app column -> table column. */
+const SBT = {
+  Plan:     ['plan',     { id: 'id', date: 'date', end: 'end_date', time: 'time', title: 'title', cat: 'category', type: 'type', done: 'done', cd: 'countdown', notes: 'notes' }],
+  Routine:  ['routine',  { day: 'day', cat: 'category', time: 'time', title: 'title', active: 'active' }],
+  Log:      ['log',      { date: 'date', steps: 'steps', km: 'km', act: 'active_mins', pages: 'pages', tmax: 'max_c', tmin: 'min_c', mood: 'mood', note: 'note' }],
+  Goals:    ['goals',    { year: 'year', month: 'month', steps: 'steps', km: 'km', act: 'active_mins', pages: 'pages' }],
+  People:   ['people',   { id: 'id', name: 'name', bday: 'birthday', seen: 'last_seen', tosee: 'to_see', every: 'see_every_days', notes: 'notes', groups: 'groups', links: 'links', ndate: 'next_catchup', ntime: 'next_time', nplan: 'catchup_plan', nid: 'plan_id' }],
+  Lists:    ['lists',    { id: 'id', list: 'list', item: 'item', status: 'status', added: 'added', notes: 'notes' }],
+  Notes:    ['notes',    { id: 'id', date: 'date', topic: 'topic', note: 'note' }],
+  Links:    ['links',    { name: 'name', cat: 'category', url: 'url', pin: 'pin', order: 'sort_order', notes: 'notes' }],
+  Settings: ['settings', { key: 'key', value: 'value', notes: 'notes' }]
+};
+/* Columns that must be unique in Supabase (checked before a copy so it can't half-fail). */
+const SB_UNIQUE = { Plan: ['id'], Log: ['date'], Goals: ['year', 'month'], People: ['id'], Lists: ['id'], Notes: ['id'], Settings: ['key'] };
+const useSb = () => g.cfg().backend === 'supabase';
+const jwtClaims = t => { try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return {}; } };
+const sb = {
+  ses() { try { return JSON.parse(localStorage.getItem(SB.sesKey) || 'null'); } catch (e) { return null; } },
+  keep(b) { const s = { at: b.access_token, rt: b.refresh_token, exp: Date.now() + (Number(b.expires_in || 3600) - 60) * 1000, email: jwtClaims(b.access_token).email || '' };
+    try { localStorage.setItem(SB.sesKey, JSON.stringify(s)); } catch (e) {} return s; },
+  forget() { try { localStorage.removeItem(SB.sesKey); } catch (e) {} },
+  signedIn() { const s = this.ses(); return !!(s && s.rt); },
+  signIn() { location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + location.pathname)}`; },
+  async signOut() { const s = this.ses(); this.forget();
+    if (s) try { await fetch(`${SB.url}/auth/v1/logout?scope=local`, { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + s.at } }); } catch (e) {} },
+  /* Back from Google: Supabase puts the session (or an error) in the address after #. */
+  fromRedirect() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (!h.has('access_token') && !h.has('error_description')) return null;
+    history.replaceState(null, '', location.pathname + location.search);
+    if (h.get('access_token')) { const s = this.keep(Object.fromEntries(h)); return { ok: true, email: s.email }; }
+    return { ok: false, message: h.get('error_description').replace(/\+/g, ' ') };
+  },
+  /* Access tokens last an hour; the refresh token keeps you signed in for good. One refresh at a time. */
+  async token(force) {
+    const s = this.ses();
+    if (!s || !s.rt) { if (useSb()) signedOut(); throw { code: 'signin' }; }
+    if (!force && s.exp > Date.now()) return s.at;
+    if (!this._ref) this._ref = (async () => {
+      const r = await fetch(`${SB.url}/auth/v1/token?grant_type=refresh_token`, { method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: s.rt }) });
+      const b = await r.json().catch(() => ({}));
+      if (r.status === 400 || r.status === 401 || r.status === 403) { this.forget(); if (useSb()) signedOut(); throw { code: 'signin' }; }
+      if (!r.ok) throw { code: 'api', message: b.msg || b.error_description || 'Supabase sign-in HTTP ' + r.status };
+      return this.keep(b).at;
+    })().finally(() => { this._ref = null; });
+    return this._ref;
+  },
+  async api(path, opts = {}, retried) {
+    const t = await this.token();
+    const o = { method: opts.method || 'GET', headers: { apikey: SB.key, Authorization: 'Bearer ' + t, 'Accept-Profile': SB.schema, 'Content-Profile': SB.schema } };
+    if (opts.prefer) o.headers.Prefer = opts.prefer;
+    if (opts.body) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(opts.body); }
+    const res = await fetch(`${SB.url}/rest/v1/${path}`, o);
+    if (res.status === 401 && !retried) { await this.token(true); return this.api(path, opts, true); }
+    const txt = await res.text(), body = txt ? (() => { try { return JSON.parse(txt); } catch (e) { return txt; } })() : null;
+    if (!res.ok) throw { code: 'api', message: (body && (body.message || body.msg)) || 'Supabase HTTP ' + res.status };
+    return body;
+  }
+};
+function sbIn(tab, r) { const o = { _row: r.row_id }; Object.entries(SBT[tab][1]).forEach(([c, d]) => { o[c] = parseCell(c, r[d]); }); return o; }
+function sbVal(c, v) {
+  if (BOOL_COLS.has(c)) return !!v;
+  if (DATE_COLS.has(c)) return v || null;
+  if (NUM_COLS.has(c)) { if (v === '' || v == null) return null; const n = Number(v); return isNaN(n) ? null : n; }
+  return v == null ? '' : String(v);
+}
+function sbOut(tab, o, only) { const r = {}; Object.entries(SBT[tab][1]).forEach(([c, d]) => { if (!only || only.includes(c)) r[d] = sbVal(c, o[c]); }); return r; }
+async function sbReadAll() {
+  const data = {};
+  await Promise.all(Object.keys(TABS).map(async n => {
+    const rows = []; const page = 1000;
+    for (let from = 0; ; from += page) {
+      const got = await sb.api(`${SBT[n][0]}?select=*&order=row_id&limit=${page}&offset=${from}`);
+      got.forEach(r => rows.push(sbIn(n, r)));
+      if (got.length < page) break;
+    }
+    data[n] = rows;
+  }));
+  return data;
+}
+
 function loadGis() {
   return new Promise((ok, fail) => {
     if (window.google && google.accounts && google.accounts.oauth2) return ok();
@@ -495,6 +587,7 @@ function loadGis() {
   });
 }
 function connect() {
+  if (useSb()) { if (sb.signedIn()) refresh(); else sb.signIn(); return; }
   const id = g.cfg().clientId;
   if (!id) { openSettings('Add your OAuth Client ID to connect.'); return; }
   if (!(window.google && google.accounts && google.accounts.oauth2)) { loadGis().then(connect, e => notice(e.message, 'error')); return; }
@@ -511,6 +604,7 @@ function connect() {
     g.client.requestAccessToken({ prompt: '' });
   } catch (err) { notice(err.message, 'error'); }
 }
+const canLoad = () => useSb() ? sb.signedIn() : g.valid();
 function signedOut() { state.live = false; setStatus('error', 'Not connected'); $('refreshBtn').textContent = 'Connect'; }
 
 /* ---------- read ---------- */
@@ -520,36 +614,41 @@ function parseCell(col, v) {
   if (NUM_COLS.has(col)) { if (v === '' || v == null) return null; const n = typeof v === 'number' ? v : Number(String(v).replace(/,/g, '')); return isNaN(n) ? null : n; }
   return v == null ? '' : String(v);
 }
+async function readSheet() {
+  const names = Object.keys(TABS), data = {};
+  const q = names.map(n => 'ranges=' + encodeURIComponent(`${n}!A2:${colLetter(TABS[n].cols.length - 1)}`)).join('&');
+  const [res, meta] = await Promise.all([
+    g.api(`/values:batchGet?${q}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER`),
+    g.api('?fields=sheets.properties(sheetId,title,gridProperties.rowCount)')
+  ]);
+  const rowCount = {}; meta.sheets.forEach(s => { rowCount[s.properties.title] = s.properties.gridProperties.rowCount; });
+  names.forEach((n, i) => {
+    const t = TABS[n], vals = res.valueRanges[i].values || [];
+    const rows = []; let last = 1;
+    vals.forEach((r, j) => {
+      const o = { _row: j + 2 };
+      t.cols.forEach((c, k) => { o[c] = parseCell(c, r[k]); });
+      const keyv = o[t.key];
+      if (keyv !== '' && keyv != null) { rows.push(o); last = j + 2; }
+    });
+    data[n] = rows; data[n]._last = last;
+  });
+  return { data, rowCount };
+}
 async function refresh() {
   if (state.busy) return;
   setStatus('loading', 'Loading…');
   try {
-    const names = Object.keys(TABS);
-    const q = names.map(n => 'ranges=' + encodeURIComponent(`${n}!A2:${colLetter(TABS[n].cols.length - 1)}`)).join('&');
-    const [res, meta] = await Promise.all([
-      g.api(`/values:batchGet?${q}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER`),
-      g.api('?fields=sheets.properties(sheetId,title,gridProperties.rowCount)')
-    ]);
-    meta.sheets.forEach(s => { state.rowCount[s.properties.title] = s.properties.gridProperties.rowCount; });
-    names.forEach((n, i) => {
-      const t = TABS[n], vals = res.valueRanges[i].values || [];
-      const rows = []; let last = 1;
-      vals.forEach((r, j) => {
-        const o = { _row: j + 2 };
-        t.cols.forEach((c, k) => { o[c] = parseCell(c, r[k]); });
-        const keyv = o[t.key];
-        if (keyv !== '' && keyv != null) { rows.push(o); last = j + 2; }
-      });
-      state.data[n] = rows; state.data[n]._last = last;
-    });
+    if (useSb()) state.data = await sbReadAll();
+    else { const r = await readSheet(); state.data = r.data; state.rowCount = r.rowCount; }
     state.live = true;
     $('refreshBtn').textContent = 'Refresh';
-    setStatus('live', 'Live · ' + new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }));
+    setStatus('live', (useSb() ? 'Supabase · ' : 'Live · ') + new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }));
     hideNotice();
     renderAll();
   } catch (e) {
-    if (e.code !== 'signin') { setStatus('error', 'Couldn\'t load'); notice('Couldn\'t load the sheet: ' + (e.message || e), 'error'); }
-    else notice('Press Connect to sign in to Google and load your Brain.');
+    if (e.code !== 'signin') { setStatus('error', 'Couldn\'t load'); notice('Couldn\'t load ' + (useSb() ? 'from Supabase: ' : 'the sheet: ') + (e.message || e), 'error'); }
+    else notice(useSb() ? 'Press Connect to sign in to Supabase and load your Brain.' : 'Press Connect to sign in to Google and load your Brain.');
   }
 }
 
@@ -574,17 +673,31 @@ async function ensureRows(tab, need) {
   await g.api(':batchUpdate', { method: 'POST', body: { requests: [{ appendDimension: { sheetId: TABS[tab].sid, dimension: 'ROWS', length: Math.max(500, need - have) } }] } });
 }
 async function addRows(tab, objs) {
+  if (useSb()) { await sb.api(SBT[tab][0], { method: 'POST', body: objs.map(o => sbOut(tab, o)), prefer: 'return=minimal' }); return; }
   const start = state.data[tab]._last + 1, end = start + objs.length - 1;
   await ensureRows(tab, end);
   const L = colLetter(TABS[tab].cols.length - 1);
   await g.api(`/values/${encodeURIComponent(`${tab}!A${start}:${L}${end}`)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: { values: objs.map(o => rowOut(tab, o)) } });
 }
 async function updateRow(tab, o) {
+  if (useSb()) {
+    const was = (state.data[tab] || []).find(x => x._row === o._row);
+    const changed = Object.keys(SBT[tab][1]).filter(c => !was || JSON.stringify(sbVal(c, was[c])) !== JSON.stringify(sbVal(c, o[c])));
+    if (!changed.length) return;
+    const got = await sb.api(`${SBT[tab][0]}?row_id=eq.${o._row}`, { method: 'PATCH', body: sbOut(tab, o, changed), prefer: 'return=representation' });
+    if (!got || got.length !== 1) throw { code: 'api', message: 'that item was changed or removed elsewhere. Refreshed. Try again.' };
+    return;
+  }
   await assertRow(tab, o);
   const L = colLetter(TABS[tab].cols.length - 1);
   await g.api(`/values/${encodeURIComponent(`${tab}!A${o._row}:${L}${o._row}`)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: { values: [rowOut(tab, o)] } });
 }
 async function deleteRow(tab, o) {
+  if (useSb()) {
+    const got = await sb.api(`${SBT[tab][0]}?row_id=eq.${o._row}`, { method: 'DELETE', prefer: 'return=representation' });
+    if (!got || got.length !== 1) throw { code: 'api', message: 'that item was already removed elsewhere. Refreshed.' };
+    return;
+  }
   await assertRow(tab, o);
   await g.api(':batchUpdate', { method: 'POST', body: { requests: [{ deleteDimension: { range: { sheetId: TABS[tab].sid, dimension: 'ROWS', startIndex: o._row - 1, endIndex: o._row } } }] } });
 }
@@ -1054,13 +1167,62 @@ $('planBtn').addEventListener('click', () => {
 $('planWeek').addEventListener('change', buildPlan);
 $('planForm').addEventListener('submit', async e => { e.preventDefault(); $('planDlg').close(); const n = planRows.length; if (n && await withBusy('Adding routine…', () => addRows('Plan', planRows))) toast(`Added ${n} items to the week`); });
 
-function openSettings(msg) { const c = g.cfg(); $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
+function drawSb() {
+  const s = sb.ses();
+  $('sbState').textContent = s && s.rt ? 'Supabase: signed in' + (s.email ? ' as ' + s.email : '') + '. You stay signed in on this device until you sign out.' : 'Supabase: not signed in on this device.';
+  $('sbIn').hidden = !!(s && s.rt); $('sbOut').hidden = $('sbCopy').hidden = !(s && s.rt);
+}
+function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend || 'sheets'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
 $('setForm').addEventListener('submit', e => {
   const sh = $('sSheet').value.trim(), m = sh.match(/\/d\/([\w-]{20,})/), id = m ? m[1] : sh, cl = $('sClient').value.trim();
   if (!/^[\w-]{20,}$/.test(id)) { e.preventDefault(); $('setMsg').textContent = 'That doesn\'t look like a sheet link or ID.'; return; }
   if (cl && !/\.apps\.googleusercontent\.com$/.test(cl)) { e.preventDefault(); $('setMsg').textContent = 'That doesn\'t look like a Client ID.'; return; }
-  g.saveCfg({ sheetId: id, clientId: cl }); g.client = null; connect();
+  const was = g.cfg().backend || 'sheets', src = $('sSource').value;
+  g.saveCfg({ sheetId: id, clientId: cl, backend: src }); g.client = null;
+  if (src !== was) state.live = false;
+  connect();
 });
+$('sbIn').addEventListener('click', () => sb.signIn());
+$('sbOut').addEventListener('click', async () => { await sb.signOut(); drawSb(); $('sbMsg').textContent = 'Signed out of Supabase on this device.'; if (useSb()) signedOut(); });
+$('sbCopy').addEventListener('click', async e => {
+  const b = e.currentTarget;
+  if (!g.valid()) { $('sbMsg').textContent = 'Connect to Google first (the copy reads your Sheet). A Google window will open; then press Copy again.'; connect(); return; }
+  if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Replace Supabase copy?';
+    $('sbMsg').textContent = 'This reads your Sheet and replaces everything in Supabase with it. Your Sheet is not changed. Press again to go.';
+    setTimeout(() => { if (b.dataset.armed === '1') { b.dataset.armed = ''; b.textContent = 'Copy Sheet → Supabase'; } }, 6000); return; }
+  b.dataset.armed = ''; b.textContent = 'Copy Sheet → Supabase'; b.disabled = true;
+  try { $('sbMsg').textContent = await copyToSb(m => { $('sbMsg').textContent = m; }); }
+  catch (err) { $('sbMsg').textContent = 'Copy stopped: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err)); }
+  b.disabled = false;
+});
+
+/* One-way copy, Sheet -> Supabase. Reads the Sheet only; never writes to it. Then reads Supabase back and compares. */
+const sbKey = (tab, o) => JSON.stringify(Object.keys(SBT[tab][1]).map(c => sbVal(c, o[c])));
+async function copyToSb(say) {
+  say('Reading your Sheet…');
+  const src = (await readSheet()).data, names = Object.keys(TABS);
+  const dupes = [];
+  Object.entries(SB_UNIQUE).forEach(([n, cols]) => { const seen = new Set();
+    src[n].forEach(o => { const k = cols.map(c => o[c]).join(' '); if (seen.has(k)) dupes.push(`${n}: ${k}`); seen.add(k); }); });
+  if (dupes.length) throw { message: 'these appear twice in your Sheet, so nothing was copied. Fix them in the Sheet and try again:\n' + dupes.slice(0, 10).join('\n') };
+  for (const n of names) {
+    say(`Copying ${n}…`);
+    await sb.api(`${SBT[n][0]}?row_id=gt.0`, { method: 'DELETE', prefer: 'return=minimal' });
+    for (let i = 0; i < src[n].length; i += 500)
+      await sb.api(SBT[n][0], { method: 'POST', body: src[n].slice(i, i + 500).map(o => sbOut(n, o)), prefer: 'return=minimal' });
+  }
+  say('Checking the copy…');
+  const back = await sbReadAll(), bad = [];
+  names.forEach(n => {
+    const a = src[n].map(o => sbKey(n, o)).sort(), b = back[n].map(o => sbKey(n, o)).sort();
+    if (a.length !== b.length) bad.push(`${n}: Sheet ${a.length} rows, Supabase ${b.length}`);
+    else { const k = a.findIndex((x, i) => x !== b[i]); if (k >= 0) bad.push(`${n}: a row differs (${a[k].slice(0, 80)})`); }
+  });
+  const total = names.reduce((t, n) => t + src[n].length, 0);
+  if (bad.length) throw { message: 'copied, but the check found differences:\n' + bad.join('\n') };
+  if (useSb()) await refresh();
+  return `Copied ${total} rows and checked them: Supabase matches your Sheet.\n` + names.map(n => `${n} ${src[n].length}`).join(' · ');
+}
 $('signOut').addEventListener('click', () => { try { localStorage.removeItem(g.tokKey); } catch (e) {} $('setDlg').close(); signedOut(); });
 $('settingsBtn').addEventListener('click', () => openSettings());
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
@@ -1140,7 +1302,7 @@ $('todayBtn').addEventListener('click', () => { state.focus = todayIso(); render
 $('calYear').addEventListener('change', renderCalendar);
 $('statYear').addEventListener('change', renderStats);
 $('peopleSearch').addEventListener('input', renderPeople);
-$('refreshBtn').addEventListener('click', () => state.live || g.valid() ? (loadWeather().then(refresh)) : connect());
+$('refreshBtn').addEventListener('click', () => state.live || canLoad() ? (loadWeather().then(refresh)) : connect());
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state.live && !state.busy) refresh(); });
 setInterval(() => { if (state.live && state.focus === null) renderAll(); }, 60e3);
 
@@ -1150,9 +1312,12 @@ setInterval(() => { if (state.live && state.focus === null) renderAll(); }, 60e3
   try { let t = localStorage.getItem('brain-tab'); if (t === 'notes') t = 'lists'; if (t && $('v-' + t)) showTab(t); } catch (e) {}
   setStatus('loading', 'Connecting…');
   loadGis().catch(() => {});
+  const back = sb.fromRedirect();
   if (window.__BRAIN_DEMO__) { await window.__BRAIN_DEMO__(g); }
-  if (g.valid()) { await refresh(); loadWeather().then(() => { if (state.live) renderAll(); }); return; }
+  if (back) openSettings(back.ok ? 'Signed in to Supabase' + (back.email ? ' as ' + back.email : '') + '.' : 'Supabase sign-in didn\'t work: ' + back.message);
+  if (canLoad()) { await refresh(); loadWeather().then(() => { if (state.live) renderAll(); }); return; }
   signedOut(); loadWeather();
+  if (useSb()) { notice('Press Connect to sign in to Supabase and load your Brain.'); return; }
   notice(g.cfg().clientId ? 'Press Connect to sign in to Google and load your Brain.' : 'Press Connect to link Google. The Client ID from your book library is picked up automatically if it\'s saved in this browser.');
 })();
 </script>
