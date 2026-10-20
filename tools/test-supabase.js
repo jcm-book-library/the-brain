@@ -122,6 +122,7 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     check('redirect: session saved', s && s.at === GOOD && s.rt === 'rtX' && s.email === 'me@example.com' && s.exp > Date.now() + 3000e3, s);
     check('redirect: hash removed from URL', !(await page.evaluate(() => location.hash)) && !page.url().includes('access_token'), page.url());
     check('redirect: settings says signed in as email', (await page.locator('#setMsg').innerText()).includes('Signed in to Supabase as me@example.com'), await page.locator('#setMsg').innerText());
+    check('redirect: email sign-in row hidden once signed in', !(await page.locator('#sbEmail').isVisible()) && !(await page.locator('#sbIn').isVisible()));
   } });
   await scenario(b, 'redirect-error', { url: 'https://brain.test/#error=access_denied&error_description=Signups+not+allowed', run: async (page) => {
     await page.waitForSelector('#setDlg[open]');
