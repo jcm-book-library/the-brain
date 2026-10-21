@@ -598,9 +598,12 @@ function loadGis() {
 }
 function connect() {
   if (useSb()) { if (sb.signedIn()) refresh(); else openSettings('Sign in to Supabase below.'); return; }
+  googleSignIn();
+}
+function googleSignIn() {
   const id = g.cfg().clientId;
   if (!id) { openSettings('Add your OAuth Client ID to connect.'); return; }
-  if (!(window.google && google.accounts && google.accounts.oauth2)) { loadGis().then(connect, e => notice(e.message, 'error')); return; }
+  if (!(window.google && google.accounts && google.accounts.oauth2)) { loadGis().then(googleSignIn, e => notice(e.message, 'error')); return; }
   try {
     if (!g.client) g.client = google.accounts.oauth2.initTokenClient({
       client_id: id, scope: 'https://www.googleapis.com/auth/spreadsheets',
@@ -1181,7 +1184,10 @@ function drawSb() {
   const s = sb.ses();
   $('sbState').textContent = s && s.rt ? 'Supabase: signed in' + (s.email ? ' as ' + s.email : '') + '. You stay signed in on this device until you sign out.' : 'Supabase: not signed in on this device.';
   $('sbIn').hidden = $('sbEmailRow').hidden = !!(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbCopy').hidden = !(s && s.rt);
+  $('sbCopy').dataset.armed = ''; $('sbCopy').textContent = copyLabel();
 }
+/* The copy always goes from the source in use to the other one, so it can never overwrite what you're working in. */
+const copyLabel = () => useSb() ? 'Copy Supabase → Sheet' : 'Copy Sheet → Supabase';
 function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend || 'sheets'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
 $('setForm').addEventListener('submit', e => {
   const sh = $('sSheet').value.trim(), m = sh.match(/\/d\/([\w-]{20,})/), id = m ? m[1] : sh, cl = $('sClient').value.trim();
@@ -1202,17 +1208,95 @@ $('sbMail').addEventListener('click', async () => {
   $('sbMail').disabled = false;
 });
 $('sbOut').addEventListener('click', async () => { await sb.signOut(); drawSb(); $('sbMsg').textContent = 'Signed out of Supabase on this device.'; if (useSb()) signedOut(); });
+let sheetPlan = null;
 $('sbCopy').addEventListener('click', async e => {
-  const b = e.currentTarget;
-  if (!g.valid()) { $('sbMsg').textContent = 'Connect to Google first (the copy reads your Sheet). A Google window will open; then press Copy again.'; connect(); return; }
-  if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Replace Supabase copy?';
-    $('sbMsg').textContent = 'This reads your Sheet and replaces everything in Supabase with it. Your Sheet is not changed. Press again to go.';
-    setTimeout(() => { if (b.dataset.armed === '1') { b.dataset.armed = ''; b.textContent = 'Copy Sheet → Supabase'; } }, 6000); return; }
-  b.dataset.armed = ''; b.textContent = 'Copy Sheet → Supabase'; b.disabled = true;
-  try { $('sbMsg').textContent = await copyToSb(m => { $('sbMsg').textContent = m; }); }
-  catch (err) { $('sbMsg').textContent = 'Copy stopped: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err)); }
+  const b = e.currentTarget, toSheet = useSb(), say = m => { $('sbMsg').textContent = m; };
+  const disarm = () => { b.dataset.armed = ''; b.textContent = copyLabel(); sheetPlan = null; };
+  if (!g.valid()) { say('Connect to Google first (the copy ' + (toSheet ? 'writes to' : 'reads') + ' your Sheet). A Google window will open; then press Copy again.'); googleSignIn(); return; }
+  if (b.dataset.armed !== '1') {
+    if (toSheet) {
+      b.disabled = true;
+      try { sheetPlan = await planSheetCopy(say); } catch (err) { say('Couldn\'t check: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err))); b.disabled = false; return; }
+      b.disabled = false;
+      if (!sheetPlan.todo.length) { say('Your Sheet already matches Supabase. Nothing to copy.'); sheetPlan = null; return; }
+      say('This will change your Sheet:\n' + sheetPlan.todo.map(p => `${p.n}: ${[p.cells.length && `${p.cells.length} cell${p.cells.length > 1 ? 's' : ''} changed`, p.adds.length && `${p.adds.length} new row${p.adds.length > 1 ? 's' : ''}`, p.dels.length && `${p.dels.length} row${p.dels.length > 1 ? 's' : ''} removed`].filter(Boolean).join(', ')}`).join('\n') + '\nEach of these tabs is backed up first (hidden tab, last 3 kept). Press again to go.');
+      b.textContent = 'Write these to the Sheet';
+    } else {
+      say('This reads your Sheet and replaces everything in Supabase with it. Your Sheet is not changed. Press again to go.');
+      b.textContent = 'Replace Supabase copy?';
+    }
+    b.dataset.armed = '1'; setTimeout(() => { if (b.dataset.armed === '1') disarm(); }, toSheet ? 60000 : 6000); return;
+  }
+  const plan = sheetPlan; disarm(); b.disabled = true;
+  try { say(toSheet ? await copyToSheet(say, plan) : await copyToSb(say)); }
+  catch (err) { say('Copy stopped: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err))); }
   b.disabled = false;
 });
+
+/* One-way copy back, Supabase -> Sheet (the way back, and a browsable backup).
+   Rows are paired by id (or date, year+month, key, title, name); only cells that differ are written,
+   rows only in Supabase are added at the end, rows only in the Sheet are removed. Each tab is backed up first. */
+const BACKUP_KEEP = 3;
+const pairKey = (n, o) => (SB_UNIQUE[n] || [TABS[n].key]).map(c => JSON.stringify(sbVal(c, o[c]))).join('|');
+function diffTabs(sheet, base) {
+  return Object.keys(TABS).map(n => {
+    const pool = new Map(), cells = [], adds = [];
+    sheet[n].forEach(o => { const k = pairKey(n, o); if (!pool.has(k)) pool.set(k, []); pool.get(k).push(o); });
+    base[n].forEach(o => {
+      const q = pool.get(pairKey(n, o)), s = q && q.shift();
+      if (!s) { adds.push(o); return; }
+      TABS[n].cols.forEach((c, i) => { if (JSON.stringify(sbVal(c, s[c])) !== JSON.stringify(sbVal(c, o[c]))) cells.push({ row: s._row, i, c, v: o[c] }); });
+    });
+    const dels = [...pool.values()].flat().map(o => o._row).sort((x, y) => y - x);
+    return { n, cells, adds, dels };
+  }).filter(p => p.cells.length || p.adds.length || p.dels.length);
+}
+async function planSheetCopy(say) {
+  say('Comparing Supabase with your Sheet…');
+  const [sheet, base] = await Promise.all([readSheet(), sbReadAll()]);
+  return { sheet, base, todo: diffTabs(sheet.data, base) };
+}
+async function copyToSheet(say, plan) {
+  if (!plan) throw { message: 'press Copy again to re-check first.' };
+  say('Checking the Sheet hasn\'t changed…');
+  const now = await readSheet();
+  const same = plan.todo.every(p => JSON.stringify(now.data[p.n].map(o => [o._row, pairKey(p.n, o)])) === JSON.stringify(plan.sheet.data[p.n].map(o => [o._row, pairKey(p.n, o)])));
+  if (!same) throw { message: 'the Sheet changed since the check. Press Copy again to re-check.' };
+  say('Backing up the tabs that will change…');
+  await backupTabs(plan.todo.map(p => p.n));
+  say('Writing to the Sheet…');
+  const data = plan.todo.flatMap(p => p.cells.map(x => ({ range: `${p.n}!${colLetter(x.i)}${x.row}`, values: [[cellOut(x.c, x.v)]] })));
+  for (let i = 0; i < data.length; i += 500) await g.api('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'USER_ENTERED', data: data.slice(i, i + 500) } });
+  for (const p of plan.todo.filter(p => p.adds.length)) {
+    const start = now.data[p.n]._last + 1, end = start + p.adds.length - 1, have = now.rowCount[p.n] || 1000, L = colLetter(TABS[p.n].cols.length - 1);
+    if (end > have) await g.api(':batchUpdate', { method: 'POST', body: { requests: [{ appendDimension: { sheetId: TABS[p.n].sid, dimension: 'ROWS', length: Math.max(100, end - have) } }] } });
+    await g.api(`/values/${encodeURIComponent(`${p.n}!A${start}:${L}${end}`)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: { values: p.adds.map(o => rowOut(p.n, o)) } });
+  }
+  const dels = plan.todo.flatMap(p => p.dels.map(r => ({ deleteDimension: { range: { sheetId: TABS[p.n].sid, dimension: 'ROWS', startIndex: r - 1, endIndex: r } } })));
+  if (dels.length) await g.api(':batchUpdate', { method: 'POST', body: { requests: dels } });
+  say('Checking the copy…');
+  const back = (await readSheet()).data, bad = [];
+  Object.keys(TABS).forEach(n => {
+    const a = plan.base[n].map(o => sbKey(n, o)).sort(), b = back[n].map(o => sbKey(n, o)).sort();
+    if (a.length !== b.length) bad.push(`${n}: Supabase ${a.length} rows, Sheet ${b.length}`);
+    else { const k = a.findIndex((x, i) => x !== b[i]); if (k >= 0) bad.push(`${n}: a row differs (${a[k].slice(0, 80)})`); }
+  });
+  if (bad.length) throw { message: 'written, but the check found differences:\n' + bad.join('\n') + '\nYour backup tabs hold the Sheet as it was.' };
+  const n = plan.todo.reduce((t, p) => t + p.cells.length + p.adds.length + p.dels.length, 0);
+  return `Sheet updated (${n} change${n === 1 ? '' : 's'}) and checked: it matches Supabase.\nBacked up first: ${plan.todo.map(p => p.n).join(', ')}.`;
+}
+/* Hidden dated copies, e.g. "Plan backup 2026-10-21": one per tab per day, newest 3 kept. Only removes backups it made. */
+async function backupTabs(names) {
+  const meta = await g.api('?fields=sheets.properties(sheetId,title)'), all = meta.sheets.map(x => x.properties), day = todayIso();
+  const make = names.filter(n => !all.some(x => x.title === `${n} backup ${day}`));
+  if (make.length) {
+    const r = await g.api(':batchUpdate', { method: 'POST', body: { requests: make.map(n => ({ duplicateSheet: { sourceSheetId: TABS[n].sid, insertSheetIndex: all.length, newSheetName: `${n} backup ${day}` } })) } });
+    await g.api(':batchUpdate', { method: 'POST', body: { requests: r.replies.map(x => ({ updateSheetProperties: { properties: { sheetId: x.duplicateSheet.properties.sheetId, hidden: true }, fields: 'hidden' } })) } });
+  }
+  const old = names.flatMap(n => all.filter(x => new RegExp(`^${n} backup \\d{4}-\\d{2}-\\d{2}$`).test(x.title)).map(x => x.title).concat(make.includes(n) ? [`${n} backup ${day}`] : [])
+    .sort().reverse().slice(BACKUP_KEEP).map(t => all.find(x => x.title === t)));
+  if (old.length) await g.api(':batchUpdate', { method: 'POST', body: { requests: old.map(x => ({ deleteSheet: { sheetId: x.sheetId } })) } });
+}
 
 /* One-way copy, Sheet -> Supabase. Reads the Sheet only; never writes to it. Then reads Supabase back and compares. */
 const sbKey = (tab, o) => JSON.stringify(Object.keys(SBT[tab][1]).map(c => sbVal(c, o[c])));
