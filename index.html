@@ -252,6 +252,11 @@ dialog::backdrop{background:rgba(8,6,14,.65)}
 dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.srow{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end;padding:10px 0;border-top:1px solid var(--line);margin:0}
+.srow label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted);flex:1 1 84px;min-width:0}
+.srow label.w{flex:2 1 150px}.srow label.c{flex:0 0 auto;align-items:center}
+.srow input,.srow select{width:100%}.srow input[type=checkbox]{width:16px}
+.srow.add{background:color-mix(in srgb,var(--accent) 6%,transparent)}
 .field.w2{grid-column:1/-1}
 .field textarea{min-height:110px;resize:vertical}
 .checks{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}
@@ -292,6 +297,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
     <button class="tab" role="tab" data-tab="people">People</button>
     <button class="tab" role="tab" data-tab="lists">Lists &amp; Notes</button>
     <button class="tab" role="tab" data-tab="links">Links</button>
+    <button class="tab" role="tab" data-tab="setup">Setup</button>
   </div>
 
   <section id="v-week">
@@ -348,6 +354,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 
   <section id="v-lists" hidden><div class="grid2" id="lists"></div><div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Notes</h2><button class="btn" type="button" id="newNote">New note</button></div><div id="notes"></div></div></section>
   <section id="v-links" hidden><div class="grid2" id="linkGroups"></div></section>
+  <section id="v-setup" hidden><div class="grid2" id="setupGrid"></div></section>
 </div>
 
 <dialog id="itemDlg"><form method="dialog" id="itemForm">
@@ -464,6 +471,7 @@ const todayIso = () => iso(new Date());
 const mondayOf = s => { const d = fromIso(s); const k = (d.getDay() + 6) % 7; d.setDate(d.getDate() - k); return iso(d); };
 const dayDiff = (a, b) => Math.round((fromIso(b) - fromIso(a)) / 864e5);
 const fmt = (s, o) => fromIso(s).toLocaleDateString('en-AU', o);
+const isoToSerial = s => { const [y, m, d] = s.split('-').map(Number); return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5); };
 const serialToIso = n => { const d = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
 function toIso(v) {
   if (v === '' || v == null) return '';
@@ -1076,8 +1084,81 @@ function renderPaper() {
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
   renderChips(); renderLinks();
-  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: () => { renderLists(); renderNotes(); }, links: renderLinkTab })[state.tab]();
+  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: () => { renderLists(); renderNotes(); }, links: renderLinkTab, setup: renderSetup })[state.tab]();
 }
+
+/* ---------- setup tab: edit Routine, Goals, Links and app settings ---------- */
+const MON_OPTS = MONTHS.map((m, i) => [i + 1, m]), DAY_OPTS = DAYS.map(d => [d, d]), CAT_OPTS = CATS.map(c => [c, c]);
+/* field specs: [column, label, type (sel|mon|text|num|url|list|chk), options, wide] */
+const SF = {
+  Routine: [['day', 'Day', 'sel', DAY_OPTS], ['cat', 'Category', 'sel', CAT_OPTS], ['time', 'Time', 'text'], ['title', 'Title', 'text', 0, 1], ['active', 'Active', 'chk']],
+  Goals: [['year', 'Year', 'num'], ['month', 'Month', 'mon', MON_OPTS], ['steps', 'Steps', 'num'], ['km', 'KM', 'num'], ['act', 'Active mins', 'num'], ['pages', 'Pages', 'num']],
+  Links: [['name', 'Name', 'text', 0, 1], ['cat', 'Category', 'list'], ['url', 'URL', 'url', 0, 1], ['pin', 'Pin', 'chk'], ['order', 'Order', 'num'], ['notes', 'Notes', 'text', 0, 1]]
+};
+const SETUP_KEYS = [['payday_anchor', 'A recent payday', 'date'], ['payday_every', 'Days between paydays', 'number'], ['birthday_window', 'Show birthdays this many days ahead', 'number'], ['weather_place', 'Weather place name', 'text'], ['weather_lat', 'Weather latitude', 'number'], ['weather_lon', 'Weather longitude', 'number'], ['bom_link', 'BOM forecast link', 'url'], ['paper_url', 'Paper link', 'url']];
+function sInput([c, l, t, opt, wide], v) {
+  const a = `name="${c}" aria-label="${l}"`;
+  if (t === 'chk') return `<label class="c">${l}<input type="checkbox" ${a} ${v ? 'checked' : ''}></label>`;
+  const os = opt && (opt.some(([x]) => String(x) === String(v)) || v == null || v === '' ? opt : opt.concat([[v, v]]));
+  const h = os ? `<select ${a}>${os.map(([x, y]) => `<option value="${esc(x)}" ${String(x) === String(v) ? 'selected' : ''}>${esc(y)}</option>`).join('')}</select>`
+    : `<input ${a} type="${t === 'num' ? 'number' : 'text'}" ${t === 'num' ? 'step="any"' : ''} ${t === 'url' ? 'inputmode="url"' : ''} ${t === 'list' ? 'list="sCats"' : ''} value="${esc(v ?? '')}">`;
+  return `<label class="${wide ? 'w' : ''}">${l}${h}</label>`;
+}
+const sRows = tab => { const a = state.data[tab] || []; return tab === 'Goals' ? a.slice().sort((x, y) => (x.year - y.year) || (x.month - y.month)) : a; };
+function sPanel(tab, title, note) {
+  const f = SF[tab], addF = f.filter(x => !(tab === 'Routine' && x[0] === 'active'));
+  let blank = {}; if (tab === 'Goals') { const g = sRows(tab).filter(x => x.year && x.month).pop(), n = g ? g.year * 12 + g.month : new Date().getFullYear() * 12 + new Date().getMonth(); blank = { year: Math.floor(n / 12), month: n % 12 + 1 }; }
+  const del = r => `<button type="button" class="btn btn-ghost" data-sdel="${tab}" data-row="${esc(r._row)}" aria-label="Remove">×</button>`;
+  return `<div class="panel"><div class="panel-head"><h2>${title}</h2></div><p class="muted" style="margin:0 0 6px;font-size:13px">${note}</p>
+    ${sRows(tab).map(r => `<form class="srow" novalidate data-srow="${tab}" data-row="${esc(r._row)}">${f.map(x => sInput(x, r[x[0]])).join('')}<button class="btn btn-primary" type="submit">Save</button>${del(r)}</form>`).join('') || '<p class="empty">Nothing here yet.</p>'}
+    <form class="srow add" novalidate data-sadd="${tab}">${addF.map(x => sInput(x, blank[x[0]])).join('')}<button class="btn" type="submit">Add</button></form></div>`;
+}
+const sCur = (r, k) => !r ? '' : k === 'payday_anchor' ? toIso(r.value) : String(r.value ?? '');
+function renderSetup() {
+  const st = state.data.Settings || [], known = new Set(SETUP_KEYS.map(k => k[0])), fld = (k, l, t, v) => `<label class="w">${esc(l)}<input data-k="${esc(k)}" type="${t}" ${t === 'number' ? 'step="any"' : ''} ${t === 'url' ? 'inputmode="url"' : ''} value="${esc(v)}"></label>`;
+  $('setupGrid').innerHTML = `<datalist id="sCats">${[...new Set((state.data.Links || []).map(l => l.cat).filter(Boolean))].sort().map(c => `<option value="${esc(c)}">`).join('')}</datalist>`
+    + sPanel('Routine', 'Routine', 'The weekly pattern that "Plan my week" adds to the Week tab.')
+    + sPanel('Goals', 'Goals', 'Monthly targets. Leave a box blank for no goal.')
+    + sPanel('Links', 'Links', 'Shown on the Links tab. Pinned links also sit on the Week tab.')
+    + `<div class="panel"><div class="panel-head"><h2>App settings</h2></div><form class="srow" style="border-top:0" novalidate id="sApp">${SETUP_KEYS.map(([k, l, t]) => fld(k, l, t, sCur(st.find(r => r.key === k), k))).join('')
+    + st.filter(r => !known.has(r.key)).map(r => fld(r.key, r.key, 'text', sCur(r, r.key))).join('')}<button class="btn btn-primary" type="submit">Save settings</button></form></div>`;
+}
+const sNorm = (c, v) => BOOL_COLS.has(c) ? !!v : NUM_COLS.has(c) ? (v === '' || v == null ? null : Number(v)) : String(v ?? '');
+function sRead(tab, f) { const o = {}; SF[tab].forEach(([c, , t]) => { const e = f.elements[c]; if (e) o[c] = t === 'chk' ? e.checked : sNorm(c, e.value.trim()); }); return o; }
+function sCheck(tab, n, self) {
+  if (tab === 'Routine' && !n.title) return 'Give the routine item a title.';
+  if (tab === 'Links' && !n.name) return 'Give the link a name.';
+  if (tab === 'Goals') { if (n.year == null || !n.month) return 'Enter a year and month.';
+    if ((state.data.Goals || []).some(x => x !== self && x.year === n.year && x.month === n.month)) return `There is already a goal for ${MONTHS[n.month - 1]} ${n.year}.`; }
+  return '';
+}
+const sBlank = tab => Object.fromEntries(TABS[tab].cols.map(c => [c, BOOL_COLS.has(c) ? false : NUM_COLS.has(c) ? null : '']));
+document.addEventListener('submit', async e => {
+  const f = e.target, tab = f.dataset.srow || f.dataset.sadd;
+  if (f.id === 'sApp') { e.preventDefault(); const st = state.data.Settings || [], upd = [], add = [];
+    f.querySelectorAll('[data-k]').forEach(i => { const k = i.dataset.k, v = i.value.trim(), r = st.find(x => x.key === k);
+      if (!(r ? v !== sCur(r, k) : v !== '')) return;
+      const val = k === 'payday_anchor' && v ? String(isoToSerial(v)) : v; // stored as the Sheet stores dates, so Sheet and Supabase stay identical
+      r ? upd.push({ ...r, value: val }) : add.push({ key: k, value: val, notes: '' }); });
+    if (!upd.length && !add.length) { toast('No changes to save'); return; }
+    if (await withBusy('Saving…', async () => { for (const o of upd) await updateRow('Settings', o); if (add.length) await addRows('Settings', add); })) toast('Saved'); return; }
+  if (!tab || !SF[tab]) return;
+  e.preventDefault();
+  if (f.dataset.srow) { const o = (state.data[tab] || []).find(x => String(x._row) === f.dataset.row); if (!o) return;
+    const n = sRead(tab, f); if (!SF[tab].some(([c]) => sNorm(c, o[c]) !== n[c])) { toast('No changes to save'); return; }
+    if (n.time != null) n.time = normTime(n.time);
+    const bad = sCheck(tab, n, o); if (bad) { toast(bad); return; }
+    if (await withBusy('Saving…', () => updateRow(tab, { ...o, ...n }))) toast('Saved'); return; }
+  const n = sRead(tab, f); if (n.time != null) n.time = normTime(n.time); const bad = sCheck(tab, n, null); if (bad) { toast(bad); return; }
+  const o = { ...sBlank(tab), ...n, ...(tab === 'Routine' ? { active: true } : {}) };
+  if (await withBusy('Adding…', () => addRows(tab, [o]))) toast('Added');
+});
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-sdel]'); if (!el) return;
+  if (el.dataset.armed !== '1') { el.dataset.armed = '1'; el.textContent = 'Remove?'; setTimeout(() => { if (el.isConnected) { el.dataset.armed = ''; el.textContent = '×'; } }, 3000); return; }
+  const tab = el.dataset.sdel, o = (state.data[tab] || []).find(x => String(x._row) === el.dataset.row);
+  if (o && await withBusy('Removing…', () => deleteRow(tab, o))) toast('Removed');
+});
 
 /* ---------- dialogs ---------- */
 let editing = null;
@@ -1166,7 +1247,7 @@ function buildPlan() {
   planRows = (state.data.Routine || []).filter(r => r.active !== false && DAYS.includes(r.day)).map(r => ({
     id: newId('r'), date: addDays(ws, DAYS.indexOf(r.day)), end: '', time: normTime(r.time), title: r.title, cat: r.cat || 'Other', type: 'Routine', done: false, cd: false, notes: ''
   })).filter(o => !have.has(o.date + '|' + o.title.toLowerCase() + '|' + o.cat));
-  $('planText').textContent = planRows.length ? `This adds ${planRows.length} routine item${planRows.length === 1 ? '' : 's'} from the Routine tab. You can then move, edit or delete each one.` : 'Your routine is already in this week. Edit the Routine tab in the sheet to change it.';
+  $('planText').textContent = planRows.length ? `This adds ${planRows.length} routine item${planRows.length === 1 ? '' : 's'} from the Routine tab. You can then move, edit or delete each one.` : 'Your routine is already in this week. Change it on the Setup tab.';
   $('planPreview').innerHTML = planRows.map(o => `<li><span>${esc(fmt(o.date, { weekday: 'short', day: 'numeric' }))} · ${esc(o.title)}</span><span class="r">${esc(o.cat)}</span></li>`).join('');
   $('planGo').disabled = !planRows.length;
 }

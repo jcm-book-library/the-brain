@@ -185,6 +185,22 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     check('sbmode: zero calls to sheets.googleapis.com', w.sheetCalls.length === 0, w.sheetCalls);
   } });
 
+  // 3b. Setup tab in Supabase mode
+  await scenario(b, 'setup', { init: { ...cfgSb, ...ses() }, setup: w => { seedSbBasic(w); w.insert('routine', { day: 'Mon', category: 'Fitness', time: '', title: '12000 steps', active: true }); w.insert('routine', { day: 'Tue', category: 'Work', time: '07:00', title: 'Kickboxing', active: true }); w.insert('links', { name: 'Books', category: 'Entertainment', url: 'https://example.com/books', pin: true, sort_order: 1, notes: '' }); }, run: async (page, w) => {
+    await live(page); await page.click('.tab[data-tab=setup]'); await page.waitForSelector('[data-srow=Routine]');
+    const id = w.sb.routine.find(r => r.title === 'Kickboxing').row_id, b0 = w.sbCalls.length;
+    await page.locator(`[data-srow=Routine][data-row="${id}"] [name=time]`).fill('8am'); await page.locator(`[data-srow=Routine][data-row="${id}"] button[type=submit]`).click();
+    await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live' && /Supabase/.test(document.getElementById('statusText').textContent)); await page.waitForTimeout(300);
+    const p = w.sbCalls.slice(b0).filter(c => c.method !== 'GET');
+    check('setup sb: one PATCH with only the changed column', p.length === 1 && p[0].method === 'PATCH' && p[0].table === 'routine' && p[0].query === `?row_id=eq.${id}` && JSON.stringify(p[0].body) === '{"time":"08:00"}', p.map(x => [x.method, x.query, x.body]));
+    const b1 = w.sbCalls.length;
+    await page.fill('[data-sadd=Links] [name=name]', 'Weather'); await page.fill('[data-sadd=Links] [name=url]', 'https://example.com/w'); await page.click('[data-sadd=Links] button[type=submit]');
+    await page.waitForFunction(() => document.querySelectorAll('[data-srow=Links]').length === 2); await page.waitForTimeout(200);
+    const q = w.sbCalls.slice(b1).filter(c => c.method !== 'GET');
+    check('setup sb: add link -> one POST to links', q.length === 1 && q[0].method === 'POST' && q[0].table === 'links' && q[0].body.length === 1 && q[0].body[0].name === 'Weather' && q[0].body[0].url === 'https://example.com/w' && q[0].body[0].pin === false, q.map(x => [x.method, x.table, x.body]));
+    check('setup sb: zero Sheets calls', w.sheetCalls.length === 0);
+  } });
+
   // 4. Pagination
   await scenario(b, 'paging', { init: { ...cfgSb, ...ses() }, setup: w => { seedSbBasic(w); for (let i = 0; i < 2300; i++) w.insert('log', { date: add(-4000 + i), steps: 1000 + i, km: 1.5, active_mins: null, pages: null, max_c: null, min_c: null, mood: '', note: '' }); }, run: async (page, w) => {
     await live(page);
