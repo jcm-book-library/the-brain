@@ -234,6 +234,48 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.click('.tab[data-tab=lists]'); await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button'); await page.waitForSelector('#status[data-state=live]');
   check('list add', db.Lists.some(r => r[2] === 'New Show' && r[3] === 'Up next'));
 
+  // setup tab
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  const live = () => page.waitForSelector('#status[data-state=live]');
+  await page.click('.tab[data-tab=setup]'); await page.waitForTimeout(200);
+  check('setup: four panels', await page.locator('#setupGrid > .panel').count() === 4 && await page.locator('[data-srow=Routine]').count() === 4);
+  await page.screenshot({ path: path.join(OUT, 'shot-setup-1280.png'), fullPage: true });
+  const rt0 = JSON.stringify(db.Routine[2]);
+  await page.locator('[data-srow=Routine]').nth(1).locator('[name=time]').fill('8am'); await page.locator('[data-srow=Routine]').nth(1).locator('button[type=submit]').click(); await live();
+  check('setup: routine time saved (normalised), other cells unchanged', db.Routine[2][2] === '08:00' && db.Routine[2][0] === 'Tue' && db.Routine[2][1] === 'Fitness' && db.Routine[2][3] === 'Kickboxing' && db.Routine[2][4] === true, db.Routine[2]);
+  const nCalls = calls.length; await page.locator('[data-srow=Routine]').nth(1).locator('button[type=submit]').click(); await page.waitForTimeout(200);
+  check('setup: unchanged row saves nothing', calls.length === nCalls);
+  await page.locator('[data-sadd=Routine] [name=day]').selectOption('Thu'); await page.locator('[data-sadd=Routine] [name=cat]').selectOption('Home'); await page.fill('[data-sadd=Routine] [name=time]', '630pm'); await page.fill('[data-sadd=Routine] [name=title]', 'Bins');
+  await page.click('[data-sadd=Routine] button[type=submit]'); await live();
+  check('setup: routine item added', JSON.stringify(db.Routine[5]) === JSON.stringify(['Thu', 'Home', '18:30', 'Bins', true]), db.Routine[5]);
+  const rdel = page.locator('[data-sdel=Routine]').nth(3); await rdel.click(); check('setup: first press asks Remove?', (await rdel.innerText()) === 'Remove?'); const rn = db.Routine.length; await page.waitForTimeout(200);
+  check('setup: first press does not delete', db.Routine.length === rn); await rdel.click(); await live();
+  check('setup: routine item removed (two presses)', db.Routine.length === rn - 1 && !db.Routine.some(r => r[3] === 'Walk'));
+  const gl = db.Goals.length; const gy = today.getFullYear(), gm = today.getMonth() + 1, nm = gm === 12 ? 1 : gm + 1, ny = gm === 12 ? gy + 1 : gy;
+  check('setup: goal add defaults to next month', (await page.inputValue('[data-sadd=Goals] [name=year]')) === String(ny) && (await page.inputValue('[data-sadd=Goals] [name=month]')) === String(nm));
+  await page.fill('[data-sadd=Goals] [name=steps]', '12000'); await page.fill('[data-sadd=Goals] [name=km]', '9'); await page.click('[data-sadd=Goals] button[type=submit]'); await live();
+  const ng = db.Goals[db.Goals.length - 1];
+  check('setup: goal added for new month (blank = empty)', db.Goals.length === gl + 1 && ng[0] === ny && ng[1] === nm && ng[2] === 12000 && ng[3] === 9 && (ng[4] === '' || ng[4] == null), ng);
+  await page.selectOption('[data-sadd=Goals] [name=month]', String(nm)); await page.fill('[data-sadd=Goals] [name=year]', String(ny));
+  const gc = calls.length; await page.click('[data-sadd=Goals] button[type=submit]'); await page.waitForTimeout(300);
+  check('setup: duplicate goal month refused, no write', db.Goals.length === gl + 1 && calls.length === gc && (await page.locator('#toast').innerText()).includes('already a goal'));
+  await page.locator('[data-srow=Links]').nth(0).locator('[name=url]').fill('https://example.com/new'); await page.locator('[data-srow=Links]').nth(0).locator('button[type=submit]').click(); await live();
+  check('setup: link url saved', db.Links[1][2] === 'https://example.com/new' && db.Links[1][0] === 'Books' && db.Links[1][3] === true && db.Links[1][4] === 1, db.Links[1]);
+  await page.fill('[data-sadd=Links] [name=name]', 'Weather'); await page.fill('[data-sadd=Links] [name=cat]', 'Sport'); await page.click('[data-sadd=Links] button[type=submit]'); await live();
+  check('setup: link added', db.Links.some(r => r[0] === 'Weather' && r[1] === 'Sport'));
+  await page.fill('#sApp [data-k=payday_every]', '21'); await page.click('#sApp button[type=submit]'); await live();
+  check('setup: payday_every updated', String(db.Settings[2][1]) === '21' && db.Settings[1][1] === serial('2026-01-09') && String(db.Settings[3][1]) === '60', db.Settings);
+  check('setup: payday date shown via toIso', (await page.inputValue('#sApp [data-k=payday_anchor]')) === '2026-01-09');
+  await page.fill('#sApp [data-k=payday_anchor]', '2026-01-23'); await page.click('#sApp button[type=submit]'); await live();
+  check('setup: payday date saved as a date serial, like the Sheet', Number(db.Settings[1][1]) === serial('2026-01-23'), db.Settings[1]);
+  check('setup: payday date reads back', (await page.inputValue('#sApp [data-k=payday_anchor]')) === '2026-01-23');
+  await page.fill('#sApp [data-k=weather_place]', 'Perth'); await page.click('#sApp button[type=submit]'); await live();
+  check('setup: new setting row added', db.Settings.some(r => r[0] === 'weather_place' && r[1] === 'Perth'));
+  await page.screenshot({ path: path.join(OUT, 'shot-setup-1280b.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
+  await page.screenshot({ path: path.join(OUT, 'shot-setup-390.png'), fullPage: true });
+  check('setup: no horizontal scroll at 390', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+
   // mobile
   await page.setViewportSize({ width: 390, height: 900 }); await page.click('.tab[data-tab=week]'); await page.waitForTimeout(200);
   await page.screenshot({ path: path.join(OUT, 'shot-mobile.png'), fullPage: true });

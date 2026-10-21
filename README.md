@@ -10,7 +10,7 @@ A week planner and daily log that reads and writes a Google Sheet. One page (`in
 - The **Paper** tab shows [The Overnight Sentinel](https://jcm-book-library.github.io/daily-paper/) inside the page. To point it somewhere else, add a `paper_url` row to the sheet's Settings tab.
 
 ## Supabase pilot
-The page can also use a Supabase database (project `jcm-apps`, schema `brain`) instead of the sheet. The sheet is the default until switch-over. In **Settings**: *Where your data lives* picks the source per device, *Email me a sign-in link* (or *Sign in with Google*, once set up) signs in to Supabase and stays signed in, and *Copy Sheet → Supabase* copies everything across (it only reads the sheet) and checks the copy row by row.
+The page can also use a Supabase database (project `jcm-apps`, schema `brain`) instead of the sheet. The sheet is the default until switch-over. In **Settings**: *Where your data lives* picks the source per device, *Email me a sign-in link* (or *Sign in with Google*, once set up) signs in to Supabase and stays signed in, and the copy button copies from the source in use to the other one: *Copy Sheet → Supabase* replaces Supabase (only reads the sheet); *Copy Supabase → Sheet* previews the changes, makes hidden dated backup tabs (`Plan backup 2026-10-21`, newest 3 per tab), writes only the cells that differ, and checks the result. Settings, Routine, Goals and Links are edited on the **Setup** tab.
 
 - Setup steps, click by click: [`supabase/SETUP.md`](supabase/SETUP.md)
 - Tables and access rules: [`supabase/01-schema.sql`](supabase/01-schema.sql). Row Level Security lets only the signed-in owner read or write their rows; signed-out visitors get nothing. The publishable key in `index.html` is meant to be public.
@@ -41,4 +41,5 @@ Keep the column order. Rows can be added, edited or sorted by hand in the sheet;
 ```
 NODE_PATH=$(npm root -g) node tools/test.js /tmp/shots
 NODE_PATH=$(npm root -g) node tools/test-supabase.js /tmp/shots
+NODE_PATH=$(npm root -g) node tools/test-copyback.js
 ```

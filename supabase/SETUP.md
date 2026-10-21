@@ -47,7 +47,7 @@ Merging adds the Supabase options to Settings. Nothing changes day to day: the p
 
 Each device (laptop, phone) needs the email link once; after that it stays signed in. Supabase's built-in email sends only a few emails an hour, so if one doesn't arrive, wait rather than pressing the button repeatedly.
 
-You can run the copy again any time before switch-over to refresh the Supabase copy. It replaces whatever is in Supabase, so anything you added while trying Supabase mode is replaced by the Sheet's version.
+While **Where your data lives** is set to Google Sheet, this button copies Sheet → Supabase and replaces whatever is in Supabase. Once you switch to Supabase it turns round (see step 7), so it can never overwrite the source you're working in.
 
 ## 6. Lock the door (Supabase, 1 minute)
 
@@ -61,7 +61,18 @@ Even without this, other accounts couldn't see your data: Row Level Security onl
 ## 7. Try it
 
 - **Settings → Where your data lives → Supabase (pilot) → Save & connect.** The status shows "Supabase · <time>".
-- Switch back to **Google Sheet** the same way at any time. Each device remembers its own choice.
+- Settings, Routine, Goals and Links are edited on the **Setup** tab (in either mode), so you don't need the Sheet or the Supabase dashboard for them.
+- Each device remembers its own choice.
+
+### Backing up to the Sheet, and going back
+
+In Supabase mode the copy button reads **Copy Supabase → Sheet**. Use it weekly as a backup, and before going back to the Sheet:
+
+1. **Settings → Copy Supabase → Sheet.** It lists what will change in each tab (cells changed, rows added, rows removed) and writes nothing yet.
+2. Click **Write these to the Sheet**. It first makes a hidden backup of each tab it will change (e.g. `Plan backup 2026-10-21`, newest 3 kept per tab), then writes only the cells that differ, then reads the Sheet back and checks it matches Supabase.
+3. To go back: set **Where your data lives** to **Google Sheet** and **Save & connect**. Nothing is missing.
+
+To see the hidden backups: in the Sheet, **View → Hidden sheets**, or the ☰ list of tabs at the bottom left.
 - You stay signed in to Supabase on each device until you click **Sign out of Supabase** in Settings.
 
 Optional check: SQL Editor → New query → paste [`02-check.sql`](02-check.sql) → Run. It lists each table's row count and confirms RLS is on.

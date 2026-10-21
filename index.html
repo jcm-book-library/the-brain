@@ -252,6 +252,11 @@ dialog::backdrop{background:rgba(8,6,14,.65)}
 dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.srow{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end;padding:10px 0;border-top:1px solid var(--line);margin:0}
+.srow label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted);flex:1 1 84px;min-width:0}
+.srow label.w{flex:2 1 150px}.srow label.c{flex:0 0 auto;align-items:center}
+.srow input,.srow select{width:100%}.srow input[type=checkbox]{width:16px}
+.srow.add{background:color-mix(in srgb,var(--accent) 6%,transparent)}
 .field.w2{grid-column:1/-1}
 .field textarea{min-height:110px;resize:vertical}
 .checks{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}
@@ -292,6 +297,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
     <button class="tab" role="tab" data-tab="people">People</button>
     <button class="tab" role="tab" data-tab="lists">Lists &amp; Notes</button>
     <button class="tab" role="tab" data-tab="links">Links</button>
+    <button class="tab" role="tab" data-tab="setup">Setup</button>
   </div>
 
   <section id="v-week">
@@ -348,6 +354,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 
   <section id="v-lists" hidden><div class="grid2" id="lists"></div><div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Notes</h2><button class="btn" type="button" id="newNote">New note</button></div><div id="notes"></div></div></section>
   <section id="v-links" hidden><div class="grid2" id="linkGroups"></div></section>
+  <section id="v-setup" hidden><div class="grid2" id="setupGrid"></div></section>
 </div>
 
 <dialog id="itemDlg"><form method="dialog" id="itemForm">
@@ -464,6 +471,7 @@ const todayIso = () => iso(new Date());
 const mondayOf = s => { const d = fromIso(s); const k = (d.getDay() + 6) % 7; d.setDate(d.getDate() - k); return iso(d); };
 const dayDiff = (a, b) => Math.round((fromIso(b) - fromIso(a)) / 864e5);
 const fmt = (s, o) => fromIso(s).toLocaleDateString('en-AU', o);
+const isoToSerial = s => { const [y, m, d] = s.split('-').map(Number); return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5); };
 const serialToIso = n => { const d = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
 function toIso(v) {
   if (v === '' || v == null) return '';
@@ -598,9 +606,12 @@ function loadGis() {
 }
 function connect() {
   if (useSb()) { if (sb.signedIn()) refresh(); else openSettings('Sign in to Supabase below.'); return; }
+  googleSignIn();
+}
+function googleSignIn() {
   const id = g.cfg().clientId;
   if (!id) { openSettings('Add your OAuth Client ID to connect.'); return; }
-  if (!(window.google && google.accounts && google.accounts.oauth2)) { loadGis().then(connect, e => notice(e.message, 'error')); return; }
+  if (!(window.google && google.accounts && google.accounts.oauth2)) { loadGis().then(googleSignIn, e => notice(e.message, 'error')); return; }
   try {
     if (!g.client) g.client = google.accounts.oauth2.initTokenClient({
       client_id: id, scope: 'https://www.googleapis.com/auth/spreadsheets',
@@ -1073,8 +1084,81 @@ function renderPaper() {
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
   renderChips(); renderLinks();
-  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: () => { renderLists(); renderNotes(); }, links: renderLinkTab })[state.tab]();
+  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: () => { renderLists(); renderNotes(); }, links: renderLinkTab, setup: renderSetup })[state.tab]();
 }
+
+/* ---------- setup tab: edit Routine, Goals, Links and app settings ---------- */
+const MON_OPTS = MONTHS.map((m, i) => [i + 1, m]), DAY_OPTS = DAYS.map(d => [d, d]), CAT_OPTS = CATS.map(c => [c, c]);
+/* field specs: [column, label, type (sel|mon|text|num|url|list|chk), options, wide] */
+const SF = {
+  Routine: [['day', 'Day', 'sel', DAY_OPTS], ['cat', 'Category', 'sel', CAT_OPTS], ['time', 'Time', 'text'], ['title', 'Title', 'text', 0, 1], ['active', 'Active', 'chk']],
+  Goals: [['year', 'Year', 'num'], ['month', 'Month', 'mon', MON_OPTS], ['steps', 'Steps', 'num'], ['km', 'KM', 'num'], ['act', 'Active mins', 'num'], ['pages', 'Pages', 'num']],
+  Links: [['name', 'Name', 'text', 0, 1], ['cat', 'Category', 'list'], ['url', 'URL', 'url', 0, 1], ['pin', 'Pin', 'chk'], ['order', 'Order', 'num'], ['notes', 'Notes', 'text', 0, 1]]
+};
+const SETUP_KEYS = [['payday_anchor', 'A recent payday', 'date'], ['payday_every', 'Days between paydays', 'number'], ['birthday_window', 'Show birthdays this many days ahead', 'number'], ['weather_place', 'Weather place name', 'text'], ['weather_lat', 'Weather latitude', 'number'], ['weather_lon', 'Weather longitude', 'number'], ['bom_link', 'BOM forecast link', 'url'], ['paper_url', 'Paper link', 'url']];
+function sInput([c, l, t, opt, wide], v) {
+  const a = `name="${c}" aria-label="${l}"`;
+  if (t === 'chk') return `<label class="c">${l}<input type="checkbox" ${a} ${v ? 'checked' : ''}></label>`;
+  const os = opt && (opt.some(([x]) => String(x) === String(v)) || v == null || v === '' ? opt : opt.concat([[v, v]]));
+  const h = os ? `<select ${a}>${os.map(([x, y]) => `<option value="${esc(x)}" ${String(x) === String(v) ? 'selected' : ''}>${esc(y)}</option>`).join('')}</select>`
+    : `<input ${a} type="${t === 'num' ? 'number' : 'text'}" ${t === 'num' ? 'step="any"' : ''} ${t === 'url' ? 'inputmode="url"' : ''} ${t === 'list' ? 'list="sCats"' : ''} value="${esc(v ?? '')}">`;
+  return `<label class="${wide ? 'w' : ''}">${l}${h}</label>`;
+}
+const sRows = tab => { const a = state.data[tab] || []; return tab === 'Goals' ? a.slice().sort((x, y) => (x.year - y.year) || (x.month - y.month)) : a; };
+function sPanel(tab, title, note) {
+  const f = SF[tab], addF = f.filter(x => !(tab === 'Routine' && x[0] === 'active'));
+  let blank = {}; if (tab === 'Goals') { const g = sRows(tab).filter(x => x.year && x.month).pop(), n = g ? g.year * 12 + g.month : new Date().getFullYear() * 12 + new Date().getMonth(); blank = { year: Math.floor(n / 12), month: n % 12 + 1 }; }
+  const del = r => `<button type="button" class="btn btn-ghost" data-sdel="${tab}" data-row="${esc(r._row)}" aria-label="Remove">×</button>`;
+  return `<div class="panel"><div class="panel-head"><h2>${title}</h2></div><p class="muted" style="margin:0 0 6px;font-size:13px">${note}</p>
+    ${sRows(tab).map(r => `<form class="srow" novalidate data-srow="${tab}" data-row="${esc(r._row)}">${f.map(x => sInput(x, r[x[0]])).join('')}<button class="btn btn-primary" type="submit">Save</button>${del(r)}</form>`).join('') || '<p class="empty">Nothing here yet.</p>'}
+    <form class="srow add" novalidate data-sadd="${tab}">${addF.map(x => sInput(x, blank[x[0]])).join('')}<button class="btn" type="submit">Add</button></form></div>`;
+}
+const sCur = (r, k) => !r ? '' : k === 'payday_anchor' ? toIso(r.value) : String(r.value ?? '');
+function renderSetup() {
+  const st = state.data.Settings || [], known = new Set(SETUP_KEYS.map(k => k[0])), fld = (k, l, t, v) => `<label class="w">${esc(l)}<input data-k="${esc(k)}" type="${t}" ${t === 'number' ? 'step="any"' : ''} ${t === 'url' ? 'inputmode="url"' : ''} value="${esc(v)}"></label>`;
+  $('setupGrid').innerHTML = `<datalist id="sCats">${[...new Set((state.data.Links || []).map(l => l.cat).filter(Boolean))].sort().map(c => `<option value="${esc(c)}">`).join('')}</datalist>`
+    + sPanel('Routine', 'Routine', 'The weekly pattern that "Plan my week" adds to the Week tab.')
+    + sPanel('Goals', 'Goals', 'Monthly targets. Leave a box blank for no goal.')
+    + sPanel('Links', 'Links', 'Shown on the Links tab. Pinned links also sit on the Week tab.')
+    + `<div class="panel"><div class="panel-head"><h2>App settings</h2></div><form class="srow" style="border-top:0" novalidate id="sApp">${SETUP_KEYS.map(([k, l, t]) => fld(k, l, t, sCur(st.find(r => r.key === k), k))).join('')
+    + st.filter(r => !known.has(r.key)).map(r => fld(r.key, r.key, 'text', sCur(r, r.key))).join('')}<button class="btn btn-primary" type="submit">Save settings</button></form></div>`;
+}
+const sNorm = (c, v) => BOOL_COLS.has(c) ? !!v : NUM_COLS.has(c) ? (v === '' || v == null ? null : Number(v)) : String(v ?? '');
+function sRead(tab, f) { const o = {}; SF[tab].forEach(([c, , t]) => { const e = f.elements[c]; if (e) o[c] = t === 'chk' ? e.checked : sNorm(c, e.value.trim()); }); return o; }
+function sCheck(tab, n, self) {
+  if (tab === 'Routine' && !n.title) return 'Give the routine item a title.';
+  if (tab === 'Links' && !n.name) return 'Give the link a name.';
+  if (tab === 'Goals') { if (n.year == null || !n.month) return 'Enter a year and month.';
+    if ((state.data.Goals || []).some(x => x !== self && x.year === n.year && x.month === n.month)) return `There is already a goal for ${MONTHS[n.month - 1]} ${n.year}.`; }
+  return '';
+}
+const sBlank = tab => Object.fromEntries(TABS[tab].cols.map(c => [c, BOOL_COLS.has(c) ? false : NUM_COLS.has(c) ? null : '']));
+document.addEventListener('submit', async e => {
+  const f = e.target, tab = f.dataset.srow || f.dataset.sadd;
+  if (f.id === 'sApp') { e.preventDefault(); const st = state.data.Settings || [], upd = [], add = [];
+    f.querySelectorAll('[data-k]').forEach(i => { const k = i.dataset.k, v = i.value.trim(), r = st.find(x => x.key === k);
+      if (!(r ? v !== sCur(r, k) : v !== '')) return;
+      const val = k === 'payday_anchor' && v ? String(isoToSerial(v)) : v; // stored as the Sheet stores dates, so Sheet and Supabase stay identical
+      r ? upd.push({ ...r, value: val }) : add.push({ key: k, value: val, notes: '' }); });
+    if (!upd.length && !add.length) { toast('No changes to save'); return; }
+    if (await withBusy('Saving…', async () => { for (const o of upd) await updateRow('Settings', o); if (add.length) await addRows('Settings', add); })) toast('Saved'); return; }
+  if (!tab || !SF[tab]) return;
+  e.preventDefault();
+  if (f.dataset.srow) { const o = (state.data[tab] || []).find(x => String(x._row) === f.dataset.row); if (!o) return;
+    const n = sRead(tab, f); if (!SF[tab].some(([c]) => sNorm(c, o[c]) !== n[c])) { toast('No changes to save'); return; }
+    if (n.time != null) n.time = normTime(n.time);
+    const bad = sCheck(tab, n, o); if (bad) { toast(bad); return; }
+    if (await withBusy('Saving…', () => updateRow(tab, { ...o, ...n }))) toast('Saved'); return; }
+  const n = sRead(tab, f); if (n.time != null) n.time = normTime(n.time); const bad = sCheck(tab, n, null); if (bad) { toast(bad); return; }
+  const o = { ...sBlank(tab), ...n, ...(tab === 'Routine' ? { active: true } : {}) };
+  if (await withBusy('Adding…', () => addRows(tab, [o]))) toast('Added');
+});
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-sdel]'); if (!el) return;
+  if (el.dataset.armed !== '1') { el.dataset.armed = '1'; el.textContent = 'Remove?'; setTimeout(() => { if (el.isConnected) { el.dataset.armed = ''; el.textContent = '×'; } }, 3000); return; }
+  const tab = el.dataset.sdel, o = (state.data[tab] || []).find(x => String(x._row) === el.dataset.row);
+  if (o && await withBusy('Removing…', () => deleteRow(tab, o))) toast('Removed');
+});
 
 /* ---------- dialogs ---------- */
 let editing = null;
@@ -1163,7 +1247,7 @@ function buildPlan() {
   planRows = (state.data.Routine || []).filter(r => r.active !== false && DAYS.includes(r.day)).map(r => ({
     id: newId('r'), date: addDays(ws, DAYS.indexOf(r.day)), end: '', time: normTime(r.time), title: r.title, cat: r.cat || 'Other', type: 'Routine', done: false, cd: false, notes: ''
   })).filter(o => !have.has(o.date + '|' + o.title.toLowerCase() + '|' + o.cat));
-  $('planText').textContent = planRows.length ? `This adds ${planRows.length} routine item${planRows.length === 1 ? '' : 's'} from the Routine tab. You can then move, edit or delete each one.` : 'Your routine is already in this week. Edit the Routine tab in the sheet to change it.';
+  $('planText').textContent = planRows.length ? `This adds ${planRows.length} routine item${planRows.length === 1 ? '' : 's'} from the Routine tab. You can then move, edit or delete each one.` : 'Your routine is already in this week. Change it on the Setup tab.';
   $('planPreview').innerHTML = planRows.map(o => `<li><span>${esc(fmt(o.date, { weekday: 'short', day: 'numeric' }))} · ${esc(o.title)}</span><span class="r">${esc(o.cat)}</span></li>`).join('');
   $('planGo').disabled = !planRows.length;
 }
@@ -1181,7 +1265,10 @@ function drawSb() {
   const s = sb.ses();
   $('sbState').textContent = s && s.rt ? 'Supabase: signed in' + (s.email ? ' as ' + s.email : '') + '. You stay signed in on this device until you sign out.' : 'Supabase: not signed in on this device.';
   $('sbIn').hidden = $('sbEmailRow').hidden = !!(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbCopy').hidden = !(s && s.rt);
+  $('sbCopy').dataset.armed = ''; $('sbCopy').textContent = copyLabel();
 }
+/* The copy always goes from the source in use to the other one, so it can never overwrite what you're working in. */
+const copyLabel = () => useSb() ? 'Copy Supabase → Sheet' : 'Copy Sheet → Supabase';
 function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend || 'sheets'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
 $('setForm').addEventListener('submit', e => {
   const sh = $('sSheet').value.trim(), m = sh.match(/\/d\/([\w-]{20,})/), id = m ? m[1] : sh, cl = $('sClient').value.trim();
@@ -1202,17 +1289,95 @@ $('sbMail').addEventListener('click', async () => {
   $('sbMail').disabled = false;
 });
 $('sbOut').addEventListener('click', async () => { await sb.signOut(); drawSb(); $('sbMsg').textContent = 'Signed out of Supabase on this device.'; if (useSb()) signedOut(); });
+let sheetPlan = null;
 $('sbCopy').addEventListener('click', async e => {
-  const b = e.currentTarget;
-  if (!g.valid()) { $('sbMsg').textContent = 'Connect to Google first (the copy reads your Sheet). A Google window will open; then press Copy again.'; connect(); return; }
-  if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Replace Supabase copy?';
-    $('sbMsg').textContent = 'This reads your Sheet and replaces everything in Supabase with it. Your Sheet is not changed. Press again to go.';
-    setTimeout(() => { if (b.dataset.armed === '1') { b.dataset.armed = ''; b.textContent = 'Copy Sheet → Supabase'; } }, 6000); return; }
-  b.dataset.armed = ''; b.textContent = 'Copy Sheet → Supabase'; b.disabled = true;
-  try { $('sbMsg').textContent = await copyToSb(m => { $('sbMsg').textContent = m; }); }
-  catch (err) { $('sbMsg').textContent = 'Copy stopped: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err)); }
+  const b = e.currentTarget, toSheet = useSb(), say = m => { $('sbMsg').textContent = m; };
+  const disarm = () => { b.dataset.armed = ''; b.textContent = copyLabel(); sheetPlan = null; };
+  if (!g.valid()) { say('Connect to Google first (the copy ' + (toSheet ? 'writes to' : 'reads') + ' your Sheet). A Google window will open; then press Copy again.'); googleSignIn(); return; }
+  if (b.dataset.armed !== '1') {
+    if (toSheet) {
+      b.disabled = true;
+      try { sheetPlan = await planSheetCopy(say); } catch (err) { say('Couldn\'t check: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err))); b.disabled = false; return; }
+      b.disabled = false;
+      if (!sheetPlan.todo.length) { say('Your Sheet already matches Supabase. Nothing to copy.'); sheetPlan = null; return; }
+      say('This will change your Sheet:\n' + sheetPlan.todo.map(p => `${p.n}: ${[p.cells.length && `${p.cells.length} cell${p.cells.length > 1 ? 's' : ''} changed`, p.adds.length && `${p.adds.length} new row${p.adds.length > 1 ? 's' : ''}`, p.dels.length && `${p.dels.length} row${p.dels.length > 1 ? 's' : ''} removed`].filter(Boolean).join(', ')}`).join('\n') + '\nEach of these tabs is backed up first (hidden tab, last 3 kept). Press again to go.');
+      b.textContent = 'Write these to the Sheet';
+    } else {
+      say('This reads your Sheet and replaces everything in Supabase with it. Your Sheet is not changed. Press again to go.');
+      b.textContent = 'Replace Supabase copy?';
+    }
+    b.dataset.armed = '1'; setTimeout(() => { if (b.dataset.armed === '1') disarm(); }, toSheet ? 60000 : 6000); return;
+  }
+  const plan = sheetPlan; disarm(); b.disabled = true;
+  try { say(toSheet ? await copyToSheet(say, plan) : await copyToSb(say)); }
+  catch (err) { say('Copy stopped: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err))); }
   b.disabled = false;
 });
+
+/* One-way copy back, Supabase -> Sheet (the way back, and a browsable backup).
+   Rows are paired by id (or date, year+month, key, title, name); only cells that differ are written,
+   rows only in Supabase are added at the end, rows only in the Sheet are removed. Each tab is backed up first. */
+const BACKUP_KEEP = 3;
+const pairKey = (n, o) => (SB_UNIQUE[n] || [TABS[n].key]).map(c => JSON.stringify(sbVal(c, o[c]))).join('|');
+function diffTabs(sheet, base) {
+  return Object.keys(TABS).map(n => {
+    const pool = new Map(), cells = [], adds = [];
+    sheet[n].forEach(o => { const k = pairKey(n, o); if (!pool.has(k)) pool.set(k, []); pool.get(k).push(o); });
+    base[n].forEach(o => {
+      const q = pool.get(pairKey(n, o)), s = q && q.shift();
+      if (!s) { adds.push(o); return; }
+      TABS[n].cols.forEach((c, i) => { if (JSON.stringify(sbVal(c, s[c])) !== JSON.stringify(sbVal(c, o[c]))) cells.push({ row: s._row, i, c, v: o[c] }); });
+    });
+    const dels = [...pool.values()].flat().map(o => o._row).sort((x, y) => y - x);
+    return { n, cells, adds, dels };
+  }).filter(p => p.cells.length || p.adds.length || p.dels.length);
+}
+async function planSheetCopy(say) {
+  say('Comparing Supabase with your Sheet…');
+  const [sheet, base] = await Promise.all([readSheet(), sbReadAll()]);
+  return { sheet, base, todo: diffTabs(sheet.data, base) };
+}
+async function copyToSheet(say, plan) {
+  if (!plan) throw { message: 'press Copy again to re-check first.' };
+  say('Checking the Sheet hasn\'t changed…');
+  const now = await readSheet();
+  const same = plan.todo.every(p => JSON.stringify(now.data[p.n].map(o => [o._row, pairKey(p.n, o)])) === JSON.stringify(plan.sheet.data[p.n].map(o => [o._row, pairKey(p.n, o)])));
+  if (!same) throw { message: 'the Sheet changed since the check. Press Copy again to re-check.' };
+  say('Backing up the tabs that will change…');
+  await backupTabs(plan.todo.map(p => p.n));
+  say('Writing to the Sheet…');
+  const data = plan.todo.flatMap(p => p.cells.map(x => ({ range: `${p.n}!${colLetter(x.i)}${x.row}`, values: [[cellOut(x.c, x.v)]] })));
+  for (let i = 0; i < data.length; i += 500) await g.api('/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'USER_ENTERED', data: data.slice(i, i + 500) } });
+  for (const p of plan.todo.filter(p => p.adds.length)) {
+    const start = now.data[p.n]._last + 1, end = start + p.adds.length - 1, have = now.rowCount[p.n] || 1000, L = colLetter(TABS[p.n].cols.length - 1);
+    if (end > have) await g.api(':batchUpdate', { method: 'POST', body: { requests: [{ appendDimension: { sheetId: TABS[p.n].sid, dimension: 'ROWS', length: Math.max(100, end - have) } }] } });
+    await g.api(`/values/${encodeURIComponent(`${p.n}!A${start}:${L}${end}`)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: { values: p.adds.map(o => rowOut(p.n, o)) } });
+  }
+  const dels = plan.todo.flatMap(p => p.dels.map(r => ({ deleteDimension: { range: { sheetId: TABS[p.n].sid, dimension: 'ROWS', startIndex: r - 1, endIndex: r } } })));
+  if (dels.length) await g.api(':batchUpdate', { method: 'POST', body: { requests: dels } });
+  say('Checking the copy…');
+  const back = (await readSheet()).data, bad = [];
+  Object.keys(TABS).forEach(n => {
+    const a = plan.base[n].map(o => sbKey(n, o)).sort(), b = back[n].map(o => sbKey(n, o)).sort();
+    if (a.length !== b.length) bad.push(`${n}: Supabase ${a.length} rows, Sheet ${b.length}`);
+    else { const k = a.findIndex((x, i) => x !== b[i]); if (k >= 0) bad.push(`${n}: a row differs (${a[k].slice(0, 80)})`); }
+  });
+  if (bad.length) throw { message: 'written, but the check found differences:\n' + bad.join('\n') + '\nYour backup tabs hold the Sheet as it was.' };
+  const n = plan.todo.reduce((t, p) => t + p.cells.length + p.adds.length + p.dels.length, 0);
+  return `Sheet updated (${n} change${n === 1 ? '' : 's'}) and checked: it matches Supabase.\nBacked up first: ${plan.todo.map(p => p.n).join(', ')}.`;
+}
+/* Hidden dated copies, e.g. "Plan backup 2026-10-21": one per tab per day, newest 3 kept. Only removes backups it made. */
+async function backupTabs(names) {
+  const meta = await g.api('?fields=sheets.properties(sheetId,title)'), all = meta.sheets.map(x => x.properties), day = todayIso();
+  const make = names.filter(n => !all.some(x => x.title === `${n} backup ${day}`));
+  if (make.length) {
+    const r = await g.api(':batchUpdate', { method: 'POST', body: { requests: make.map(n => ({ duplicateSheet: { sourceSheetId: TABS[n].sid, insertSheetIndex: all.length, newSheetName: `${n} backup ${day}` } })) } });
+    await g.api(':batchUpdate', { method: 'POST', body: { requests: r.replies.map(x => ({ updateSheetProperties: { properties: { sheetId: x.duplicateSheet.properties.sheetId, hidden: true }, fields: 'hidden' } })) } });
+  }
+  const old = names.flatMap(n => all.filter(x => new RegExp(`^${n} backup \\d{4}-\\d{2}-\\d{2}$`).test(x.title)).map(x => x.title).concat(make.includes(n) ? [`${n} backup ${day}`] : [])
+    .sort().reverse().slice(BACKUP_KEEP).map(t => all.find(x => x.title === t)));
+  if (old.length) await g.api(':batchUpdate', { method: 'POST', body: { requests: old.map(x => ({ deleteSheet: { sheetId: x.sheetId } })) } });
+}
 
 /* One-way copy, Sheet -> Supabase. Reads the Sheet only; never writes to it. Then reads Supabase back and compares. */
 const sbKey = (tab, o) => JSON.stringify(Object.keys(SBT[tab][1]).map(c => sbVal(c, o[c])));
