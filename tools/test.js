@@ -276,6 +276,32 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.screenshot({ path: path.join(OUT, 'shot-setup-390.png'), fullPage: true });
   check('setup: no horizontal scroll at 390', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
 
+  // drafts: typing survives the refresh that runs when you come back to the tab, and a full reload
+  const backToTab = async () => { await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await page.waitForTimeout(150); await page.waitForSelector('#status[data-state=live]'); };
+  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(150);
+  await page.fill('#logDate', add(-4)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
+  await page.fill('#lSteps', '7777'); await page.fill('#lNote', 'half typed'); await page.click('.mood[data-m=P]');
+  check('unsaved note shows while typing', await page.isVisible('[data-draftflag]'));
+  await backToTab();
+  check('log typing survives coming back to the tab', (await page.inputValue('#lSteps')) === '7777' && (await page.inputValue('#lNote')) === 'half typed' && (await page.getAttribute('.mood[data-m=P]', 'aria-pressed')) === 'true');
+  await page.click('.tab[data-tab=week]'); await page.fill('#qaTitle', 'Buy milk'); await page.fill('#qaTime', '5pm');
+  await backToTab();
+  check('quick add typing survives coming back to the tab', (await page.inputValue('#qaTitle')) === 'Buy milk' && (await page.inputValue('#qaTime')) === '5pm');
+  await page.locator('[data-add]').first().click(); await page.fill('#fTitle', 'Half-written plan'); await page.fill('#fNotes', 'details');
+  await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
+  check('add-item pop-up comes back after a reload', await page.isVisible('#itemDlg[open]') && (await page.inputValue('#fTitle')) === 'Half-written plan');
+  await page.click('#itemDlg [data-close]');
+  check('cancel throws the pop-up draft away', !(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('brain-drafts') || '{}')).some(k => k.startsWith('item@')))));
+  check('quick add typing survives a reload', (await page.inputValue('#qaTitle')) === 'Buy milk');
+  await page.click('#quickAdd button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('saving clears the quick add draft', db.Plan.some(r => r[4] === 'Buy milk') && (await page.inputValue('#qaTitle')) === '');
+  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(150);
+  check('log typing survives a reload', (await page.inputValue('#lSteps')) === '7777');
+  await page.click('[data-draftdiscard]'); await page.waitForTimeout(100);
+  check('discard puts the saved values back', (await page.inputValue('#lSteps')) !== '7777' && !(await page.isVisible('[data-draftflag]')));
+  await page.fill('#lSteps', '8888'); await page.click('#logForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('saving the log clears its draft', !(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('brain-drafts') || '{}')).some(k => k.startsWith('log@')))));
+
   // mobile
   await page.setViewportSize({ width: 390, height: 900 }); await page.click('.tab[data-tab=week]'); await page.waitForTimeout(200);
   await page.screenshot({ path: path.join(OUT, 'shot-mobile.png'), fullPage: true });
