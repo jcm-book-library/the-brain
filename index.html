@@ -3,34 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#15141c">
+<meta name="theme-color" content="#03080d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Brain">
 <title>The Brain</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2315141c'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23a99cff' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23f2c35c'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='c'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.12' stop-color='%23c8f6ff'/%3E%3Cstop offset='.3' stop-color='%234fd8ff'/%3E%3Cstop offset='.7' stop-color='%2308476a'/%3E%3Cstop offset='1' stop-color='%2302070b'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='%2303080d'/%3E%3Ccircle cx='16' cy='16' r='13' fill='%234b6574'/%3E%3Ccircle cx='16' cy='16' r='11' fill='%2302070b'/%3E%3Ccircle cx='16' cy='16' r='9.5' fill='url(%23c)'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
-/* Layout: header + countdowns + links, then Week view = two columns (focus day | the other six days). Dark-only, same family as Jackets & Manuscripts. */
+/* Layout: header + countdowns + links, then Week view = two columns (focus day | the other six days). Dark-only "blue lens" look: navy grid room, frosted glowing panels, a pulsing eye for the logo. */
 :root{
-  --bg:#15141c; --surface:#1d1b27; --raise:#272435; --line:#34304a;
-  --fg:#f1effa; --muted:#a39fbd; --accent:#a99cff; --accent-ink:#15141c; --danger:#ff7a7a; --ok:#7bc98f;
+  --bg:#03080d; --surface:#06111a; --raise:#0a1b27; --line:#13364a;
+  --fg:#dff6ff; --muted:#7aa9bd; --accent:#4fd8ff; --accent-ink:#03080d; --danger:#ff7a7a; --ok:#34f5a4;
+  --glow:rgba(79,216,255,.5); --glowline:rgba(79,216,255,.14);
+  --glass:linear-gradient(180deg,rgba(8,26,38,.88),rgba(5,15,23,.94));
   --c-fitness:#ff8f7e; --c-work:#7bc98f; --c-home:#5fc8c2; --c-social:#f2c35c; --c-sport:#7fa9ff; --c-other:#c39cf0;
   --m-G:#59c27a; --m-F:#6fa8dc; --m-P:#f0a04b; --m-B:#e06666;
-  --display:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
-  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Chakra Petch",ui-sans-serif,system-ui,sans-serif;
+  --body:"Barlow",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html,body{background:var(--bg)}
-body{color:var(--fg);font:15px/1.5 var(--body);margin:0;font-variant-numeric:tabular-nums}
+html{background:var(--bg)}
+body{color:var(--fg);font:15px/1.5 var(--body);margin:0;font-variant-numeric:tabular-nums;min-height:100vh;
+  background:radial-gradient(70% 40% at 100% 0%,rgba(79,216,255,.12),transparent 65%) fixed,
+    linear-gradient(rgba(79,216,255,.045) 1px,transparent 1px) 0 0/24px 24px,
+    linear-gradient(90deg,rgba(79,216,255,.045) 1px,transparent 1px) 0 0/24px 24px,var(--bg)}
 .wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:18px 48px}
 h1,h2,h3,.num{font-family:var(--display)}
-h1{font-size:clamp(24px,3.4vw,30px);font-weight:700;letter-spacing:-.02em;margin:0}
-h2{font-size:17px;font-weight:700;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(24px,3.4vw,30px);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:0;text-shadow:0 0 18px var(--glow)}
+h2{font-size:17px;font-weight:600;margin:0;letter-spacing:.02em}
 h3{font-size:14px;margin:0}
-.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+.eyebrow{font:600 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--accent)}
 .muted{color:var(--muted)}
 button{font:inherit;cursor:pointer;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -52,10 +57,16 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;margin:0;
 
 header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .lockup{display:flex;align-items:center;gap:10px}
-.mark{width:36px;height:36px;flex:none}
+.mark{width:44px;height:44px;flex:none;overflow:visible}
+/* the eye: core breathes, halo swells with it */
+.mark .core{animation:breathe 4.2s ease-in-out infinite}
+.mark .halo{transform-box:fill-box;transform-origin:center;animation:halo 4.2s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.68}}
+@keyframes halo{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.18;transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){.mark .core,.mark .halo{animation:none}}
 .status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
-.status[data-state=live] .dot{background:var(--ok)}
+.status[data-state=live] .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
 .status[data-state=error] .dot{background:var(--danger)}
 .status[data-state=loading] .dot{background:var(--accent);animation:pulse 1s infinite alternate}
 @keyframes pulse{to{opacity:.3}}
@@ -64,7 +75,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .notice[data-kind=error]{border-left-color:var(--danger)}
 
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.cd{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 12px;display:flex;align-items:baseline;gap:8px;min-width:0}
+.cd{background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:6px 12px;display:flex;align-items:baseline;gap:8px;min-width:0}
 .cd b{font-family:var(--display);font-size:18px}
 .cd span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22ch}
 .cd.pay{border-color:color-mix(in srgb,var(--ok) 50%,var(--line))}
@@ -74,10 +85,10 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .links a:hover{border-color:var(--accent);color:var(--accent)}
 
 .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px;width:max-content;max-width:100%;overflow-x:auto}
-.tab{border:0;background:transparent;color:var(--muted);border-radius:8px;padding:7px 14px;font-weight:600;font-size:14px;white-space:nowrap}
-.tab[aria-selected=true]{background:color-mix(in srgb,var(--accent) 22%,var(--surface));color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent)}
+.tab{border:0;background:transparent;color:var(--muted);border-radius:8px;padding:7px 14px;font:600 13px/1.4 var(--display);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.tab[aria-selected=true]{background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent),0 6px 16px -10px var(--accent)}
 
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0;box-shadow:0 0 0 1px var(--glowline),0 20px 60px -34px var(--glow)}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .stack{display:flex;flex-direction:column;gap:16px;min-width:0}
 
@@ -87,7 +98,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .navlabel{text-align:center;white-space:nowrap}
 .week{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
 .dayhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.dayhead h2{font-size:24px}
+.dayhead h2{font-size:24px;color:#fff;text-shadow:0 0 14px var(--glow)}
 .wx{font-size:13px;color:var(--muted);text-align:right}
 .wx b{color:var(--fg);font-family:var(--display);font-size:18px}
 .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
@@ -95,7 +106,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .addrow{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
 .addrow #qaTime{flex:0 0 76px}.addrow #qaTitle{flex:1 1 200px}.addrow select{flex:1 0 110px;max-width:140px}.addrow .btn{flex:0 0 auto}
 .cat{margin-top:14px}
-.cat-h{display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;color:var(--muted);margin-bottom:4px}
+.cat-h{display:flex;align-items:center;gap:8px;font:600 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:4px}
 .cat-h i{width:8px;height:8px;border-radius:2px;display:inline-block}
 .items{list-style:none;margin:0;padding:0}
 .item{display:flex;align-items:center;gap:10px;padding:6px 4px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);min-width:0}
@@ -108,9 +119,9 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .empty{font-size:13px;color:var(--muted);padding:6px 0}
 
 .days{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
-.dcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.dcard{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;display:flex;flex-direction:column;gap:6px}
 .dcard[data-past=true]{opacity:.62}
-.dcard[data-today=true]{border-color:var(--accent)}
+.dcard[data-today=true]{border-color:var(--accent);box-shadow:0 0 14px -6px var(--glow)}
 .dcard-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
 .dcard-h button{border:0;background:transparent;padding:0;text-align:left;font-family:var(--display);font-weight:700;font-size:15px}
 .dcard-h button:hover{color:var(--accent)}
@@ -203,7 +214,7 @@ td.up{color:var(--ok)} td.down{color:var(--m-P)}
 .gtag{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;margin-left:6px;background:var(--raise);color:var(--muted);vertical-align:1px}
 .rel{font-size:13px;color:var(--muted)}
 .rel button{border:0;background:transparent;color:var(--accent);padding:0;font:inherit;font-size:13px;cursor:pointer}
-.ghead{margin:14px 0 2px;font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;color:var(--muted)}
+.ghead{margin:14px 0 2px;font:600 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
 .ghead:first-child{margin-top:0}
 .linkedit{display:flex;flex-direction:column;gap:6px}
 .linkedit .lrow{display:flex;gap:6px;align-items:center;font-size:14px}
@@ -247,8 +258,8 @@ td.up{color:var(--ok)} td.down{color:var(--m-P)}
 .linkrow a{flex:1;min-width:0;color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .linkrow a:hover{color:var(--accent)}
 
-dialog{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
-dialog::backdrop{background:rgba(8,6,14,.65)}
+dialog{background:var(--glass);box-shadow:0 0 0 1px var(--glowline),0 30px 80px -30px var(--glow);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
+dialog::backdrop{background:rgba(1,6,10,.72);backdrop-filter:blur(2px)}
 dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -278,7 +289,18 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 <div class="wrap">
   <header>
     <div class="lockup">
-      <svg class="mark" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="9" fill="#272435"/><circle cx="18" cy="18" r="10" fill="none" stroke="#a99cff" stroke-width="3"/><circle cx="18" cy="18" r="3.5" fill="#f2c35c"/></svg>
+      <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="eyeRim" cx="50%" cy="38%" r="62%"><stop offset="0" stop-color="#c9dbe6"/><stop offset=".5" stop-color="#4b6574"/><stop offset="1" stop-color="#0b1720"/></radialGradient>
+          <radialGradient id="eyeCore"><stop offset="0" stop-color="#fff"/><stop offset=".1" stop-color="#c8f6ff"/><stop offset=".26" stop-color="#4fd8ff"/><stop offset=".62" stop-color="#08476a"/><stop offset="1" stop-color="#02070b"/></radialGradient>
+          <radialGradient id="eyeHalo"><stop offset=".55" stop-color="#4fd8ff" stop-opacity=".55"/><stop offset="1" stop-color="#4fd8ff" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle class="halo" cx="50" cy="50" r="49" fill="url(#eyeHalo)"/>
+        <circle cx="50" cy="50" r="44" fill="url(#eyeRim)"/>
+        <circle cx="50" cy="50" r="37" fill="#02070b"/>
+        <circle class="core" cx="50" cy="50" r="31" fill="url(#eyeCore)"/>
+        <ellipse cx="40" cy="35" rx="9" ry="4.5" fill="#fff" opacity=".2" transform="rotate(-25 40 35)"/>
+      </svg>
       <div><div class="eyebrow" id="todayLabel"></div><h1>The Brain</h1></div>
     </div>
     <div class="status" id="status" data-state="loading"><span class="dot"></span><span id="statusText">Starting…</span>
