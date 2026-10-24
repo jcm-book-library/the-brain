@@ -683,9 +683,58 @@ function cellOut(col, v) {
   return /^[=+@-]/.test(s) ? "'" + s : s;
 }
 const rowOut = (tab, o) => TABS[tab].cols.map(c => cellOut(c, o[c]));
+/* ---------- drafts: keep unsaved typing through refreshes and reloads ----------
+   Forms on screen are rebuilt whenever the data reloads (after a save, or when you come back to the tab).
+   Anything typed is kept per form until that form saves, and put back after each rebuild. */
+const DRAFT_KEY = 'brain-drafts';
+let drafts = {}; try { drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}') || {}; } catch (e) { drafts = {}; }
+let draftPending = null, lastFocus = null;
+const saveDrafts = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts)); } catch (e) {} };
+function formKey(f) {
+  if (f && f.id === 'itemForm') return state.itemKey || null;
+  if (!f || f.closest('dialog')) return null;
+  if (f.id === 'logForm') return 'log@' + (state.logDate || todayIso());
+  if (f.id === 'quickAdd') return 'qa@' + (state.focus || todayIso());
+  if (f.id === 'personQuick' || f.id === 'sApp') return f.id;
+  if (f.dataset.list) return 'list@' + f.dataset.list;
+  if (f.dataset.nxform) return 'nx@' + f.dataset.nxform;
+  if (f.dataset.srow) return 'srow@' + f.dataset.srow + '@' + f.dataset.row;
+  if (f.dataset.sadd) return 'sadd@' + f.dataset.sadd;
+  return null;
+}
+const fieldKey = (el, f) => el.id || el.name || el.dataset.k || String([...f.elements].indexOf(el));
+function noteDraft(el) {
+  const f = el.form || el.closest('form'), fk = formKey(f); if (!fk || el.type === 'submit' || el.type === 'button') return;
+  (drafts[fk] = drafts[fk] || {})[fieldKey(el, f)] = el.type === 'checkbox' ? el.checked : el.value; saveDrafts();
+  const flag = f.querySelector('[data-draftflag]'); if (flag) flag.hidden = false;
+}
+function clearDraft(fk) { if (fk && drafts[fk]) { delete drafts[fk]; saveDrafts(); } }
+function applyDrafts() {
+  document.querySelectorAll('form').forEach(f => {
+    const fk = formKey(f), d = fk && drafts[fk]; if (!d) return;
+    [...f.elements].forEach(el => { const k = fieldKey(el, f); if (!(k in d)) return;
+      if (el.type === 'checkbox') el.checked = !!d[k]; else if (el.value !== d[k]) el.value = d[k]; });
+    if ('__mood' in d) f.querySelectorAll('.mood').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === d.__mood)));
+    const flag = f.querySelector('[data-draftflag]'); if (flag) flag.hidden = false;
+  });
+  if (lastFocus && (document.activeElement === document.body || !document.activeElement)) {
+    const f = [...document.querySelectorAll('form')].find(x => formKey(x) === lastFocus.fk);
+    const el = f && [...f.elements].find(x => fieldKey(x, f) === lastFocus.k);
+    if (el && el.offsetParent) { el.focus({ preventScroll: true }); try { const n = el.value.length; el.setSelectionRange(n, n); } catch (e) {} }
+  }
+}
+document.addEventListener('input', e => noteDraft(e.target), true);
+document.addEventListener('change', e => noteDraft(e.target), true);
+document.addEventListener('focusin', e => { const f = e.target.form; const fk = formKey(f); lastFocus = fk && e.target.matches('input,textarea,select') ? { fk, k: fieldKey(e.target, f) } : null; });
+document.addEventListener('focusout', e => { const t = e.target; setTimeout(() => { if (t.isConnected && lastFocus && document.activeElement !== t) lastFocus = null; }, 0); });
+document.addEventListener('submit', e => { draftPending = formKey(e.target); }, true);
+let draftQueued = false;
+new MutationObserver(() => { if (draftQueued) return; draftQueued = true; queueMicrotask(() => { draftQueued = false; applyDrafts(); }); })
+  .observe(document.body, { childList: true, subtree: true });
+
 async function withBusy(label, fn) {
   state.busy = true; setStatus('loading', label);
-  try { await fn(); state.busy = false; await refresh(); return true; }
+  try { await fn(); state.busy = false; clearDraft(draftPending); draftPending = null; await refresh(); return true; }
   catch (e) { state.busy = false; if (e.code !== 'signin') notice('Couldn\'t save: ' + (e.message || e), 'error'); setStatus('error', 'Not saved'); return false; }
 }
 async function ensureRows(tab, need) {
@@ -862,7 +911,8 @@ function renderLog() {
       <div class="moods" role="group" aria-label="Mood"><span class="muted" style="font-size:12px;font-weight:600">Mood</span>
         ${[['G', 'Good'], ['F', 'Fair'], ['P', 'Poor'], ['B', 'Bad']].map(([k, n]) => `<button type="button" class="mood" data-m="${k}" aria-pressed="${row.mood === k}">${n}</button>`).join('')}</div>
       <div class="f note"><label for="lNote">Note</label><input id="lNote" value="${esc(v('note'))}" placeholder="Meds, sleep, anything"></div>
-      <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Save ${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'short' }))}</button></div>
+      <div style="grid-column:1/-1;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Save ${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'short' }))}</button>
+        <span data-draftflag hidden class="muted" style="font-size:13px">Unsaved changes · <button type="button" class="linkish" data-draftdiscard style="border:0;background:transparent;color:var(--accent);padding:0;font:inherit;cursor:pointer">Discard</button></span></div>
     </form>`;
 }
 function renderUp() {
@@ -1171,7 +1221,9 @@ function openItem(o, presetDate) {
   $('fTime').value = o ? (o.time || '') : ''; $('fCat').value = o ? (CATS.includes(o.cat) ? o.cat : 'Other') : 'Social';
   $('fType').value = o ? (o.type || '') : ''; $('fNotes').value = o ? (o.notes || '') : '';
   $('fDone').checked = !!(o && o.done); $('fCd').checked = !!(o && o.cd); $('itemDel').hidden = !o;
-  $('itemDlg').showModal(); setTimeout(() => $('fTitle').focus(), 30);
+  state.itemKey = o ? 'item@' + o.id : 'item@new@' + presetDate;
+  try { sessionStorage.setItem('brain-open-item', JSON.stringify({ id: o ? o.id : '', date: presetDate || '' })); } catch (e) {}
+  $('itemDlg').showModal(); applyDrafts(); setTimeout(() => $('fTitle').focus(), 30);
 }
 function normTime(s) {
   s = (s || '').trim().toLowerCase(); if (!s) return '';
@@ -1408,15 +1460,17 @@ async function copyToSb(say) {
 }
 $('signOut').addEventListener('click', () => { try { localStorage.removeItem(g.tokKey); } catch (e) {} $('setDlg').close(); signedOut(); });
 $('settingsBtn').addEventListener('click', () => openSettings());
-document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => { if (b.closest('#itemDlg')) clearDraft(state.itemKey); b.closest('dialog').close(); }));
+$('itemDlg').addEventListener('cancel', () => clearDraft(state.itemKey));
+$('itemDlg').addEventListener('close', () => { try { sessionStorage.removeItem('brain-open-item'); } catch (e) {} });
 
 /* ---------- events ---------- */
 const findPlan = id => (state.data.Plan || []).find(p => p.id === id);
 document.addEventListener('click', async e => {
-  const el = e.target.closest('[data-nxedit],[data-nxcancel],[data-nxclear],[data-gpick],[data-unlink],[data-pgroup],[data-pview],[data-month],[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
+  const el = e.target.closest('[data-draftdiscard],[data-nxedit],[data-nxcancel],[data-nxclear],[data-gpick],[data-unlink],[data-pgroup],[data-pview],[data-month],[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
   if (!el) return;
   if (el.dataset.nxedit) { state.pEditNext = el.dataset.nxedit; renderPeople(); const f = document.querySelector(`[data-nxform="${el.dataset.nxedit}"] input`); if (f) f.focus(); return; }
-  if (el.hasAttribute('data-nxcancel')) { state.pEditNext = null; renderPeople(); return; }
+  if (el.hasAttribute('data-nxcancel')) { clearDraft(formKey(el.closest('form'))); state.pEditNext = null; renderPeople(); return; }
   if (el.dataset.nxclear) { const p = (state.data.People || []).find(x => x.id === el.dataset.nxclear); state.pEditNext = null; if (p) await saveNext(p, { date: '' }); return; }
   if (el.dataset.gpick) { const cur = splitGroups($('pGroups').value), gp = el.dataset.gpick; $('pGroups').value = (cur.includes(gp) ? cur.filter(x => x !== gp) : cur.concat(gp)).join(', '); drawGroupPick(); return; }
   if (el.dataset.unlink != null) { pLinks.splice(Number(el.dataset.unlink), 1); drawLinks(); return; }
@@ -1437,7 +1491,9 @@ document.addEventListener('click', async e => {
     await withBusy('Saving…', () => updateRow('Lists', { ...l, status: nx })); return; }
   if (el.dataset.ldel) { if (el.dataset.armed !== '1') { el.dataset.armed = '1'; el.textContent = 'Remove?'; setTimeout(() => { if (el.isConnected) { el.dataset.armed = ''; el.textContent = '×'; } }, 3000); return; }
     const l = (state.data.Lists || []).find(x => x.id === el.dataset.ldel); if (l) await withBusy('Removing…', () => deleteRow('Lists', l)); return; }
-  if (el.classList.contains('mood')) { const on = el.getAttribute('aria-pressed') === 'true'; el.parentElement.querySelectorAll('.mood').forEach(b => b.setAttribute('aria-pressed', 'false')); el.setAttribute('aria-pressed', String(!on)); }
+  if (el.classList.contains('mood')) { const on = el.getAttribute('aria-pressed') === 'true'; el.parentElement.querySelectorAll('.mood').forEach(b => b.setAttribute('aria-pressed', 'false')); el.setAttribute('aria-pressed', String(!on));
+    const fk = formKey(el.closest('form')); if (fk) { (drafts[fk] = drafts[fk] || {}).__mood = on ? '' : el.dataset.m; saveDrafts(); const flag = el.closest('form').querySelector('[data-draftflag]'); if (flag) flag.hidden = false; } }
+  if (el.hasAttribute('data-draftdiscard')) { clearDraft(formKey(el.closest('form'))); renderLog(); return; }
 });
 document.addEventListener('change', async e => {
   const t = e.target;
@@ -1492,13 +1548,20 @@ setInterval(() => { if (state.live && state.focus === null) renderAll(); }, 60e3
 /* ---------- boot ---------- */
 (async () => {
   state.focus = todayIso();
+  try { const v = JSON.parse(sessionStorage.getItem('brain-view') || 'null'); if (v) { if (v.focus) state.focus = v.focus; if (v.logDate) state.logDate = v.logDate; if (v.month) state.month = v.month; } } catch (e) {}
+  const saveView = () => { try { sessionStorage.setItem('brain-view', JSON.stringify({ focus: state.focus, logDate: state.logDate, month: state.month })); } catch (e) {} };
+  addEventListener('pagehide', saveView); document.addEventListener('visibilitychange', () => { if (document.hidden) saveView(); }); setInterval(saveView, 1000);
   try { let t = localStorage.getItem('brain-tab'); if (t === 'notes') t = 'lists'; if (t && $('v-' + t)) showTab(t); } catch (e) {}
   setStatus('loading', 'Connecting…');
   loadGis().catch(() => {});
   const back = sb.fromRedirect();
   if (window.__BRAIN_DEMO__) { await window.__BRAIN_DEMO__(g); }
   if (back) openSettings(back.ok ? 'Signed in to Supabase' + (back.email ? ' as ' + back.email : '') + '.' : 'Supabase sign-in didn\'t work: ' + back.message);
-  if (canLoad()) { await refresh(); loadWeather().then(() => { if (state.live) renderAll(); }); return; }
+  if (canLoad()) { await refresh(); loadWeather().then(() => { if (state.live) renderAll(); });
+    try { const oi = JSON.parse(sessionStorage.getItem('brain-open-item') || 'null');
+      if (oi && state.live) { const o = oi.id ? findPlan(oi.id) : null, k = o ? 'item@' + o.id : 'item@new@' + oi.date;
+        if (drafts[k] && (o || oi.date)) { if (state.tab !== 'week') showTab('week'); openItem(o, oi.date); } } } catch (e) {}
+    return; }
   signedOut(); loadWeather();
   if (useSb()) { notice('Press Connect to sign in to Supabase and load your Brain.'); return; }
   notice(g.cfg().clientId ? 'Press Connect to sign in to Google and load your Brain.' : 'Press Connect to link Google. The Client ID from your book library is picked up automatically if it\'s saved in this browser.');
