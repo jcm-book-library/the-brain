@@ -4,7 +4,7 @@
 
 ## This repo
 
-- One file, `index.html`, no build step. Live: https://jcm-book-library.github.io/the-brain/ (from `main`).
+- One file, `index.html`, no build step (plus `apple-touch-icon.png`, the 180px home-screen icon: the blue lens eye on the navy grid). Live: https://jcm-book-library.github.io/the-brain/ (from `main`).
 - Data: the Google Sheet (tabs in README) or, in the Supabase pilot, the `brain` schema of the `jcm-apps` project. The data layer is `refresh` / `addRows` / `updateRow` / `deleteRow`; each branches on `useSb()`. Screens never call either backend directly.
 - Tests: `tools/test.js` (Sheets mode), `tools/test-supabase.js` (Supabase mode) and `tools/test-copyback.js` (Supabase → Sheet copy), all against fakes. Run all three before every push.
 - Supabase → Sheet copy (`diffTabs` / `copyToSheet` / `backupTabs`) is the app's only bulk write to the Sheet: preview first, hidden dated backup tab per changed tab (newest 3 kept), cell-level writes, re-check before writing, read-back after. Change it with care and keep its test passing.
