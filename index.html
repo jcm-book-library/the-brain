@@ -11,9 +11,10 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='c'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.12' stop-color='%23c8f6ff'/%3E%3Cstop offset='.3' stop-color='%234fd8ff'/%3E%3Cstop offset='.7' stop-color='%2308476a'/%3E%3Cstop offset='1' stop-color='%2302070b'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='%2303080d'/%3E%3Ccircle cx='16' cy='16' r='13' fill='%234b6574'/%3E%3Ccircle cx='16' cy='16' r='11' fill='%2302070b'/%3E%3Ccircle cx='16' cy='16' r='9.5' fill='url(%23c)'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
 <style>
-/* Layout: header + countdowns + links, then Week view = two columns (focus day | the other six days). Dark-only "blue lens" look: navy grid room, frosted panels with quiet steel-blue trim, a pulsing eye for the logo. Rubik throughout, always with tabular figures. */
+/* Layout: header + countdowns + links, then Week view = two columns (focus day | the other six days). Dark-only "blue lens" look: navy grid room, frosted panels with quiet steel-blue trim, a pulsing eye for the logo. Roboto throughout, always with tabular figures.
+   Home = quick add, then Today, then three equal cards, then Upcoming. Anything that can grow takes a full-width row; fixed-size cards sit in equal columns. Phones get a bottom tab bar. */
 :root{
   --bg:#03080d; --surface:#06111a; --raise:#0a1b27; --line:#13364a;
   --fg:#dff6ff; --muted:#7aa9bd; --accent:#9bbccb; --accent-ink:#03080d; --danger:#ff7a7a; --ok:#7fc9a3;
@@ -21,11 +22,12 @@
   --glass:linear-gradient(180deg,rgba(8,26,38,.88),rgba(5,15,23,.94));
   --c-fitness:#ff8f7e; --c-work:#7bc98f; --c-home:#5fc8c2; --c-social:#f2c35c; --c-sport:#7fa9ff; --c-other:#c39cf0;
   --m-G:#59c27a; --m-F:#6fa8dc; --m-P:#f0a04b; --m-B:#e06666;
-  --display:"Rubik",ui-sans-serif,system-ui,sans-serif;
-  --body:"Rubik",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Roboto",ui-sans-serif,system-ui,sans-serif;
+  --body:"Roboto",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 html{background:var(--bg);font-feature-settings:"tnum"}
 body{color:var(--fg);font:400 15px/1.5 var(--body);margin:0;font-variant-numeric:tabular-nums;min-height:100vh;
   background:radial-gradient(70% 40% at 100% 0%,rgba(79,216,255,.07),transparent 65%) fixed,
@@ -277,6 +279,83 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .dlg-acts div{display:flex;gap:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:9px 16px;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);z-index:10;max-width:calc(100vw - 32px)}
 
+/* home */
+.qa{display:grid;gap:6px}
+.qa-row{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 14px}
+.qa-row:focus-within{border-color:var(--accent)}
+.qa-row .plus{font-size:20px;color:var(--accent);line-height:1}
+.qa-row input{flex:1;min-width:0;border:0;background:transparent;font-size:15px;padding:6px 0}
+.qa-row input:focus{outline:none}
+.qa-prev{font-size:13px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:22px;padding-left:4px}
+.tok{border:1px solid var(--line);background:var(--raise);border-radius:999px;padding:1px 9px;color:var(--fg);font-size:12.5px;display:inline-flex;align-items:center;gap:5px}
+.tok.k{border-color:var(--accent);color:var(--accent)}
+.tok i{width:7px;height:7px;border-radius:50%}
+.home{display:grid;gap:16px}
+.halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px}
+.halves .cat-h{margin-top:12px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.trio .panel{display:flex;flex-direction:column;gap:6px}
+.trio .panel-head{margin-bottom:4px}
+.go{margin-top:auto;padding-top:8px;align-self:flex-start;border:0;background:transparent;color:var(--accent);font-size:13px;padding-left:0;padding-right:0}
+.go:hover{color:var(--fg)}
+.big{font:500 28px/1.1 var(--display)}
+.big small{font:400 13px/1 var(--body);color:var(--muted);margin-left:4px}
+.sub{font-size:13px;color:var(--muted)}
+.sess{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:4px 0}
+.sess span{height:30px;border-radius:6px;border:1px dashed var(--line);font-size:11px;display:grid;place-items:center;color:var(--muted)}
+.sess span.done{border:0;background:color-mix(in srgb,var(--c-fitness) 30%,var(--raise));color:var(--fg)}
+.sess span.plan{border:1px solid color-mix(in srgb,var(--c-fitness) 50%,var(--line))}
+.sess span.miss{border:1px solid var(--line);opacity:.6}
+.sess span[data-today=true]{outline:1px solid var(--accent);outline-offset:1px}
+.ppl{list-style:none;margin:0;padding:0;font-size:14px}
+.ppl li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.ppl li:first-child{border-top:0}
+.ppl button{border:0;background:transparent;padding:0;text-align:left;font:inherit;color:var(--fg)}
+.ppl .r{font-size:13px;color:var(--muted);white-space:nowrap;text-align:right}
+.ppl .r.due{color:var(--m-P)}
+.ppl .r.plan{color:var(--accent)}
+.hbar{height:6px;border-radius:3px;background:var(--bg);overflow:hidden;margin:4px 0}
+.hbar i{display:block;height:100%;border-radius:3px;background:var(--c-social)}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.uplist{list-style:none;margin:0;padding:0}
+.uprow{display:grid;grid-template-columns:180px 24px minmax(0,1fr) 120px 120px;gap:12px;align-items:center;padding:8px 6px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:14.5px}
+.uprow:first-child{border-top:0}
+.uprow .dt{color:var(--accent);font-weight:500;white-space:nowrap}
+.uprow .dt small{color:var(--muted);font-weight:400;margin-left:6px}
+.uprow .ic{text-align:center;font-size:13px}
+.uprow .ic i{display:inline-block;width:8px;height:8px;border-radius:50%}
+.uprow .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uprow .t button{border:0;background:transparent;padding:0;font:inherit;color:inherit;text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.uprow .t button:hover{color:var(--accent)}
+.uprow .t small{color:var(--muted);font-size:13px}
+.uprow .ar{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.uprow .ar i{width:7px;height:7px;border-radius:50%}
+.uprow .wn{font-size:13px;color:var(--muted);text-align:right;white-space:nowrap}
+.uprow .wn.soon{color:var(--c-social)}
+.uprow.pay .t{color:var(--ok)}
+.upmore{display:flex;justify-content:center;margin-top:10px}
+@media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.halves{grid-template-columns:minmax(0,1fr)}.uprow{grid-template-columns:96px 18px minmax(0,1fr) auto;gap:8px;font-size:14px}.uprow .dt{font-size:13.5px}.uprow .ar{display:none}.uprow .dt small{display:block;margin:0}#homeToday .wx{text-align:left}}
+
+/* phone: bottom tab bar, quick add and More open as sheets */
+.bbar{display:none}
+.bbar button{border:0;background:transparent;color:var(--muted);font-size:11.5px;display:grid;justify-items:center;gap:4px;padding:6px 0}
+.bbar button i{width:22px;height:3px;border-radius:2px}
+.bbar button[aria-current=page]{color:var(--fg)}
+.bbar button[aria-current=page] i{background:var(--accent)}
+.bbar .fab{width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:30px;line-height:1;justify-self:center;display:grid;place-items:center;padding:0;transform:translateY(-12px);box-shadow:0 8px 20px -8px rgba(0,0,0,.8)}
+dialog.sheet{margin:auto auto 0;width:min(560px,100%);max-width:100%;border-radius:18px 18px 0 0;border-bottom:0}
+dialog.sheet .sheet-in{padding:14px 14px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:10px}
+dialog.sheet form{padding:0}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto}
+.more{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.more button{padding:14px 10px;font-size:14px}
+@media (max-width:700px){
+  .tabs{display:none}
+  .bbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;position:fixed;left:0;right:0;bottom:0;z-index:5;height:calc(64px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:rgba(4,12,18,.97);border-top:1px solid var(--line)}
+  .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
 @media (max-width:900px){.week{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){
   .addrow select{max-width:none}
@@ -314,7 +393,8 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   <nav class="links" id="links" aria-label="Pinned links"></nav>
 
   <div class="tabs" role="tablist">
-    <button class="tab" role="tab" data-tab="week" aria-selected="true">Week</button>
+    <button class="tab" role="tab" data-tab="home" aria-selected="true">Home</button>
+    <button class="tab" role="tab" data-tab="week" aria-selected="false">Week</button>
     <button class="tab" role="tab" data-tab="paper">Paper</button>
     <button class="tab" role="tab" data-tab="stats">Stats</button>
     <button class="tab" role="tab" data-tab="people">People</button>
@@ -323,7 +403,17 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
     <button class="tab" role="tab" data-tab="setup">Setup</button>
   </div>
 
-  <section id="v-week">
+  <section id="v-home" class="home">
+    <form class="qa" id="qaHome" data-qa autocomplete="off">
+      <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="qhText" aria-label="Quick add" placeholder="Add anything… e.g. dinner IV fri 7pm"><button class="btn btn-primary" type="submit">Add</button></div>
+      <div class="qa-prev" aria-live="polite"></div>
+    </form>
+    <div class="panel" id="homeToday"></div>
+    <div class="trio"><div class="panel" id="homeFit"></div><div class="panel" id="homeSteps"></div><div class="panel" id="homePeople"></div></div>
+    <div class="panel" id="homeUp"></div>
+  </section>
+
+  <section id="v-week" hidden>
     <div class="weekbar">
       <div class="nav">
         <button class="btn" id="prevWk" type="button" aria-label="Previous week">‹</button>
@@ -379,6 +469,23 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
   <section id="v-links" hidden><div class="grid2" id="linkGroups"></div></section>
   <section id="v-setup" hidden><div class="grid2" id="setupGrid"></div></section>
 </div>
+
+<nav class="bbar" aria-label="Sections">
+  <button type="button" data-go="home"><i></i>Home</button>
+  <button type="button" data-go="week"><i></i>Week</button>
+  <button type="button" class="fab" data-qaopen aria-label="Quick add">+</button>
+  <button type="button" data-go="stats"><i></i>Stats</button>
+  <button type="button" data-more><i></i>More</button>
+</nav>
+<dialog id="qaDlg" class="sheet"><div class="sheet-in"><div class="grab"></div>
+  <form class="qa" id="qaSheet" data-qa autocomplete="off">
+    <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="qsText" aria-label="Quick add" placeholder="Add anything… e.g. gym tomorrow 6am"><button class="btn btn-primary" type="submit">Add</button></div>
+    <div class="qa-prev" aria-live="polite"></div>
+  </form>
+  <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
+<dialog id="moreDlg" class="sheet"><div class="sheet-in"><div class="grab"></div>
+  <div class="more"><button class="btn" type="button" data-go="paper">Paper</button><button class="btn" type="button" data-go="people">People</button><button class="btn" type="button" data-go="lists">Lists &amp; Notes</button><button class="btn" type="button" data-go="links">Links</button><button class="btn" type="button" data-go="setup">Setup</button><button class="btn" type="button" data-go="settings">Settings</button></div>
+  <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
 
 <dialog id="itemDlg"><form method="dialog" id="itemForm">
   <h2 id="itemDlgTitle">Item</h2>
@@ -483,7 +590,7 @@ const BOOL_COLS = new Set(['done', 'cd', 'active', 'tosee', 'pin']);
 const NUM_COLS = new Set(['steps', 'km', 'act', 'pages', 'tmax', 'tmin', 'year', 'month', 'every', 'order']);
 const colLetter = i => String.fromCharCode(65 + i);
 
-const state = { data: {}, rowCount: {}, tab: 'week', focus: null, wx: {}, live: false, busy: false };
+const state = { data: {}, rowCount: {}, tab: 'home', focus: null, wx: {}, live: false, busy: false };
 
 /* ---------- dates (local, ISO yyyy-mm-dd) ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -718,6 +825,7 @@ function formKey(f) {
   if (!f || f.closest('dialog')) return null;
   if (f.id === 'logForm') return 'log@' + (state.logDate || todayIso());
   if (f.id === 'quickAdd') return 'qa@' + (state.focus || todayIso());
+  if (f.id === 'qaHome') return 'qh';
   if (f.id === 'personQuick' || f.id === 'sApp') return f.id;
   if (f.dataset.list) return 'list@' + f.dataset.list;
   if (f.dataset.nxform) return 'nx@' + f.dataset.nxform;
@@ -948,6 +1056,144 @@ function renderUp() {
     ${tb.length ? `<ul class="side-list">${tb.map(l => `<li><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-booked="${esc(l.id)}"> ${esc(l.item)}</label><span class="r">${l.added ? 'since ' + esc(fmt(l.added, { day: 'numeric', month: 'short' })) : ''}</span></li>`).join('')}</ul>` : '<p class="empty">Nothing waiting.</p>'}`;
 }
 
+/* ---------- render: home ---------- */
+const KIND_ICON = { birthday: '🎂', catchup: '☕', payday: '$', trip: '✈' };
+const inWords = n => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n < 14 ? `In ${n} days` : n < 60 ? `In ${Math.round(n / 7)} weeks` : `In ${Math.round(n / 30.4)} months`;
+/* Everything dated between two days, in one list: plan items (not routine, not done), birthdays, catch-ups and paydays. */
+function upcomingItems(from, to) {
+  const out = [], ppl = state.data.People || [], who = new Map(ppl.filter(p => p.nid).map(p => [p.nid, p]));
+  (state.data.Plan || []).forEach(p => {
+    if (!p.date || p.date < from || p.date > to || p.done || p.type === 'Routine') return;
+    const multi = p.end && p.end > p.date, w = who.get(p.id);
+    out.push({ date: p.date, end: multi ? p.end : '', time: p.time, title: p.title, cat: CATS.includes(p.cat) ? p.cat : 'Other', kind: w ? 'catchup' : multi ? 'trip' : 'plan', edit: p.id });
+  });
+  ppl.forEach(p => { const b = nextBday(p, from); if (b && b.date <= to) out.push({ date: b.date, title: p.name + '\'s birthday', sub: b.turning ? 'turns ' + b.turning : '', cat: 'Social', kind: 'birthday', person: p.id }); });
+  const every = Number(setting('payday_every', 14)) || 14;
+  for (let d = paydayInfo().next; d <= to; d = addDays(d, every)) if (d >= from) out.push({ date: d, title: 'Payday', cat: 'Other', kind: 'payday' });
+  return out.sort((a, b) => a.date.localeCompare(b.date) || (a.time || '99').localeCompare(b.time || '99') || a.title.localeCompare(b.title));
+}
+function upGroup(d, t) {
+  const we = addDays(mondayOf(t), 6); if (d <= we) return 'This week'; if (d <= addDays(we, 7)) return 'Next week';
+  const x = fromIso(d); return x.toLocaleDateString('en-AU', x.getFullYear() === fromIso(t).getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' });
+}
+/* Steps this month and the catch-up figure, worked out the same way as the Stats tab. */
+function stepsMonth(t) {
+  const ym = t.slice(0, 7), [y, m] = ym.split('-').map(Number), dim = new Date(y, m, 0).getDate();
+  const log = (state.data.Log || []).filter(r => r.date.startsWith(ym) && r.steps != null);
+  const goal = ((state.data.Goals || []).find(x => x.year === y && x.month === m) || {}).steps || null;
+  const total = log.reduce((a, r) => a + r.steps, 0), n = log.length, last = log.reduce((a, r) => r.date > a ? r.date : a, '');
+  const fromDay = Math.max(Number(t.slice(8, 10)) + (last === t ? 1 : 0), last ? Number(last.slice(8, 10)) + 1 : 1);
+  const h = Math.max(0, Math.min(5, dim - fromDay + 1));
+  return { total, n, avg: n ? total / n : null, goal, h, need: goal && n && h ? Math.ceil((goal * (n + h) - total) / h) : null };
+}
+function renderHome() {
+  const t = todayIso(), pay = paydayInfo(), w = state.wx[t], its = itemsOn(t), nf = x => Math.round(x).toLocaleString('en-AU');
+  const timed = its.filter(i => i.time).sort((a, b) => a.time.localeCompare(b.time)), rest = its.filter(i => !i.time);
+  const bds = (state.data.People || []).filter(p => { const b = nextBday(p, t); return b && b.days === 0; });
+  $('homeToday').innerHTML = `<div class="dayhead"><div><div class="eyebrow">Today</div><h2>${esc(fmt(t, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2>
+      ${pay.is(t) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(p => `<span class="tag">🎂 ${esc(p.name)}'s birthday</span>`).join(' ')}</div>
+      <div class="wx">${w ? `<b>${Math.round(w.max)}° / ${Math.round(w.min)}°</b><br>${esc(wxWord(w.code))}${w.rain != null ? ' · ' + w.rain + '% rain' : ''}` : ''}</div></div>
+    <div class="halves">
+      <div><div class="cat-h">Schedule · ${timed.length}</div><ul class="items">${timed.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing booked.</li>'}</ul></div>
+      <div><div class="cat-h">To do · ${rest.filter(i => !i.done).length} left</div><ul class="items">${rest.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing else today.</li>'}</ul></div>
+    </div>`;
+  // fitness this week
+  const ws = mondayOf(t), wk = Array.from({ length: 7 }, (_, k) => addDays(ws, k));
+  const fit = wk.map(d => itemsOn(d).filter(i => i.cat === 'Fitness')), all = fit.flat(), done = all.filter(i => i.done).length;
+  const next = wk.flatMap((d, k) => d >= t ? fit[k].filter(i => !i.done).map(i => [d, i]) : [])[0];
+  $('homeFit').innerHTML = `<div class="panel-head"><h2>Fitness</h2><span class="sub">This week</span></div>
+    <div class="big">${done}<small>of ${all.length} done</small></div>
+    <div class="sess">${wk.map((d, k) => `<span class="${fit[k].length ? (fit[k].every(i => i.done) ? 'done' : d < t ? 'miss' : 'plan') : ''}" data-today="${d === t}" title="${esc(fmt(d, { weekday: 'long' }) + (fit[k].length ? ': ' + fit[k].map(i => i.title).join(', ') : ''))}">${fmt(d, { weekday: 'narrow' })}</span>`).join('')}</div>
+    <div class="sub">${next ? `Next: ${esc(next[0] === t ? 'today' : fmt(next[0], { weekday: 'short' }))}${next[1].time ? ' ' + esc(next[1].time) : ''} · ${esc(next[1].title)}` : 'Nothing else planned this week.'}</div>
+    <button type="button" class="go" data-go="week">Open the week →</button>`;
+  // steps this month
+  const sm = stepsMonth(t);
+  $('homeSteps').innerHTML = `<div class="panel-head"><h2>Steps</h2><span class="sub">${esc(fmt(t, { month: 'long' }))}</span></div>
+    <div class="big">${nf(sm.total)}<small>${sm.n} day${sm.n === 1 ? '' : 's'} logged</small></div>
+    ${sm.goal ? `<div class="hbar"><i style="width:${Math.min(100, Math.round((sm.avg || 0) / sm.goal * 100))}%"></i></div>` : ''}
+    <div class="sub">Avg ${sm.avg == null ? '–' : nf(sm.avg)}${sm.goal ? ' · goal ' + nf(sm.goal) : ''}</div>
+    ${sm.need != null ? `<div class="sub">${sm.need > sm.goal ? `Catch up: <b style="color:var(--fg)">${nf(sm.need)}</b> a day, ${sm.h === 1 ? 'tomorrow' : 'next ' + sm.h + ' days'}` : 'On goal'}</div>` : ''}
+    <button type="button" class="go" data-go="stats">Log a day →</button>`;
+  // catch-ups: planned first, then due (longest since seen)
+  const since = p => p.seen ? dayDiff(p.seen, t) : null;
+  const due = p => p.tosee || (p.every && (since(p) == null || since(p) >= p.every));
+  const ago = n => n == null ? 'not logged' : n < 14 ? 'seen ' + n + ' days ago' : n < 60 ? 'seen ' + Math.round(n / 7) + ' weeks ago' : 'seen ' + Math.round(n / 30.4) + ' months ago';
+  const ppl = state.data.People || [], planned = ppl.filter(p => p.ndate && p.ndate >= t).sort((a, b) => a.ndate.localeCompare(b.ndate));
+  const dueP = ppl.filter(p => !planned.includes(p) && due(p)).sort((a, b) => (since(b) ?? 1e9) - (since(a) ?? 1e9));
+  const top = planned.map(p => [p, 'plan', fmt(p.ndate, { weekday: 'short', day: 'numeric', month: 'short' }) + (p.nplan ? ' · ' + p.nplan : '')]).concat(dueP.map(p => [p, 'due', ago(since(p))])).slice(0, 4);
+  $('homePeople').innerHTML = `<div class="panel-head"><h2>Catch-ups</h2><span class="sub">${planned.length} planned · ${dueP.length} due</span></div>
+    ${top.length ? `<ul class="ppl">${top.map(([p, k, r]) => `<li><button type="button" data-person="${esc(p.id)}">${esc(p.name)}</button><span class="r ${k}">${esc(r)}</span></li>`).join('')}</ul>` : '<p class="empty">Nobody due. Nice.</p>'}
+    <button type="button" class="go" data-go="people">All people →</button>`;
+  // upcoming
+  const to = addDays(t, state.hMore ? 365 : 90), list = upcomingItems(addDays(t, 1), to);
+  const cats = CATS.filter(c => list.some(i => i.cat === c));
+  if (state.hFilter && !cats.includes(state.hFilter)) state.hFilter = '';
+  const shown = state.hFilter ? list.filter(i => i.cat === state.hFilter) : list;
+  let rows = '', last = '';
+  shown.forEach(i => {
+    const g = upGroup(i.date, t); if (g !== last) { rows += `${last ? '</ul>' : ''}<div class="cat-h" style="margin-top:${last ? 14 : 4}px">${esc(g)}</div><ul class="uplist">`; last = g; }
+    const n = dayDiff(t, i.date), when = i.end ? `to ${fmt(i.end, { weekday: 'short', day: 'numeric' })}` : (i.time || '');
+    const label = esc(i.title) + (i.sub ? ` <small>· ${esc(i.sub)}</small>` : '');
+    const title = i.edit ? `<button type="button" data-edit="${esc(i.edit)}">${label}</button>` : i.person ? `<button type="button" data-person="${esc(i.person)}">${label}</button>` : label;
+    rows += `<li class="uprow${i.kind === 'payday' ? ' pay' : ''}" data-kind="${i.kind}"><span class="dt">${esc(fmt(i.date, { weekday: 'short', day: 'numeric', month: 'short' }))}${when ? `<small>${esc(when)}</small>` : ''}</span>
+      <span class="ic" style="color:${CATVAR(i.cat)}">${KIND_ICON[i.kind] || `<i style="background:${CATVAR(i.cat)}"></i>`}</span><span class="t">${title}</span>
+      <span class="ar"><i style="background:${CATVAR(i.cat)}"></i>${esc(i.cat)}</span><span class="wn${n <= 3 ? ' soon' : ''}">${inWords(n)}</span></li>`;
+  });
+  $('homeUp').innerHTML = `<div class="panel-head"><h2>Upcoming</h2><span class="sub">${shown.length} in the next ${state.hMore ? 'year' : '3 months'}</span></div>
+    <div class="filters" role="group" aria-label="Filter by category"><button type="button" class="gchip" data-hfilter="" aria-pressed="${!state.hFilter}">All</button>${cats.map(c => `<button type="button" class="gchip" data-hfilter="${c}" aria-pressed="${state.hFilter === c}"><span class="dot" style="background:${CATVAR(c)};display:inline-block;margin-right:6px;width:7px;height:7px"></span>${c}</button>`).join('')}</div>
+    ${rows ? rows + '</ul>' : '<p class="empty">Nothing coming up.</p>'}
+    <div class="upmore"><button type="button" class="btn btn-ghost" data-hmore>${state.hMore ? 'Show the next 3 months' : 'Show the next year'}</button></div>`;
+}
+
+/* ---------- quick add: one line, read for date, time and category ---------- */
+const QA_CAT = { Fitness: /\b(gym|kickboxing|hiit|run|walk|weights|swim|yoga|class|workout|steps)\b/i, Social: /\b(dinner|drinks|lunch|brunch|coffee|party|catch ?up|bday|birthday|visit)\b/i,
+  Work: /\b(work|office|meeting|stand-?up|wfh|interview)\b/i, Sport: /\b(match|matchday|game|footy|afl|nrl|cricket|grand final)\b/i,
+  Home: /\b(clean|laundry|dentist|doctor|car|garden|groceries|shopping|bins|rego|bank|bill|pay)\b/i };
+function parseQuick(text) {
+  const t = todayIso(), y = Number(t.slice(0, 4)); let s = ' ' + text + ' ', date = '', time = '', cat = '', m;
+  const cut = re => { const x = s.match(re); if (x) s = s.replace(x[0], ' '); return x; };
+  if ((m = cut(/\s#(\w+)/))) cat = CATS.find(c => c.toLowerCase().startsWith(m[1].toLowerCase())) || '';
+  if ((m = cut(/(?:\bat\s+)?\b(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b|(?:\bat\s+)?\b([01]?\d|2[0-3]):(\d{2})\b/i))) {
+    let h = Number(m[1] || m[4]), mi = Number(m[2] || m[5] || 0), ap = (m[3] || '').toLowerCase();
+    if (ap === 'pm' && h < 12) h += 12; if (ap === 'am' && h === 12) h = 0; if (h < 24 && mi < 60) time = pad(h) + ':' + pad(mi); }
+  const ahead = d => d < t ? null : d;
+  if (cut(/\b(today|tonight)\b/i)) date = t;
+  else if (cut(/\b(tomorrow|tmrw)\b/i)) date = addDays(t, 1);
+  else if ((m = cut(/(?:\b(?:on|by)\s+)?\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i))) { const mo = MONTHS.findIndex(x => x.toLowerCase() === m[2].toLowerCase().slice(0, 3)); date = ahead(`${y}-${pad(mo + 1)}-${pad(m[1])}`) || `${y + 1}-${pad(mo + 1)}-${pad(m[1])}`; }
+  else if ((m = cut(/(?:\b(?:on|by)\s+)?\b(\d{1,2})\/(\d{1,2})\b/))) date = ahead(`${y}-${pad(m[2])}-${pad(m[1])}`) || `${y + 1}-${pad(m[2])}-${pad(m[1])}`;
+  else if ((m = cut(/(?:\b(?:on|by)\s+)?\b(next\s+)?(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b/i))) { const k = DAYS.findIndex(d => d.toLowerCase() === m[2].toLowerCase()), now = (fromIso(t).getDay() + 6) % 7;
+    let n = (k - now + 7) % 7; if (n === 0 || m[1]) n += 7; date = addDays(t, n); }
+  if (date && isNaN(fromIso(date))) date = '';
+  let title = s.replace(/\s+/g, ' ').trim(); title = title.charAt(0).toUpperCase() + title.slice(1);
+  if (!cat) cat = CATS.find(c => QA_CAT[c] && QA_CAT[c].test(text)) || 'Other';
+  return { title, date: date || t, dated: !!date, time, cat };
+}
+function quickPreview(f) {
+  const v = f.querySelector('input').value, q = parseQuick(v), out = f.querySelector('.qa-prev');
+  out.innerHTML = !q.title ? '<span>Type anything. Dates (fri, tomorrow, 5 nov), times (7pm) and categories are picked up as you go. No date means today.</span>'
+    : `<span class="tok k">${esc(q.title)}</span><span class="tok">${esc(q.date === todayIso() ? 'Today' : fmt(q.date, { weekday: 'short', day: 'numeric', month: 'short' }))}</span>${q.time ? `<span class="tok">${esc(q.time)}</span>` : ''}<span class="tok"><i style="background:${CATVAR(q.cat)}"></i>${esc(q.cat)}</span><span>· Enter to add</span>`;
+}
+document.addEventListener('input', e => { const f = e.target.closest('[data-qa]'); if (f) quickPreview(f); });
+document.addEventListener('submit', async e => {
+  const f = e.target; if (!f.matches('[data-qa]')) return; e.preventDefault();
+  const inp = f.querySelector('input'), q = parseQuick(inp.value); if (!q.title) return;
+  const o = { id: newId('e'), date: q.date, end: '', time: q.time, title: q.title, cat: q.cat, type: '', done: false, cd: false, notes: '' };
+  if (f.closest('dialog')) f.closest('dialog').close();
+  if (await withBusy('Adding…', () => addRows('Plan', [o]))) { inp.value = ''; quickPreview(f); toast(`Added ${o.title} to ${o.date === todayIso() ? 'today' : fmt(o.date, { weekday: 'long', day: 'numeric', month: 'short' })}`); }
+});
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-go],[data-qaopen],[data-more],[data-sheetclose],[data-hfilter],[data-hmore]'); if (!el) return;
+  const sheet = el.closest('dialog.sheet');
+  if (el.dataset.go) { if (sheet) sheet.close(); if (el.dataset.go === 'settings') { openSettings(); return; } showTab(el.dataset.go); window.scrollTo({ top: 0 }); return; }
+  if (el.hasAttribute('data-qaopen')) { const d = $('qaDlg'); d.showModal(); quickPreview($('qaSheet')); setTimeout(() => $('qsText').focus(), 30); return; }
+  if (el.hasAttribute('data-more')) { $('moreDlg').showModal(); return; }
+  if (el.hasAttribute('data-sheetclose')) { sheet.close(); return; }
+  if (el.dataset.hfilter != null) { state.hFilter = el.dataset.hfilter; renderHome(); return; }
+  if (el.hasAttribute('data-hmore')) { state.hMore = !state.hMore; renderHome(); }
+});
+document.querySelectorAll('dialog.sheet').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
+document.querySelectorAll('[data-qa]').forEach(quickPreview);
+
 /* ---------- render: calendar ---------- */
 function yearOptions(sel, cur) {
   const ys = new Set([Number(todayIso().slice(0, 4))]);
@@ -1156,8 +1402,8 @@ function renderPaper() {
 }
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
-  renderChips(); renderLinks();
-  ({ week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: () => { renderLists(); renderNotes(); }, links: renderLinkTab, setup: renderSetup })[state.tab]();
+  renderChips(); renderLinks(); $('chips').hidden = state.tab === 'home';
+  ({ home: renderHome, week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: () => { renderLists(); renderNotes(); }, links: renderLinkTab, setup: renderSetup })[state.tab]();
 }
 
 /* ---------- setup tab: edit Routine, Goals, Links and app settings ---------- */
@@ -1553,7 +1799,11 @@ document.addEventListener('submit', async e => {
 function showTab(t) {
   state.tab = t; document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   document.querySelectorAll('section[id^=v-]').forEach(s => s.hidden = s.id !== 'v-' + t);
-  try { localStorage.setItem('brain-tab', t); } catch (e) {}
+  const inMore = !['home', 'week', 'stats'].includes(t);
+  document.querySelectorAll('.bbar [data-go],.bbar [data-more]').forEach(b => b.toggleAttribute('aria-current', b.dataset.go ? b.dataset.go === t : inMore));
+  document.querySelectorAll('.bbar [aria-current]').forEach(b => b.setAttribute('aria-current', 'page'));
+  $('chips').hidden = t === 'home';
+  try { sessionStorage.setItem('brain-tab', t); } catch (e) {}
   if (t === 'paper') renderPaper();
   else if (state.live) renderAll();
 }
@@ -1574,7 +1824,7 @@ setInterval(() => { if (state.live && state.focus === null) renderAll(); }, 60e3
   try { const v = JSON.parse(sessionStorage.getItem('brain-view') || 'null'); if (v) { if (v.focus) state.focus = v.focus; if (v.logDate) state.logDate = v.logDate; if (v.month) state.month = v.month; } } catch (e) {}
   const saveView = () => { try { sessionStorage.setItem('brain-view', JSON.stringify({ focus: state.focus, logDate: state.logDate, month: state.month })); } catch (e) {} };
   addEventListener('pagehide', saveView); document.addEventListener('visibilitychange', () => { if (document.hidden) saveView(); }); setInterval(saveView, 1000);
-  try { let t = localStorage.getItem('brain-tab'); if (t === 'notes') t = 'lists'; if (t && $('v-' + t)) showTab(t); } catch (e) {}
+  let t0 = 'home'; try { const t = sessionStorage.getItem('brain-tab'); if (t && $('v-' + t)) t0 = t; } catch (e) {} showTab(t0);
   setStatus('loading', 'Connecting…');
   loadGis().catch(() => {});
   const back = sb.fromRedirect();
