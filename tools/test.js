@@ -79,9 +79,26 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.goto('https://brain.test/');
   await page.waitForSelector('#status[data-state=live]', { timeout: 8000 });
   await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(OUT, 'shot-week.png'), fullPage: true });
   const log = [];
   const check = (name, ok) => log.push((ok ? 'PASS ' : 'FAIL ') + name);
+
+  // home: the default tab
+  await page.screenshot({ path: path.join(OUT, 'shot-home.png'), fullPage: true });
+  check('home is the default tab', await page.isVisible('#v-home') && !(await page.isVisible('#v-week')));
+  check('home: today shows schedule and to-do', /Strength & Conditioning/.test(await page.locator('#homeToday').innerText()) && /Office/.test(await page.locator('#homeToday').innerText()));
+  check('home: three cards share one width and height', await page.evaluate(() => { const r = ['homeFit', 'homeSteps', 'homePeople'].map(id => document.getElementById(id).getBoundingClientRect());
+    return r.every(x => Math.abs(x.width - r[0].width) < 1 && Math.abs(x.height - r[0].height) < 1 && Math.abs(x.top - r[0].top) < 1); }));
+  check('home: today and upcoming run full width', await page.evaluate(() => { const w = id => document.getElementById(id).getBoundingClientRect().width; return Math.abs(w('homeUp') - w('homeToday')) < 1 && Math.abs(w('homeUp') - document.querySelector('#v-home .qa').getBoundingClientRect().width) < 1; }));
+  { const up = await page.locator('#homeUp').innerText();
+    check('home: upcoming merges plan, birthdays and paydays', /Sam's birthday/.test(up) && /Payday/.test(up) && /Opera night/.test(up) && /Finance Coaching/.test(up));
+    check('home: multi-day item listed once, done and routine left out', (up.match(/Housesitting/g) || []).length === 1 && !/Strength/.test(up)); }
+  await page.click('[data-hfilter="Social"]'); await page.waitForTimeout(100);
+  { const ups = await page.evaluate(() => [...document.querySelectorAll('#homeUp .uprow')].map(r => r.textContent).join('|'));
+    check('home: category filter narrows upcoming', !ups.includes('Payday') && ups.includes('Opera night') && !ups.includes('Finance Coaching')); }
+  await page.click('[data-hfilter=""]');
+  check('home: countdown chips hidden (upcoming covers them)', !(await page.isVisible('#chips')));
+  await page.click('.tab[data-tab=week]'); await page.waitForTimeout(200);
+  await page.screenshot({ path: path.join(OUT, 'shot-week.png'), fullPage: true });
 
   check('chips include payday', await page.locator('.cd.pay').count() === 1); { const pd = await page.locator('.cd.pay b').innerText(); const exp = (()=>{const a=Date.UTC(2026,0,9);const n=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());const d=Math.round((n-a)/864e5);const r=((14-(d%14))%14);return r===0?'Today':r===1?'Tomorrow':r+' days';})(); check('payday countdown correct ('+pd+')', pd===exp); }
   check('ticked countdown shown', (await page.locator('#chips').innerText()).includes('Dinner with friends'));
@@ -93,7 +110,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('pinned links', await page.locator('#links a').count() === 2);
 
   // tick an item
-  await page.locator('[data-tick="e1"]').check(); await page.waitForSelector('#status[data-state=live]');
+  await page.locator('#v-week [data-tick="e1"]').check(); await page.waitForSelector('#status[data-state=live]');
   check('tick saved to sheet', db.Plan[1][7] === true);
 
   // quick add
@@ -103,11 +120,11 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('quick add wrote row after last item (row 10)', db.Plan.indexOf(added) === 9 && added[3] === '19:30' && added[5] === 'Social' && added[1] === serial(T));
 
   // edit via dialog
-  await page.click('[data-edit="e2"]'); await page.fill('#fTitle', 'WFH'); await page.click('#itemForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('#v-week [data-edit="e2"]'); await page.fill('#fTitle', 'WFH'); await page.click('#itemForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   check('edit saved', db.Plan[2][4] === 'WFH');
 
   // delete
-  await page.click('[data-edit="e3"]'); await page.click('#itemDel'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('#v-week [data-edit="e3"]'); await page.click('#itemDel'); await page.waitForSelector('#status[data-state=live]');
   check('delete removed row', !db.Plan.some(r => r[0] === 'e3'));
 
   // plan my week
@@ -276,6 +293,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.screenshot({ path: path.join(OUT, 'shot-setup-390.png'), fullPage: true });
   check('setup: no horizontal scroll at 390', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
 
+  await page.setViewportSize({ width: 1360, height: 1000 });
   // drafts: typing survives the refresh that runs when you come back to the tab, and a full reload
   const backToTab = async () => { await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await page.waitForTimeout(150); await page.waitForSelector('#status[data-state=live]'); };
   await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(150);
@@ -302,8 +320,37 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.fill('#lSteps', '8888'); await page.click('#logForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   check('saving the log clears its draft', !(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('brain-drafts') || '{}')).some(k => k.startsWith('log@')))));
 
+  // home quick add: one line, read for date, time and category
+  await page.click('.tab[data-tab=home]'); await page.waitForTimeout(150);
+  const fri = (() => { const d = new Date(today); let n = (5 - d.getDay() + 7) % 7; if (n === 0) n = 7; return add(n); })();
+  await page.fill('#qhText', 'Dinner IV fri 7pm');
+  check('quick add preview reads the line', /Dinner IV/.test(await page.locator('#qaHome .qa-prev').innerText()) && /19:00/.test(await page.locator('#qaHome .qa-prev').innerText()) && /Social/.test(await page.locator('#qaHome .qa-prev').innerText()));
+  await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  const qa1 = db.Plan.find(r => r[4] === 'Dinner IV');
+  check('quick add: friday 7pm social', !!qa1 && qa1[1] === serial(fri) && qa1[3] === '19:00' && qa1[5] === 'Social' && (await page.inputValue('#qhText')) === '', qa1);
+  await page.fill('#qhText', 'gym tomorrow at 6:30am'); await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  const qa2 = db.Plan.find(r => r[4] === 'Gym');
+  check('quick add: tomorrow 06:30 fitness', !!qa2 && qa2[1] === serial(add(1)) && qa2[3] === '06:30' && qa2[5] === 'Fitness', qa2);
+  await page.fill('#qhText', 'Sort winter clothes'); await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  const qa3 = db.Plan.find(r => r[4] === 'Sort winter clothes');
+  check('quick add: no date means today', !!qa3 && qa3[1] === serial(T) && qa3[3] === '', qa3);
+  check('quick add: shows on home straight away', (await page.locator('#homeToday').innerText()).includes('Sort winter clothes') && (await page.locator('#homeUp').innerText()).includes('Dinner IV'));
+
+  // phone: bottom tab bar, quick add sheet, More sheet
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
+  check('phone: bottom bar replaces the top tabs', await page.isVisible('.bbar') && !(await page.isVisible('.tabs')));
+  check('phone: bottom bar has five equal slots', await page.evaluate(() => { const w = [...document.querySelectorAll('.bbar > *')].map(x => x.getBoundingClientRect().width); return w.length === 5; }));
+  await page.screenshot({ path: path.join(OUT, 'shot-home-390.png'), fullPage: true });
+  await page.click('.bbar [data-qaopen]'); await page.waitForSelector('#qaDlg[open]');
+  await page.fill('#qsText', 'Call the bank thu'); await page.screenshot({ path: path.join(OUT, 'shot-sheet-390.png') }); await page.press('#qsText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  check('phone: + sheet adds and closes', db.Plan.some(r => r[4] === 'Call the bank' && r[5] === 'Home') && !(await page.isVisible('#qaDlg')));
+  await page.click('.bbar [data-more]'); await page.waitForSelector('#moreDlg[open]'); await page.click('#moreDlg [data-go=people]'); await page.waitForTimeout(150);
+  check('phone: More opens other sections', await page.isVisible('#v-people') && !(await page.isVisible('#moreDlg')) && (await page.getAttribute('.bbar [data-more]', 'aria-current')) === 'page');
+  await page.click('.bbar [data-go=week]'); await page.waitForTimeout(150);
+  check('phone: bar marks the open section', (await page.getAttribute('.bbar [data-go=week]', 'aria-current')) === 'page' && await page.isVisible('#v-week'));
+
   // mobile
-  await page.setViewportSize({ width: 390, height: 900 }); await page.click('.tab[data-tab=week]'); await page.waitForTimeout(200);
+  await page.setViewportSize({ width: 390, height: 900 }); await page.click('.bbar [data-go=week]'); await page.waitForTimeout(200);
   await page.screenshot({ path: path.join(OUT, 'shot-mobile.png'), fullPage: true });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
   check('no horizontal scroll on phone', !overflow);

@@ -162,10 +162,11 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
   await scenario(b, 'sbmode', { init: { ...cfgSb, ...ses() }, setup: seedSbBasic, run: async (page, w) => {
     await live(page);
     check('sbmode: status starts "Supabase ·"', (await page.locator('#statusText').innerText()).startsWith('Supabase ·'), await page.locator('#statusText').innerText());
+    await page.click('.tab[data-tab=week]'); await page.waitForTimeout(150);
     check('sbmode: week view shows seeded plan items', (await page.locator('#days').innerText()).includes('Finance Coaching') && (await page.locator('#focusPanel').innerText()).includes('Strength & Conditioning'));
     check('sbmode: sends apikey, bearer and schema headers', w.sbCalls.every(c => c.headers.apikey && c.headers.authorization === 'Bearer ' + GOOD && c.headers['accept-profile'] === 'brain'));
     const before = w.sbCalls.length;
-    await page.locator('[data-tick="e1"]').check(); await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live' && /Supabase/.test(document.getElementById('statusText').textContent));
+    await page.locator('#v-week [data-tick="e1"]').check(); await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live' && /Supabase/.test(document.getElementById('statusText').textContent));
     await page.waitForTimeout(300);
     const p = w.sbCalls.slice(before).filter(c => c.method === 'PATCH');
     check('sbmode: tick -> exactly one PATCH with only `done`', p.length === 1 && p[0].table === 'plan' && JSON.stringify(p[0].body) === '{"done":true}' && /row_id=eq\.1$/.test(p[0].query), p.map(x => [x.query, x.body]));
