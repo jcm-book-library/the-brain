@@ -78,9 +78,11 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .notice[data-kind=error]{border-left-color:var(--danger)}
 
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.cd{background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:6px 12px;display:flex;align-items:baseline;gap:8px;min-width:0}
-.cd b{font-family:var(--display);font-size:18px}
-.cd span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22ch}
+/* countdowns: equal-width cells that fill the row */
+.cds{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.cd{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:grid;gap:1px;min-width:0}
+.cd b{font-family:var(--display);font-size:22px;font-weight:500;line-height:1.2}
+.cd span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cd.pay{border-color:color-mix(in srgb,var(--ok) 50%,var(--line))}
 .cd.pay b{color:var(--ok)}
 .links{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
@@ -96,18 +98,13 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .stack{display:flex;flex-direction:column;gap:16px;min-width:0}
 
 /* week */
-.weekbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.weekbar .nav{display:flex;align-items:center;gap:6px}
 .navlabel{text-align:center;white-space:nowrap}
-.week{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
 .dayhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .dayhead h2{font-size:24px}
 .wx{font-size:13px;color:var(--muted);text-align:right}
 .wx b{color:var(--fg);font-family:var(--display);font-size:18px}
 .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .tag.pay{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,var(--line))}
-.addrow{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
-.addrow #qaTime{flex:0 0 76px}.addrow #qaTitle{flex:1 1 200px}.addrow select{flex:1 0 110px;max-width:140px}.addrow .btn{flex:0 0 auto}
 .cat{margin-top:14px}
 .cat-h{display:flex;align-items:center;gap:8px;font:500 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:4px}
 .cat-h i{width:8px;height:8px;border-radius:2px;display:inline-block}
@@ -122,21 +119,6 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .empty{font-size:13px;color:var(--muted);padding:6px 0}
 
 .days{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
-.dcard{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;display:flex;flex-direction:column;gap:6px}
-.dcard[data-past=true]{opacity:.62}
-.dcard[data-today=true]{border-color:var(--accent);box-shadow:0 0 14px -6px var(--glow)}
-.dcard-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-.dcard-h button{border:0;background:transparent;padding:0;text-align:left;font-family:var(--display);font-weight:700;font-size:15px}
-.dcard-h button:hover{color:var(--accent)}
-.dcard-h .w{font-size:12px;color:var(--muted);white-space:nowrap}
-.mini{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:13px}
-.mini li{display:flex;gap:6px;align-items:center;min-width:0}
-.mini li i{width:6px;height:6px;border-radius:50%;flex:none}
-.mini li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.mini li[data-done=true] span{text-decoration:line-through;color:var(--muted)}
-.mini .more{color:var(--muted);font-size:12px}
-.dcard .add{align-self:flex-start;font-size:12px;color:var(--muted);border:0;background:transparent;padding:2px 0}
-.dcard .add:hover{color:var(--accent)}
 
 .logform{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
 @media (max-width:900px){.logform{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -159,15 +141,6 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 #paperFrame{display:block;width:100%;height:calc(100vh - 150px);min-height:560px;border:0;border-radius:10px;background:#fff}
 
 /* calendar */
-.cal-scroll{overflow-x:auto}
-.cal{display:grid;grid-template-columns:36px repeat(31,minmax(0,1fr));gap:3px;min-width:560px;font-size:10px}
-.cal .h{color:var(--muted);text-align:center;font-weight:600}
-.cal .m{color:var(--muted);font-weight:700;font-size:11px;display:flex;align-items:center}
-.cal .c{height:22px;border-radius:3px;background:var(--raise);border:0;padding:0;position:relative}
-.cal .c[data-x]{background:transparent}
-.cal .c[data-past]{opacity:.45}
-.cal .c[data-today]{outline:2px solid var(--accent);outline-offset:-1px}
-.cal .c[data-pay]::after{content:"";position:absolute;right:2px;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--ok)}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
 .legend span{display:inline-flex;gap:6px;align-items:center}
 .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
@@ -256,10 +229,6 @@ td.up{color:var(--ok)} td.down{color:var(--m-P)}
 .note{padding:12px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);cursor:pointer}
 .note:first-child{border-top:0}
 .note p{margin:4px 0 0;white-space:pre-wrap;font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.linkrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:14px;min-width:0}
-.linkrow:first-child{border-top:0}
-.linkrow a{flex:1;min-width:0;color:var(--fg);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.linkrow a:hover{color:var(--accent)}
 
 dialog{background:var(--glass);box-shadow:0 0 0 1px var(--glowline),0 30px 80px -30px var(--glow);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
 dialog::backdrop{background:rgba(1,6,10,.72);backdrop-filter:blur(2px)}
@@ -280,6 +249,87 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:9px 16px;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);z-index:10;max-width:calc(100vw - 32px)}
 
 /* home */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.pair>.panel{display:flex;flex-direction:column;gap:8px}
+.pair .panel-head{margin-bottom:0}
+.news{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.news li{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.news li:first-child{border-top:0}
+.news a{display:grid;gap:1px;padding:7px 0;color:var(--fg);text-decoration:none;min-height:64px;align-content:center}
+.news a:hover .hl{color:var(--accent)}
+.news .src{font:500 11px/1.3 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.news .hl{font-size:14.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wxbig{font:500 34px/1.1 var(--display)}
+.wxbig small{font:400 14px/1 var(--body);color:var(--muted);margin-left:8px}
+.wx3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:auto}
+.wx3 div{background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:1px;font-size:13px;color:var(--muted)}
+.wx3 b{color:var(--fg);font-weight:500;font-size:15px}
+.acc{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.acc:first-of-type{border-top:0}
+.acc-h{width:100%;display:grid;grid-template-columns:minmax(0,190px) 90px minmax(0,1fr) 100px 22px;gap:12px;align-items:center;border:0;background:transparent;padding:11px 4px;text-align:left;font-size:15px}
+.acc-h:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.acc-d{font-weight:500}
+.acc-n{color:var(--muted);font-size:13.5px}
+.acc-t{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+.acc-w{color:var(--muted);font-size:13px;text-align:right;white-space:nowrap}
+.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);justify-self:center;transition:transform .15s}
+.acc[data-open=true] .chev{transform:rotate(-135deg)}
+.acc[data-open=true] .acc-h .acc-d{color:var(--accent)}
+.acc-b{padding:2px 4px 12px 4px}
+.acc-b .add{margin-top:6px;border:0;background:transparent;color:var(--muted);font-size:13px;padding:2px 0}
+.acc-b .add:hover{color:var(--accent)}
+.star{border:0;background:transparent;color:var(--muted);font-size:17px;line-height:1;padding:2px 5px;opacity:.45;border-radius:6px}
+.star:hover{opacity:1;background:var(--raise)}
+.star[aria-pressed=true]{color:var(--c-social);opacity:1}
+.star[data-auto]{cursor:help}
+.later{color:var(--muted);font-size:14px;margin:0}
+.later b{color:var(--fg);font-weight:500}
+@media (max-width:760px){.pair{grid-template-columns:minmax(0,1fr)}.acc-h{grid-template-columns:minmax(0,1fr) auto 22px;gap:8px}.acc-t,.acc-w{display:none}}
+
+/* upcoming: month calendar */
+.mnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.mh{font:500 11px/1 var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:center;padding:4px 0 2px}
+.mc{display:grid;grid-template-rows:auto 1fr;gap:4px;min-height:118px;padding:6px 7px 7px;text-align:left;border:1px solid var(--line);background:var(--raise);border-radius:10px;min-width:0;position:relative;color:var(--fg)}
+.mc:hover{border-color:var(--muted)}
+.mc[data-out=true]{opacity:.38}
+.mc[data-past=true]:not([data-out=true]){opacity:.7}
+.mc[data-today=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.mc[data-sel=true]{background:color-mix(in srgb,var(--accent) 14%,var(--raise))}
+.mn{font:500 14px/1 var(--display)}
+.mpay{position:absolute;top:6px;right:8px;font-size:12px;color:var(--ok)}
+.mlist{display:grid;gap:3px;align-content:start;min-width:0}
+.ce{display:block;font-size:12px;line-height:1.3;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--c) 22%,var(--surface));border-left:3px solid var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ce.done{text-decoration:line-through;opacity:.6}
+.mmore{font-size:11.5px;color:var(--muted);padding-left:3px}
+.mlegend{font-size:13px;color:var(--muted);margin:10px 0 0}
+@media (max-width:520px){.mnav .navlabel{width:7.5em !important;font-size:16px}}
+@media (max-width:520px){.cds{grid-template-columns:repeat(2,minmax(0,1fr))}.cds .cd:last-child:nth-child(odd){grid-column:1/-1}}
+@media (max-width:700px){.mcal{gap:3px}.mc{min-height:62px;padding:4px 4px 5px}.mn{font-size:13px}.mlist{display:flex;flex-wrap:wrap;gap:3px}.ce{width:7px;height:7px;padding:0;border:0;border-radius:50%;font-size:0;background:var(--c)}.mmore{font-size:10px;padding:0}.mpay{top:4px;right:5px;font-size:11px}}
+
+/* fitness placeholders */
+.later-card{border-style:dashed;background:transparent;display:grid;gap:4px;align-content:start}
+.later-card p{margin:0;color:var(--muted);font-size:14px}
+
+/* setup: one section at a time, rows lined up under one header */
+.setupnav{margin-bottom:14px;width:max-content;max-width:100%;overflow-x:auto}
+.setupnav{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.setupnav button{border:0;background:transparent;color:var(--muted);border-radius:8px;padding:7px 16px;font:500 14px/1.4 var(--display);white-space:nowrap}
+.setupnav button:hover{color:var(--fg)}
+.setupnav button[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent)}
+.sact{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.srow .lt{display:block}
+@media (min-width:761px){
+  .stbl .shead,.stbl .srow{display:grid;grid-template-columns:var(--sc);gap:10px;align-items:center}
+  .stbl .shead{font:500 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:10px 0 6px;border-bottom:1px solid var(--line)}
+  .stbl .shead span:last-child{text-align:right}
+  .stbl .srow{padding:7px 0}
+  .stbl .srow label{display:block;flex:none;font-size:inherit;min-width:0}
+  .stbl .srow .lt{display:none}
+  .stbl .srow label.c{display:flex;justify-content:center}
+  .stbl .shead span.c{text-align:center}
+}
+@media (max-width:760px){.stbl .shead{display:none}}
 .qa{display:grid;gap:6px}
 .qa-row{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 14px}
 .qa-row:focus-within{border-color:var(--accent)}
@@ -293,27 +343,12 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .home{display:grid;gap:16px}
 .halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px}
 .halves .cat-h{margin-top:12px}
-.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.trio .panel{display:flex;flex-direction:column;gap:6px}
-.trio .panel-head{margin-bottom:4px}
 .go{margin-top:auto;padding-top:8px;align-self:flex-start;border:0;background:transparent;color:var(--accent);font-size:13px;padding-left:0;padding-right:0}
 .go:hover{color:var(--fg)}
+a.go{text-decoration:none}
 .big{font:500 28px/1.1 var(--display)}
 .big small{font:400 13px/1 var(--body);color:var(--muted);margin-left:4px}
 .sub{font-size:13px;color:var(--muted)}
-.sess{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:4px 0}
-.sess span{height:30px;border-radius:6px;border:1px dashed var(--line);font-size:11px;display:grid;place-items:center;color:var(--muted)}
-.sess span.done{border:0;background:color-mix(in srgb,var(--c-fitness) 30%,var(--raise));color:var(--fg)}
-.sess span.plan{border:1px solid color-mix(in srgb,var(--c-fitness) 50%,var(--line))}
-.sess span.miss{border:1px solid var(--line);opacity:.6}
-.sess span[data-today=true]{outline:1px solid var(--accent);outline-offset:1px}
-.ppl{list-style:none;margin:0;padding:0;font-size:14px}
-.ppl li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
-.ppl li:first-child{border-top:0}
-.ppl button{border:0;background:transparent;padding:0;text-align:left;font:inherit;color:var(--fg)}
-.ppl .r{font-size:13px;color:var(--muted);white-space:nowrap;text-align:right}
-.ppl .r.due{color:var(--m-P)}
-.ppl .r.plan{color:var(--accent)}
 .hbar{height:6px;border-radius:3px;background:var(--bg);overflow:hidden;margin:4px 0}
 .hbar i{display:block;height:100%;border-radius:3px;background:var(--c-social)}
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
@@ -334,7 +369,6 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .uprow .wn.soon{color:var(--c-social)}
 .uprow.pay .t{color:var(--ok)}
 .upmore{display:flex;justify-content:center;margin-top:10px}
-@media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){.halves{grid-template-columns:minmax(0,1fr)}.uprow{grid-template-columns:96px 18px minmax(0,1fr) auto;gap:8px;font-size:14px}.uprow .dt{font-size:13.5px}.uprow .ar{display:none}.uprow .dt small{display:block;margin:0}#homeToday .wx{text-align:left}}
 
 /* phone: bottom tab bar, quick add and More open as sheets */
@@ -356,9 +390,7 @@ dialog.sheet form{padding:0}
   .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 }
-@media (max-width:900px){.week{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){
-  .addrow select{max-width:none}
   .logform{grid-template-columns:repeat(2,minmax(0,1fr))}
   .fields{grid-template-columns:minmax(0,1fr)}
   .dayhead h2{font-size:21px}
@@ -389,52 +421,42 @@ dialog.sheet form{padding:0}
     </div>
   </header>
   <div id="notice" class="notice" hidden></div>
-  <div class="chips" id="chips"></div>
   <nav class="links" id="links" aria-label="Pinned links"></nav>
 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="home" aria-selected="true">Home</button>
-    <button class="tab" role="tab" data-tab="week" aria-selected="false">Week</button>
-    <button class="tab" role="tab" data-tab="paper">Paper</button>
-    <button class="tab" role="tab" data-tab="stats">Stats</button>
-    <button class="tab" role="tab" data-tab="people">People</button>
-    <button class="tab" role="tab" data-tab="lists">Lists &amp; Notes</button>
-    <button class="tab" role="tab" data-tab="links">Links</button>
-    <button class="tab" role="tab" data-tab="setup">Setup</button>
+    <button class="tab" role="tab" data-tab="upcoming" aria-selected="false">Upcoming</button>
+    <button class="tab" role="tab" data-tab="paper" aria-selected="false">Paper</button>
+    <button class="tab" role="tab" data-tab="fitness" aria-selected="false">Fitness</button>
+    <button class="tab" role="tab" data-tab="people" aria-selected="false">Family &amp; Friends</button>
+    <button class="tab" role="tab" data-tab="notes" aria-selected="false">Notes</button>
+    <button class="tab" role="tab" data-tab="setup" aria-selected="false">Setup</button>
   </div>
 
   <section id="v-home" class="home">
-    <form class="qa" id="qaHome" data-qa autocomplete="off">
-      <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="qhText" aria-label="Quick add" placeholder="Add anything… e.g. dinner IV fri 7pm"><button class="btn btn-primary" type="submit">Add</button></div>
-      <div class="qa-prev" aria-live="polite"></div>
-    </form>
+    <div class="cds" id="chips"></div>
+    <div class="pair"><div class="panel" id="homeNews"></div><div class="panel" id="homeWx"></div></div>
+    <div class="pair"><div class="panel" id="homeSteps"></div><div class="panel" id="homePages"></div></div>
+    <div class="pair">
+      <form class="panel qa" id="qaHome" data-qa autocomplete="off">
+        <div class="panel-head"><h2>Add anything</h2><span class="sub">Goes on the planner</span></div>
+        <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="qhText" aria-label="Add anything" placeholder="dinner IV fri 7pm"><button class="btn btn-primary" type="submit">Add</button></div>
+        <div class="qa-prev" aria-live="polite"></div>
+      </form>
+      <form class="panel qa" id="noteHome" data-nq autocomplete="off">
+        <div class="panel-head"><h2>Add to notes</h2><span class="sub">Goes on the Notes tab</span></div>
+        <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="nhText" aria-label="Add to notes" placeholder="Jot something, or Topic: your note"><button class="btn btn-primary" type="submit">Add</button></div>
+        <div class="qa-prev" aria-live="polite"></div>
+      </form>
+    </div>
     <div class="panel" id="homeToday"></div>
-    <div class="trio"><div class="panel" id="homeFit"></div><div class="panel" id="homeSteps"></div><div class="panel" id="homePeople"></div></div>
-    <div class="panel" id="homeUp"></div>
+    <div class="panel" id="homeNext"><div class="panel-head"><h2>Next 6 days</h2><button class="btn btn-primary" id="planBtn" type="button">Plan my week</button></div><div id="nextBody"></div></div>
   </section>
 
-  <section id="v-week" hidden>
-    <div class="weekbar">
-      <div class="nav">
-        <button class="btn" id="prevWk" type="button" aria-label="Previous week">‹</button>
-        <h2 id="weekTitle" class="navlabel" style="width:10em"></h2>
-        <button class="btn" id="nextWk" type="button" aria-label="Next week">›</button>
-        <button class="btn btn-ghost" id="todayBtn" type="button">Today</button>
-      </div>
-      <button class="btn btn-primary" id="planBtn" type="button">Plan my week</button>
-    </div>
-    <div class="week">
-      <div class="stack">
-        <div class="panel" id="focusPanel"></div>
-        <div class="panel" id="upPanel"></div>
-      </div>
-      <div class="days" id="days"></div>
-    </div>
-    <div class="panel" style="margin-top:16px">
-      <div class="panel-head"><h2>Year calendar</h2><select id="calYear" aria-label="Year"></select></div>
-      <div class="cal-scroll"><div class="cal" id="cal"></div></div>
-      <div class="legend" id="calLegend"></div>
-    </div>
+  <section id="v-upcoming" class="home" hidden>
+    <div class="panel" id="calPanel"></div>
+    <div class="panel" id="dayPanel"></div>
+    <div class="panel" id="evPanel"></div>
   </section>
 
   <section id="v-paper" hidden>
@@ -444,14 +466,17 @@ dialog.sheet form{padding:0}
     </div>
   </section>
 
-
-  <section id="v-stats" hidden>
-    <div class="panel" id="logPanel" style="margin-bottom:16px"></div>
-    <div class="panel" id="monthPanel" style="margin-bottom:16px"></div>
+  <section id="v-fitness" class="home" hidden>
+    <div class="panel" id="monthPanel"></div>
+    <div class="panel" id="logPanel"></div>
     <div class="panel">
-      <div class="panel-head"><h2>Monthly stats</h2><select id="statYear" aria-label="Year"></select></div>
+      <div class="panel-head"><h2>Year to date</h2><select id="statYear" aria-label="Year"></select></div>
       <div class="table-wrap"><table id="statTable"></table></div>
       <div class="legend"><span><i style="background:var(--m-G)"></i>Good</span><span><i style="background:var(--m-F)"></i>Fair</span><span><i style="background:var(--m-P)"></i>Poor</span><span><i style="background:var(--m-B)"></i>Bad</span><span>Averages count logged days only. +/- is against that month's goal.</span></div>
+    </div>
+    <div class="pair">
+      <div class="panel later-card"><div class="eyebrow">Coming later</div><h2>Personal workout sessions</h2><p>Your own home workouts: exercises, sets and weights.</p></div>
+      <div class="panel later-card"><div class="eyebrow">Coming later</div><h2>Records set</h2><p>Personal bests, picked up from your sessions and daily log.</p></div>
     </div>
   </section>
 
@@ -465,26 +490,31 @@ dialog.sheet form{padding:0}
     </div>
   </section>
 
-  <section id="v-lists" hidden><div class="grid2" id="lists"></div><div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Notes</h2><button class="btn" type="button" id="newNote">New note</button></div><div id="notes"></div></div></section>
-  <section id="v-links" hidden><div class="grid2" id="linkGroups"></div></section>
-  <section id="v-setup" hidden><div class="grid2" id="setupGrid"></div></section>
+  <section id="v-notes" class="home" hidden><div class="panel"><div class="panel-head"><h2>Notes</h2><button class="btn" type="button" id="newNote">New note</button></div><div id="notes"></div></div><div class="grid2" id="lists"></div></section>
+  <section id="v-setup" hidden><div class="seg setupnav" id="setupNav" role="group" aria-label="Setup sections"></div><div id="setupGrid"></div></section>
 </div>
 
 <nav class="bbar" aria-label="Sections">
   <button type="button" data-go="home"><i></i>Home</button>
-  <button type="button" data-go="week"><i></i>Week</button>
-  <button type="button" class="fab" data-qaopen aria-label="Quick add">+</button>
-  <button type="button" data-go="stats"><i></i>Stats</button>
+  <button type="button" data-go="upcoming"><i></i>Upcoming</button>
+  <button type="button" class="fab" data-qaopen aria-label="Add">+</button>
+  <button type="button" data-go="fitness"><i></i>Fitness</button>
   <button type="button" data-more><i></i>More</button>
 </nav>
 <dialog id="qaDlg" class="sheet"><div class="sheet-in"><div class="grab"></div>
   <form class="qa" id="qaSheet" data-qa autocomplete="off">
-    <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="qsText" aria-label="Quick add" placeholder="Add anything… e.g. gym tomorrow 6am"><button class="btn btn-primary" type="submit">Add</button></div>
+    <h2>Add anything</h2>
+    <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="qsText" aria-label="Add anything" placeholder="gym tomorrow 6am"><button class="btn btn-primary" type="submit">Add</button></div>
+    <div class="qa-prev" aria-live="polite"></div>
+  </form>
+  <form class="qa" id="noteSheet" data-nq autocomplete="off">
+    <h2>Add to notes</h2>
+    <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="nsText" aria-label="Add to notes" placeholder="Jot something, or Topic: your note"><button class="btn btn-primary" type="submit">Add</button></div>
     <div class="qa-prev" aria-live="polite"></div>
   </form>
   <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
 <dialog id="moreDlg" class="sheet"><div class="sheet-in"><div class="grab"></div>
-  <div class="more"><button class="btn" type="button" data-go="paper">Paper</button><button class="btn" type="button" data-go="people">People</button><button class="btn" type="button" data-go="lists">Lists &amp; Notes</button><button class="btn" type="button" data-go="links">Links</button><button class="btn" type="button" data-go="setup">Setup</button><button class="btn" type="button" data-go="settings">Settings</button></div>
+  <div class="more"><button class="btn" type="button" data-go="paper">Paper</button><button class="btn" type="button" data-go="people">Family &amp; Friends</button><button class="btn" type="button" data-go="notes">Notes</button><button class="btn" type="button" data-go="setup">Setup</button><button class="btn" type="button" data-go="settings">Settings</button></div>
   <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
 
 <dialog id="itemDlg"><form method="dialog" id="itemForm">
@@ -498,7 +528,7 @@ dialog.sheet form{padding:0}
     <div class="field w2"><label for="fType">Type</label><input id="fType" list="typeList" placeholder="Gym, Appointment, Event, Travel…"><datalist id="typeList"></datalist></div>
     <div class="field w2"><label for="fNotes">Notes</label><input id="fNotes"></div>
   </div>
-  <div class="checks"><label><input type="checkbox" id="fDone"> Done</label><label><input type="checkbox" id="fCd"> Countdown on top</label></div>
+  <div class="checks"><label><input type="checkbox" id="fDone"> Done</label><label><input type="checkbox" id="fCd"> Countdown on Home</label><label title="Events show on the Upcoming calendar. Multi-day items always do."><input type="checkbox" id="fEvent"> ★ Event (shows on the calendar)</label></div>
   <div class="dlg-acts"><button class="btn btn-danger" type="button" id="itemDel">Delete</button><div><button class="btn" type="button" data-close>Cancel</button><button class="btn btn-primary" type="submit">Save</button></div></div>
 </form></dialog>
 
@@ -824,8 +854,8 @@ function formKey(f) {
   if (f && f.id === 'itemForm') return state.itemKey || null;
   if (!f || f.closest('dialog')) return null;
   if (f.id === 'logForm') return 'log@' + (state.logDate || todayIso());
-  if (f.id === 'quickAdd') return 'qa@' + (state.focus || todayIso());
   if (f.id === 'qaHome') return 'qh';
+  if (f.id === 'noteHome') return 'nh';
   if (f.id === 'personQuick' || f.id === 'sApp') return f.id;
   if (f.dataset.list) return 'list@' + f.dataset.list;
   if (f.dataset.nxform) return 'nx@' + f.dataset.nxform;
@@ -963,7 +993,7 @@ function renderChips() {
   out.push(`<div class="cd pay"><b>${daysWord(dayDiff(t, pay.next))}</b><span>Payday</span></div>`);
   const fut = (state.data.Plan || []).filter(p => p.date >= t);
   const ticked = fut.filter(p => p.cd);
-  const defs = fut.filter(p => !p.cd && COUNTDOWN_TYPES.includes(p.type)).map(p => ({ date: p.date, title: p.title }));
+  const defs = fut.filter(p => !p.cd && COUNTDOWN_TYPES.includes(plainType(p.type))).map(p => ({ date: p.date, title: p.title }));
   const bd = birthdays(366)[0]; if (bd) defs.push({ date: bd.b.date, title: bd.p.name + '\'s birthday' });
   defs.sort((a, b) => a.date.localeCompare(b.date));
   const pick = ticked.map(p => ({ date: p.date, title: p.title })).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
@@ -977,40 +1007,6 @@ function renderLinks() {
 }
 
 /* ---------- render: week ---------- */
-function renderWeek() {
-  const t = todayIso(), f = state.focus || t, pay = paydayInfo();
-  $('weekTitle').textContent = fmt(f, { day: 'numeric', month: 'short' }) + ' – ' + fmt(addDays(f, 6), { day: 'numeric', month: 'short' });
-  // focus day
-  const its = itemsOn(f), w = state.wx[f];
-  const byCat = CATS.map(c => [c, its.filter(i => (CATS.includes(i.cat) ? i.cat : 'Other') === c)]).filter(([, a]) => a.length);
-  $('focusPanel').innerHTML = `
-    <div class="dayhead"><div><div class="eyebrow">${f === t ? 'Today' : dayDiff(t, f) === 1 ? 'Tomorrow' : dayDiff(t, f) === -1 ? 'Yesterday' : 'Selected day'}</div>
-      <h2>${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2>
-      ${pay.is(f) ? '<span class="tag pay">Payday</span>' : ''}</div>
-      <div class="wx">${w ? `<b>${Math.round(w.max)}° / ${Math.round(w.min)}°</b><br>${esc(wxWord(w.code))}${w.rain != null ? ' · ' + w.rain + '% rain' : ''}` : `<a href="${esc(setting('bom_link', '#'))}" target="_blank" rel="noopener" class="muted">BOM forecast ↗</a>`}</div></div>
-    <form class="addrow" id="quickAdd" autocomplete="off">
-      <input id="qaTime" placeholder="Time" aria-label="Time">
-      <input id="qaTitle" placeholder="Add something to ${esc(fmt(f, { weekday: 'long' }))}" aria-label="Title" required>
-      <select id="qaCat" aria-label="Category">${CATS.map(c => `<option>${c}</option>`).join('')}</select>
-      <button class="btn btn-primary" type="submit">Add</button>
-    </form>
-    ${byCat.length ? byCat.map(([c, a]) => `<div class="cat"><div class="cat-h"><i style="background:${CATVAR(c)}"></i>${c}</div><ul class="items">${a.map(i => itemHtml(i, f)).join('')}</ul></div>`).join('') : '<p class="empty">Nothing planned yet. Add something above, or press Plan my week.</p>'}`;
-  // other six days
-  const cards = [];
-  for (let k = 1; k < 7; k++) {
-    const d = addDays(f, k);
-    const di = itemsOn(d), wx = state.wx[d];
-    const main = di.filter(i => i.cat !== 'Sport'), sport = di.filter(i => i.cat === 'Sport');
-    const shown = main.slice(0, 7).concat(sport.slice(0, main.length >= 7 ? 0 : 2));
-    const extra = di.length - shown.length;
-    cards.push(`<div class="dcard" data-past="${d < t}" data-today="${d === t}">
-      <div class="dcard-h"><button type="button" data-focus="${d}">${esc(fmt(d, { weekday: 'short', day: 'numeric' }))}${pay.is(d) ? ' <span class="tag pay">Payday</span>' : ''}</button><span class="w">${wx ? Math.round(wx.max) + '° · ' + (wx.rain ?? 0) + '%' : ''}</span></div>
-      ${shown.length ? `<ul class="mini">${shown.map(i => `<li data-done="${i.done}" data-edit="${esc(i.id)}"><i style="background:${CATVAR(i.cat)}"></i><span>${i.time ? esc(i.time) + ' ' : ''}${esc(i.title)}${dayOf(i, d) ? ` <span class="dayn">${dayTag(i, d)}</span>` : ''}</span></li>`).join('')}${extra > 0 ? `<li class="more">+${extra} more</li>` : ''}</ul>` : '<span class="empty">Free</span>'}
-      <button class="add" type="button" data-add="${d}">+ Add</button></div>`);
-  }
-  $('days').innerHTML = cards.join('');
-  renderUp(); renderCalendar();
-}
 /* "Day 2 of 5" for anything that spans several days */
 function dayOf(i, d) {
   if (!i.end || i.end <= i.date) return null;
@@ -1018,9 +1014,11 @@ function dayOf(i, d) {
 }
 const dayTag = (i, d) => { const x = dayOf(i, d); return x ? `Day ${x.n} of ${x.total}` : ''; };
 function itemHtml(i, d) {
+  const ev = calEvent(i), auto = ev && !hasStar(i.type);
   return `<li class="item" data-done="${i.done}"><input type="checkbox" ${i.done ? 'checked' : ''} data-tick="${esc(i.id)}" aria-label="Done: ${esc(i.title)}">
     <span class="tm">${esc(i.time || '')}</span><span class="t" data-edit="${esc(i.id)}" title="${esc(i.notes || i.title)}">${esc(i.title)}${dayOf(i, d) ? ` <span class="dayn">${dayTag(i, d)}</span> <span class="ty">${esc(fmt(i.date, { day: 'numeric', month: 'short' }))} – ${esc(fmt(i.end, { day: 'numeric', month: 'short' }))}</span>` : ''}</span>
-    <span class="ty">${esc(i.type || '')}</span></li>`;
+    <button type="button" class="star" data-star="${esc(i.id)}" aria-pressed="${ev}" ${auto ? 'data-auto' : ''} title="${auto ? 'Multi-day items always show on the calendar' : ev ? 'Event: shows on the calendar. Click to remove.' : 'Mark as an event so it shows on the calendar'}" aria-label="${ev ? 'Event' : 'Mark as an event'}: ${esc(i.title)}">★</button>
+    <span class="ty">${esc(plainType(i.type))}</span></li>`;
 }
 function renderLog() {
   const t = todayIso(); if (!state.logDate || state.logDate > t) state.logDate = t;
@@ -1028,7 +1026,7 @@ function renderLog() {
   const missing = []; for (let k = 1; k <= 14; k++) { const d = addDays(t, -k); if (!logged.has(d)) missing.push(d); }
   const row = (state.data.Log || []).find(r => r.date === f) || {}, w = state.wx[f] || {};
   const v = (k, alt) => row[k] != null && row[k] !== '' ? row[k] : (alt ?? '');
-  $('logPanel').innerHTML = `<div class="panel-head"><h2>Daily log</h2>
+  $('logPanel').innerHTML = `<div class="panel-head"><h2>Log</h2>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label for="logDate" class="muted" style="font-size:13px">Day</label><input type="date" id="logDate" value="${f}" max="${t}">
       <span class="muted" style="font-size:13px">${row.date ? 'Saved · edit and save again' : 'Not logged yet'}</span></div></div>
     ${missing.length ? `<div class="chips" style="margin:-2px 0 12px"><span class="muted" style="font-size:13px;align-self:center">Not logged:</span>${missing.slice(0, 7).reverse().map(d => `<button type="button" class="pill" data-logday="${d}" ${d === f ? 'data-s="Current"' : ''}>${esc(fmt(d, { weekday: 'short', day: 'numeric' }))}</button>`).join('')}</div>` : ''}
@@ -1046,26 +1044,124 @@ function renderLog() {
         <span data-draftflag hidden class="muted" style="font-size:13px">Unsaved changes · <button type="button" class="linkish" data-draftdiscard style="border:0;background:transparent;color:var(--accent);padding:0;font:inherit;cursor:pointer">Discard</button></span></div>
     </form>`;
 }
-function renderUp() {
-  const win = Number(setting('birthday_window', 60)) || 60, bds = birthdays(win).slice(0, 4);
-  const tb = (state.data.Lists || []).filter(l => l.list === 'To book' && l.status !== 'Done');
-  $('upPanel').innerHTML = `<div class="panel-head"><h2>Coming up</h2></div>
-    <div class="eyebrow" style="margin-bottom:4px">Birthdays</div>
-    ${bds.length ? `<ul class="side-list">${bds.map(x => `<li><span>${esc(x.p.name)}${x.b.turning ? ` <span class="muted">turns ${x.b.turning}</span>` : ''}</span><span class="r">${esc(fmt(x.b.date, { weekday: 'short', day: 'numeric', month: 'short' }))} · ${daysWord(x.b.days)}</span></li>`).join('')}</ul>` : '<p class="empty">None in the next ' + win + ' days.</p>'}
-    <div class="eyebrow" style="margin:12px 0 4px">To book</div>
-    ${tb.length ? `<ul class="side-list">${tb.map(l => `<li><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-booked="${esc(l.id)}"> ${esc(l.item)}</label><span class="r">${l.added ? 'since ' + esc(fmt(l.added, { day: 'numeric', month: 'short' })) : ''}</span></li>`).join('')}</ul>` : '<p class="empty">Nothing waiting.</p>'}`;
+/* ---------- the event star ----------
+   An item is an "event" (a day block-out that shows on the Upcoming calendar) when its Type ends in a ★.
+   Multi-day items always count. Everything goes through these helpers, so a real column can replace the ★ later. */
+const hasStar = t => /★\s*$/.test(t || '');
+const plainType = t => String(t || '').replace(/\s*★\s*$/, '').trim();
+const withStar = (t, on) => on ? (plainType(t) + ' ★').trim() : plainType(t);
+const isMulti = p => !!(p.end && p.end > p.date);
+const calEvent = p => hasStar(p.type) || isMulti(p);
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-star]'); if (!el) return;
+  const p = findPlan(el.dataset.star); if (!p) return;
+  if (el.hasAttribute('data-auto')) { toast('Multi-day items always show on the calendar'); return; }
+  const on = !hasStar(p.type);
+  if (await withBusy('Saving…', () => updateRow('Plan', { ...p, type: withStar(p.type, on) }))) toast(on ? p.title + ' now shows on the calendar' : p.title + ' taken off the calendar');
+});
+
+/* ---------- paper headlines (same site as this page, so a plain fetch works) ---------- */
+async function loadNews() {
+  const url = setting('paper_url', PAPER_URL);
+  try { const c = JSON.parse(sessionStorage.getItem('brain-news') || 'null'); if (c && c.url === url && Date.now() - c.at < 20 * 60e3) { state.news = c.items; state.newsErr = ''; return; } } catch (e) {}
+  try {
+    const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status);
+    const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+    const grids = [...doc.querySelectorAll('.watch-grid')], grid = grids.find(g => !g.hasAttribute('hidden')) || grids[0];
+    const items = grid ? [...grid.querySelectorAll('.watch-item')].slice(0, 3).map(el => {
+      const a = el.querySelector('a.story'), href = a ? a.getAttribute('href') || '' : '';
+      return { title: ((el.querySelector('h3') || {}).textContent || '').trim(), src: ((el.querySelector('.kicker .src') || {}).textContent || '').trim(), href: /^https?:\/\//i.test(href) ? href : '' };
+    }).filter(x => x.title) : [];
+    state.news = items; state.newsErr = items.length ? '' : 'No headlines found in the paper.';
+    try { sessionStorage.setItem('brain-news', JSON.stringify({ url, at: Date.now(), items })); } catch (e) {}
+  } catch (e) { state.news = []; state.newsErr = 'Couldn\'t load the paper.'; }
 }
 
 /* ---------- render: home ---------- */
-const KIND_ICON = { birthday: '🎂', catchup: '☕', payday: '$', trip: '✈' };
+const nf0 = x => Math.round(x).toLocaleString('en-AU');
+/* Averages and the catch-up figure for the month, worked out the same way as the Fitness tab. */
+function metricMonth(k, t) {
+  const ym = t.slice(0, 7), [y, m] = ym.split('-').map(Number), dim = new Date(y, m, 0).getDate();
+  const log = (state.data.Log || []).filter(r => r.date.startsWith(ym)), vals = log.filter(r => r[k] != null);
+  const goal = ((state.data.Goals || []).find(x => x.year === y && x.month === m) || {})[k] || null;
+  const total = vals.reduce((a, r) => a + r[k], 0), n = vals.length;
+  const last = log.reduce((a, r) => r.steps != null && r.date > a ? r.date : a, '');
+  const fromDay = Math.max(Number(t.slice(8, 10)) + (last === t ? 1 : 0), last ? Number(last.slice(8, 10)) + 1 : 1);
+  const h = Math.max(0, Math.min(5, dim - fromDay + 1));
+  return { total, n, avg: n ? total / n : null, goal, h, need: goal && n && h ? Math.ceil((goal * (n + h) - total) / h) : null };
+}
+function metricCard(k, title, t) {
+  const m = metricMonth(k, t);
+  const line = m.need == null ? (m.goal ? '&nbsp;' : 'No goal set this month') : m.need > m.goal ? `Catch up: <b style="color:var(--fg)">${nf0(m.need)}</b> a day, ${m.h === 1 ? 'tomorrow' : 'next ' + m.h + ' days'}` : 'On goal';
+  return `<div class="panel-head"><h2>${title}</h2><span class="sub">${esc(fmt(t, { month: 'long' }))}</span></div>
+    <div class="big">${m.avg == null ? '–' : nf0(m.avg)}<small>a day</small></div>
+    <div class="hbar"><i style="width:${m.goal && m.avg ? Math.min(100, Math.round(m.avg / m.goal * 100)) : 0}%"></i></div>
+    <div class="sub">${m.n} day${m.n === 1 ? '' : 's'} logged${m.goal ? ' · goal ' + nf0(m.goal) : ''}</div>
+    <div class="sub">${line}</div>
+    <button type="button" class="go" data-go="fitness">Open Fitness →</button>`;
+}
+function renderHomeNews() {
+  const rows = state.news === undefined ? [] : state.news;
+  $('homeNews').innerHTML = `<div class="panel-head"><h2>Top headlines</h2><span class="sub">The Overnight Sentinel</span></div>
+    <ol class="news">${[0, 1, 2].map(i => { const n = rows[i];
+      if (n) return `<li><a ${n.href ? `href="${esc(n.href)}" target="_blank" rel="noopener"` : ''}><span class="src">${esc(n.src || 'Top story')}</span><span class="hl">${esc(n.title)}</span></a></li>`;
+      return `<li><a><span class="src">${i === 0 && state.news === undefined ? 'Loading…' : i === 0 && state.newsErr ? esc(state.newsErr) : '&nbsp;'}</span><span class="hl">&nbsp;</span></a></li>`; }).join('')}</ol>
+    <button type="button" class="go" data-go="paper">Open the paper →</button>`;
+}
+function renderHomeWx(t) {
+  const w = state.wx[t], days = [1, 2, 3].map(k => addDays(t, k));
+  $('homeWx').innerHTML = `<div class="panel-head"><h2>Weather</h2><span class="sub">${esc(setting('weather_place', 'Melbourne'))}</span></div>
+    ${w ? `<div class="wxbig">${Math.round(w.max)}° / ${Math.round(w.min)}°<small>${esc(wxWord(w.code))}${w.rain != null ? ' · ' + w.rain + '% rain' : ''}</small></div>` : '<div class="wxbig">–</div><div class="sub">No forecast loaded.</div>'}
+    <div class="wx3">${days.map(d => { const x = state.wx[d]; return `<div><span>${esc(fmt(d, { weekday: 'short' }))}</span><b>${x ? Math.round(x.max) + '° / ' + Math.round(x.min) + '°' : '–'}</b><span>${x && x.rain != null ? x.rain + '% rain' : '&nbsp;'}</span></div>`; }).join('')}</div>
+    <a class="go" href="${esc(setting('bom_link', '#'))}" target="_blank" rel="noopener">Full forecast ↗</a>`;
+}
+function renderHome() {
+  const t = todayIso(), pay = paydayInfo(), its = itemsOn(t);
+  const timed = its.filter(i => i.time).sort((a, b) => a.time.localeCompare(b.time)), rest = its.filter(i => !i.time);
+  const bds = (state.data.People || []).filter(p => { const b = nextBday(p, t); return b && b.days === 0; });
+  renderHomeNews(); renderHomeWx(t);
+  $('homeSteps').innerHTML = metricCard('steps', 'Average steps', t);
+  $('homePages').innerHTML = metricCard('pages', 'Average pages read', t);
+  $('homeToday').innerHTML = `<div class="dayhead"><div><div class="eyebrow">Today</div><h2>${esc(fmt(t, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
+      <div>${pay.is(t) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(p => `<span class="tag">🎂 ${esc(p.name)}'s birthday</span>`).join(' ')}</div></div>
+    <div class="halves">
+      <div><div class="cat-h">Schedule · ${timed.length}</div><ul class="items">${timed.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing booked.</li>'}</ul></div>
+      <div><div class="cat-h">To do · ${rest.filter(i => !i.done).length} left</div><ul class="items">${rest.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing else today.</li>'}</ul></div>
+    </div>`;
+  renderHomeNext();
+}
+/* Next 6 days: one row per day, one open at a time. */
+function renderHomeNext() {
+  const t = todayIso(), pay = paydayInfo(), ppl = state.data.People || [];
+  $('nextBody').innerHTML = Array.from({ length: 6 }, (_, k) => addDays(t, k + 1)).map(d => {
+    const its = itemsOn(d), open = state.acc === d, w = state.wx[d];
+    const tags = (pay.is(d) ? '<span class="tag pay">Payday</span>' : '') + ppl.filter(p => { const b = nextBday(p, d); return b && b.days === 0; }).map(p => `<span class="tag">🎂 ${esc(p.name)}</span>`).join('');
+    return `<div class="acc" data-open="${open}"><button type="button" class="acc-h" data-acc="${d}" aria-expanded="${open}" aria-controls="acc-${d}">
+        <span class="acc-d">${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'short' }))}</span><span class="acc-n">${its.length ? its.length + (its.length === 1 ? ' task' : ' tasks') : 'Free'}</span>
+        <span class="acc-t">${tags}</span><span class="acc-w">${w ? Math.round(w.max) + '° · ' + (w.rain ?? 0) + '%' : ''}</span><span class="chev" aria-hidden="true"></span></button>
+      <div class="acc-b" id="acc-${d}" ${open ? '' : 'hidden'}>${its.length ? `<ul class="items">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing planned.</p>'}<button type="button" class="add" data-add="${d}">+ Add to ${esc(fmt(d, { weekday: 'long' }))}</button></div></div>`;
+  }).join('');
+}
+
+/* ---------- render: upcoming (month calendar, the selected day, events coming up) ---------- */
+const KIND_ICON = { birthday: '🎂', catchup: '☕', payday: '$', trip: '✈', event: '★' };
 const inWords = n => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n < 14 ? `In ${n} days` : n < 60 ? `In ${Math.round(n / 7)} weeks` : `In ${Math.round(n / 30.4)} months`;
-/* Everything dated between two days, in one list: plan items (not routine, not done), birthdays, catch-ups and paydays. */
+const planOn = (p, d) => p.date && p.date <= d && (p.end || p.date) >= d;
+/* Everything the calendar and the events list show: starred and multi-day plan items, catch-ups, birthdays and paydays. */
+function whoByPlan() { return new Map((state.data.People || []).filter(p => p.nid).map(p => [p.nid, p])); }
+function dayEntries(d, who) {
+  const out = [];
+  (state.data.Plan || []).filter(p => planOn(p, d) && p.type !== 'Routine' && (calEvent(p) || who.has(p.id)))
+    .sort((a, b) => (a.time || '99').localeCompare(b.time || '99') || a.title.localeCompare(b.title))
+    .forEach(p => out.push({ title: p.title, time: p.time, cat: CATS.includes(p.cat) ? p.cat : 'Other', done: p.done, kind: who.has(p.id) ? 'catchup' : isMulti(p) ? 'trip' : 'event', edit: p.id }));
+  (state.data.People || []).filter(p => p.bday && p.bday.slice(5) === d.slice(5)).forEach(p => out.push({ title: p.name, cat: 'Social', kind: 'birthday', person: p.id }));
+  return out;
+}
 function upcomingItems(from, to) {
-  const out = [], ppl = state.data.People || [], who = new Map(ppl.filter(p => p.nid).map(p => [p.nid, p]));
+  const out = [], who = whoByPlan(), ppl = state.data.People || [];
   (state.data.Plan || []).forEach(p => {
-    if (!p.date || p.date < from || p.date > to || p.done || p.type === 'Routine') return;
-    const multi = p.end && p.end > p.date, w = who.get(p.id);
-    out.push({ date: p.date, end: multi ? p.end : '', time: p.time, title: p.title, cat: CATS.includes(p.cat) ? p.cat : 'Other', kind: w ? 'catchup' : multi ? 'trip' : 'plan', edit: p.id });
+    if (!p.date || p.date < from || p.date > to || p.done || p.type === 'Routine' || !(calEvent(p) || who.has(p.id))) return;
+    out.push({ date: p.date, end: isMulti(p) ? p.end : '', time: p.time, title: p.title, cat: CATS.includes(p.cat) ? p.cat : 'Other', kind: who.has(p.id) ? 'catchup' : isMulti(p) ? 'trip' : 'event', edit: p.id });
   });
   ppl.forEach(p => { const b = nextBday(p, from); if (b && b.date <= to) out.push({ date: b.date, title: p.name + '\'s birthday', sub: b.turning ? 'turns ' + b.turning : '', cat: 'Social', kind: 'birthday', person: p.id }); });
   const every = Number(setting('payday_every', 14)) || 14;
@@ -1076,59 +1172,34 @@ function upGroup(d, t) {
   const we = addDays(mondayOf(t), 6); if (d <= we) return 'This week'; if (d <= addDays(we, 7)) return 'Next week';
   const x = fromIso(d); return x.toLocaleDateString('en-AU', x.getFullYear() === fromIso(t).getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' });
 }
-/* Steps this month and the catch-up figure, worked out the same way as the Stats tab. */
-function stepsMonth(t) {
-  const ym = t.slice(0, 7), [y, m] = ym.split('-').map(Number), dim = new Date(y, m, 0).getDate();
-  const log = (state.data.Log || []).filter(r => r.date.startsWith(ym) && r.steps != null);
-  const goal = ((state.data.Goals || []).find(x => x.year === y && x.month === m) || {}).steps || null;
-  const total = log.reduce((a, r) => a + r.steps, 0), n = log.length, last = log.reduce((a, r) => r.date > a ? r.date : a, '');
-  const fromDay = Math.max(Number(t.slice(8, 10)) + (last === t ? 1 : 0), last ? Number(last.slice(8, 10)) + 1 : 1);
-  const h = Math.max(0, Math.min(5, dim - fromDay + 1));
-  return { total, n, avg: n ? total / n : null, goal, h, need: goal && n && h ? Math.ceil((goal * (n + h) - total) / h) : null };
+function renderUpcoming() {
+  const t = todayIso(); if (!state.calMonth) state.calMonth = t.slice(0, 7);
+  if (!state.calDay || !state.calDay.startsWith(state.calMonth)) state.calDay = state.calMonth === t.slice(0, 7) ? t : state.calMonth + '-01';
+  const first = state.calMonth + '-01', start = mondayOf(first), who = whoByPlan(), pay = paydayInfo();
+  const cells = Array.from({ length: 42 }, (_, k) => addDays(start, k)).map(d => {
+    const ev = dayEntries(d, who), show = ev.slice(0, 3), more = ev.length - show.length, out = !d.startsWith(state.calMonth);
+    const label = `${fmt(d, { weekday: 'long', day: 'numeric', month: 'long' })}${ev.length ? ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') : ''}`;
+    return `<button type="button" class="mc" data-calday="${d}" data-out="${out}" data-today="${d === t}" data-past="${d < t}" data-sel="${d === state.calDay}" aria-label="${esc(label)}">
+      <span class="mn">${Number(d.slice(8))}</span>${pay.is(d) ? '<span class="mpay" title="Payday">$</span>' : ''}
+      <span class="mlist">${show.map(x => `<span class="ce${x.done ? ' done' : ''}" style="--c:${CATVAR(x.cat)}" title="${esc(x.title)}">${x.kind === 'birthday' ? '🎂 ' : x.kind === 'catchup' ? '☕ ' : ''}${esc(x.title)}</span>`).join('')}${more > 0 ? `<span class="mmore">+${more} more</span>` : ''}</span></button>`;
+  });
+  const label = fromIso(first).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  $('calPanel').innerHTML = `<div class="panel-head"><div class="mnav"><button class="btn" type="button" data-calnav="-1" aria-label="Previous month">‹</button><h2 class="navlabel" style="width:10.5em">${esc(label)}</h2><button class="btn" type="button" data-calnav="1" aria-label="Next month">›</button><button class="btn btn-ghost" type="button" data-calnav="0">Today</button></div></div>
+    <div class="mcal">${DAYS.map(d => `<div class="mh">${d}</div>`).join('')}${cells.join('')}</div>
+    <p class="mlegend">Shows events only: starred ★ items, multi-day items, catch-ups and birthdays. Click a day to see everything on it.</p>`;
+  renderDayPanel(); renderEvents();
 }
-function renderHome() {
-  const t = todayIso(), pay = paydayInfo(), w = state.wx[t], its = itemsOn(t), nf = x => Math.round(x).toLocaleString('en-AU');
-  const timed = its.filter(i => i.time).sort((a, b) => a.time.localeCompare(b.time)), rest = its.filter(i => !i.time);
-  const bds = (state.data.People || []).filter(p => { const b = nextBday(p, t); return b && b.days === 0; });
-  $('homeToday').innerHTML = `<div class="dayhead"><div><div class="eyebrow">Today</div><h2>${esc(fmt(t, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2>
-      ${pay.is(t) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(p => `<span class="tag">🎂 ${esc(p.name)}'s birthday</span>`).join(' ')}</div>
-      <div class="wx">${w ? `<b>${Math.round(w.max)}° / ${Math.round(w.min)}°</b><br>${esc(wxWord(w.code))}${w.rain != null ? ' · ' + w.rain + '% rain' : ''}` : ''}</div></div>
-    <div class="halves">
-      <div><div class="cat-h">Schedule · ${timed.length}</div><ul class="items">${timed.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing booked.</li>'}</ul></div>
-      <div><div class="cat-h">To do · ${rest.filter(i => !i.done).length} left</div><ul class="items">${rest.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing else today.</li>'}</ul></div>
-    </div>`;
-  // fitness this week
-  const ws = mondayOf(t), wk = Array.from({ length: 7 }, (_, k) => addDays(ws, k));
-  const fit = wk.map(d => itemsOn(d).filter(i => i.cat === 'Fitness')), all = fit.flat(), done = all.filter(i => i.done).length;
-  const next = wk.flatMap((d, k) => d >= t ? fit[k].filter(i => !i.done).map(i => [d, i]) : [])[0];
-  $('homeFit').innerHTML = `<div class="panel-head"><h2>Fitness</h2><span class="sub">This week</span></div>
-    <div class="big">${done}<small>of ${all.length} done</small></div>
-    <div class="sess">${wk.map((d, k) => `<span class="${fit[k].length ? (fit[k].every(i => i.done) ? 'done' : d < t ? 'miss' : 'plan') : ''}" data-today="${d === t}" title="${esc(fmt(d, { weekday: 'long' }) + (fit[k].length ? ': ' + fit[k].map(i => i.title).join(', ') : ''))}">${fmt(d, { weekday: 'narrow' })}</span>`).join('')}</div>
-    <div class="sub">${next ? `Next: ${esc(next[0] === t ? 'today' : fmt(next[0], { weekday: 'short' }))}${next[1].time ? ' ' + esc(next[1].time) : ''} · ${esc(next[1].title)}` : 'Nothing else planned this week.'}</div>
-    <button type="button" class="go" data-go="week">Open the week →</button>`;
-  // steps this month
-  const sm = stepsMonth(t);
-  $('homeSteps').innerHTML = `<div class="panel-head"><h2>Steps</h2><span class="sub">${esc(fmt(t, { month: 'long' }))}</span></div>
-    <div class="big">${nf(sm.total)}<small>${sm.n} day${sm.n === 1 ? '' : 's'} logged</small></div>
-    ${sm.goal ? `<div class="hbar"><i style="width:${Math.min(100, Math.round((sm.avg || 0) / sm.goal * 100))}%"></i></div>` : ''}
-    <div class="sub">Avg ${sm.avg == null ? '–' : nf(sm.avg)}${sm.goal ? ' · goal ' + nf(sm.goal) : ''}</div>
-    ${sm.need != null ? `<div class="sub">${sm.need > sm.goal ? `Catch up: <b style="color:var(--fg)">${nf(sm.need)}</b> a day, ${sm.h === 1 ? 'tomorrow' : 'next ' + sm.h + ' days'}` : 'On goal'}</div>` : ''}
-    <button type="button" class="go" data-go="stats">Log a day →</button>`;
-  // catch-ups: planned first, then due (longest since seen)
-  const since = p => p.seen ? dayDiff(p.seen, t) : null;
-  const due = p => p.tosee || (p.every && (since(p) == null || since(p) >= p.every));
-  const ago = n => n == null ? 'not logged' : n < 14 ? 'seen ' + n + ' days ago' : n < 60 ? 'seen ' + Math.round(n / 7) + ' weeks ago' : 'seen ' + Math.round(n / 30.4) + ' months ago';
-  const ppl = state.data.People || [], planned = ppl.filter(p => p.ndate && p.ndate >= t).sort((a, b) => a.ndate.localeCompare(b.ndate));
-  const dueP = ppl.filter(p => !planned.includes(p) && due(p)).sort((a, b) => (since(b) ?? 1e9) - (since(a) ?? 1e9));
-  const top = planned.map(p => [p, 'plan', fmt(p.ndate, { weekday: 'short', day: 'numeric', month: 'short' }) + (p.nplan ? ' · ' + p.nplan : '')]).concat(dueP.map(p => [p, 'due', ago(since(p))])).slice(0, 4);
-  $('homePeople').innerHTML = `<div class="panel-head"><h2>Catch-ups</h2><span class="sub">${planned.length} planned · ${dueP.length} due</span></div>
-    ${top.length ? `<ul class="ppl">${top.map(([p, k, r]) => `<li><button type="button" data-person="${esc(p.id)}">${esc(p.name)}</button><span class="r ${k}">${esc(r)}</span></li>`).join('')}</ul>` : '<p class="empty">Nobody due. Nice.</p>'}
-    <button type="button" class="go" data-go="people">All people →</button>`;
-  // upcoming
-  const to = addDays(t, state.hMore ? 365 : 90), list = upcomingItems(addDays(t, 1), to);
+function renderDayPanel() {
+  const d = state.calDay, its = itemsOn(d), who = whoByPlan(), pay = paydayInfo(), bds = dayEntries(d, who).filter(x => x.kind === 'birthday');
+  $('dayPanel').innerHTML = `<div class="panel-head"><div><div class="eyebrow">${d === todayIso() ? 'Today' : 'Selected day'}</div><h2>${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
+      <div>${pay.is(d) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(x => `<span class="tag">🎂 ${esc(x.title)}'s birthday</span>`).join(' ')}<button class="btn" type="button" data-add="${d}" style="margin-left:8px">+ Add to this day</button></div></div>
+    ${its.length ? `<ul class="items">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing on this day.</p>'}`;
+}
+function renderEvents() {
+  const t = todayIso(), to = addDays(t, state.eMore ? 365 : 90), list = upcomingItems(t, to);
   const cats = CATS.filter(c => list.some(i => i.cat === c));
-  if (state.hFilter && !cats.includes(state.hFilter)) state.hFilter = '';
-  const shown = state.hFilter ? list.filter(i => i.cat === state.hFilter) : list;
+  if (state.eFilter && !cats.includes(state.eFilter)) state.eFilter = '';
+  const shown = state.eFilter ? list.filter(i => i.cat === state.eFilter) : list;
   let rows = '', last = '';
   shown.forEach(i => {
     const g = upGroup(i.date, t); if (g !== last) { rows += `${last ? '</ul>' : ''}<div class="cat-h" style="margin-top:${last ? 14 : 4}px">${esc(g)}</div><ul class="uplist">`; last = g; }
@@ -1136,13 +1207,13 @@ function renderHome() {
     const label = esc(i.title) + (i.sub ? ` <small>· ${esc(i.sub)}</small>` : '');
     const title = i.edit ? `<button type="button" data-edit="${esc(i.edit)}">${label}</button>` : i.person ? `<button type="button" data-person="${esc(i.person)}">${label}</button>` : label;
     rows += `<li class="uprow${i.kind === 'payday' ? ' pay' : ''}" data-kind="${i.kind}"><span class="dt">${esc(fmt(i.date, { weekday: 'short', day: 'numeric', month: 'short' }))}${when ? `<small>${esc(when)}</small>` : ''}</span>
-      <span class="ic" style="color:${CATVAR(i.cat)}">${KIND_ICON[i.kind] || `<i style="background:${CATVAR(i.cat)}"></i>`}</span><span class="t">${title}</span>
+      <span class="ic" style="color:${CATVAR(i.cat)}">${KIND_ICON[i.kind] || '●'}</span><span class="t">${title}</span>
       <span class="ar"><i style="background:${CATVAR(i.cat)}"></i>${esc(i.cat)}</span><span class="wn${n <= 3 ? ' soon' : ''}">${inWords(n)}</span></li>`;
   });
-  $('homeUp').innerHTML = `<div class="panel-head"><h2>Upcoming</h2><span class="sub">${shown.length} in the next ${state.hMore ? 'year' : '3 months'}</span></div>
-    <div class="filters" role="group" aria-label="Filter by category"><button type="button" class="gchip" data-hfilter="" aria-pressed="${!state.hFilter}">All</button>${cats.map(c => `<button type="button" class="gchip" data-hfilter="${c}" aria-pressed="${state.hFilter === c}"><span class="dot" style="background:${CATVAR(c)};display:inline-block;margin-right:6px;width:7px;height:7px"></span>${c}</button>`).join('')}</div>
-    ${rows ? rows + '</ul>' : '<p class="empty">Nothing coming up.</p>'}
-    <div class="upmore"><button type="button" class="btn btn-ghost" data-hmore>${state.hMore ? 'Show the next 3 months' : 'Show the next year'}</button></div>`;
+  $('evPanel').innerHTML = `<div class="panel-head"><h2>Events coming up</h2><span class="sub">${shown.length} in the next ${state.eMore ? 'year' : '3 months'}</span></div>
+    <div class="filters" role="group" aria-label="Filter by category"><button type="button" class="gchip" data-efilter="" aria-pressed="${!state.eFilter}">All</button>${cats.map(c => `<button type="button" class="gchip" data-efilter="${c}" aria-pressed="${state.eFilter === c}"><span class="dot" style="background:${CATVAR(c)};display:inline-block;margin-right:6px;width:7px;height:7px"></span>${c}</button>`).join('')}</div>
+    ${rows ? rows + '</ul>' : '<p class="empty">No events yet. Star ★ an item to put it here.</p>'}
+    <div class="upmore"><button type="button" class="btn btn-ghost" data-emore>${state.eMore ? 'Show the next 3 months' : 'Show the next year'}</button></div>`;
 }
 
 /* ---------- quick add: one line, read for date, time and category ---------- */
@@ -1151,79 +1222,71 @@ const QA_CAT = { Fitness: /\b(gym|kickboxing|hiit|run|walk|weights|swim|yoga|cla
   Home: /\b(clean|laundry|dentist|doctor|car|garden|groceries|shopping|bins|rego|bank|bill|pay)\b/i };
 function parseQuick(text) {
   const t = todayIso(), y = Number(t.slice(0, 4)); let s = ' ' + text + ' ', date = '', time = '', cat = '', m;
-  const cut = re => { const x = s.match(re); if (x) s = s.replace(x[0], ' '); return x; };
-  if ((m = cut(/\s#(\w+)/))) cat = CATS.find(c => c.toLowerCase().startsWith(m[1].toLowerCase())) || '';
-  if ((m = cut(/(?:\bat\s+)?\b(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b|(?:\bat\s+)?\b([01]?\d|2[0-3]):(\d{2})\b/i))) {
+  const cutw = re => { const x = s.match(re); if (x) s = s.replace(x[0], ' '); return x; };
+  if ((m = cutw(/\s#(\w+)/))) cat = CATS.find(c => c.toLowerCase().startsWith(m[1].toLowerCase())) || '';
+  if ((m = cutw(/(?:\bat\s+)?\b(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b|(?:\bat\s+)?\b([01]?\d|2[0-3]):(\d{2})\b/i))) {
     let h = Number(m[1] || m[4]), mi = Number(m[2] || m[5] || 0), ap = (m[3] || '').toLowerCase();
     if (ap === 'pm' && h < 12) h += 12; if (ap === 'am' && h === 12) h = 0; if (h < 24 && mi < 60) time = pad(h) + ':' + pad(mi); }
   const ahead = d => d < t ? null : d;
-  if (cut(/\b(today|tonight)\b/i)) date = t;
-  else if (cut(/\b(tomorrow|tmrw)\b/i)) date = addDays(t, 1);
-  else if ((m = cut(/(?:\b(?:on|by)\s+)?\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i))) { const mo = MONTHS.findIndex(x => x.toLowerCase() === m[2].toLowerCase().slice(0, 3)); date = ahead(`${y}-${pad(mo + 1)}-${pad(m[1])}`) || `${y + 1}-${pad(mo + 1)}-${pad(m[1])}`; }
-  else if ((m = cut(/(?:\b(?:on|by)\s+)?\b(\d{1,2})\/(\d{1,2})\b/))) date = ahead(`${y}-${pad(m[2])}-${pad(m[1])}`) || `${y + 1}-${pad(m[2])}-${pad(m[1])}`;
-  else if ((m = cut(/(?:\b(?:on|by)\s+)?\b(next\s+)?(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b/i))) { const k = DAYS.findIndex(d => d.toLowerCase() === m[2].toLowerCase()), now = (fromIso(t).getDay() + 6) % 7;
+  if (cutw(/\b(today|tonight)\b/i)) date = t;
+  else if (cutw(/\b(tomorrow|tmrw)\b/i)) date = addDays(t, 1);
+  else if ((m = cutw(/(?:\b(?:on|by)\s+)?\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i))) { const mo = MONTHS.findIndex(x => x.toLowerCase() === m[2].toLowerCase().slice(0, 3)); date = ahead(`${y}-${pad(mo + 1)}-${pad(m[1])}`) || `${y + 1}-${pad(mo + 1)}-${pad(m[1])}`; }
+  else if ((m = cutw(/(?:\b(?:on|by)\s+)?\b(\d{1,2})\/(\d{1,2})\b/))) date = ahead(`${y}-${pad(m[2])}-${pad(m[1])}`) || `${y + 1}-${pad(m[2])}-${pad(m[1])}`;
+  else if ((m = cutw(/(?:\b(?:on|by)\s+)?\b(next\s+)?(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b/i))) { const k = DAYS.findIndex(d => d.toLowerCase() === m[2].toLowerCase()), now = (fromIso(t).getDay() + 6) % 7;
     let n = (k - now + 7) % 7; if (n === 0 || m[1]) n += 7; date = addDays(t, n); }
   if (date && isNaN(fromIso(date))) date = '';
   let title = s.replace(/\s+/g, ' ').trim(); title = title.charAt(0).toUpperCase() + title.slice(1);
   if (!cat) cat = CATS.find(c => QA_CAT[c] && QA_CAT[c].test(text)) || 'Other';
   return { title, date: date || t, dated: !!date, time, cat };
 }
+/* "Topic: the note" files it under that topic; anything else goes under "Quick note". */
+function parseNote(text) { const m = text.trim().match(/^([A-Za-z][\w &'’-]{0,22}):\s+(\S[\s\S]*)$/); return m ? { topic: m[1].trim(), note: m[2].trim() } : { topic: 'Quick note', note: text.trim() }; }
 function quickPreview(f) {
-  const v = f.querySelector('input').value, q = parseQuick(v), out = f.querySelector('.qa-prev');
-  out.innerHTML = !q.title ? '<span>Type anything. Dates (fri, tomorrow, 5 nov), times (7pm) and categories are picked up as you go. No date means today.</span>'
-    : `<span class="tok k">${esc(q.title)}</span><span class="tok">${esc(q.date === todayIso() ? 'Today' : fmt(q.date, { weekday: 'short', day: 'numeric', month: 'short' }))}</span>${q.time ? `<span class="tok">${esc(q.time)}</span>` : ''}<span class="tok"><i style="background:${CATVAR(q.cat)}"></i>${esc(q.cat)}</span><span>· Enter to add</span>`;
+  const v = f.querySelector('input').value, out = f.querySelector('.qa-prev'); let html;
+  if (f.matches('[data-nq]')) { const q = parseNote(v);
+    html = !q.note ? '<span>Type a note. Start with "Topic:" to file it under a topic.</span>' : `<span class="tok k">${esc(q.topic)}</span><span class="tok">${esc(q.note.length > 46 ? q.note.slice(0, 46) + '…' : q.note)}</span><span>· Enter to save</span>`; }
+  else { const q = parseQuick(v);
+    html = !q.title ? '<span>Type anything. Dates (fri, tomorrow, 5 nov), times (7pm) and categories are picked up as you go. No date means today.</span>'
+      : `<span class="tok k">${esc(q.title)}</span><span class="tok">${esc(q.date === todayIso() ? 'Today' : fmt(q.date, { weekday: 'short', day: 'numeric', month: 'short' }))}</span>${q.time ? `<span class="tok">${esc(q.time)}</span>` : ''}<span class="tok"><i style="background:${CATVAR(q.cat)}"></i>${esc(q.cat)}</span><span>· Enter to add</span>`; }
+  if (out.dataset.pv !== html) { out.dataset.pv = html; out.innerHTML = html; }
 }
-document.addEventListener('input', e => { const f = e.target.closest('[data-qa]'); if (f) quickPreview(f); });
+const previewAll = () => document.querySelectorAll('[data-qa],[data-nq]').forEach(quickPreview);
+document.addEventListener('input', e => { const f = e.target.closest('[data-qa],[data-nq]'); if (f) quickPreview(f); });
 document.addEventListener('submit', async e => {
-  const f = e.target; if (!f.matches('[data-qa]')) return; e.preventDefault();
-  const inp = f.querySelector('input'), q = parseQuick(inp.value); if (!q.title) return;
+  const f = e.target; if (!f.matches('[data-qa],[data-nq]')) return; e.preventDefault();
+  const inp = f.querySelector('input'), dlg = f.closest('dialog');
+  if (f.matches('[data-nq]')) { const q = parseNote(inp.value); if (!q.note) return; if (dlg) dlg.close();
+    if (await withBusy('Saving note…', () => addRows('Notes', [{ id: newId('n'), date: todayIso(), topic: q.topic, note: q.note }]))) { inp.value = ''; quickPreview(f); toast('Saved to Notes under ' + q.topic); } return; }
+  const q = parseQuick(inp.value); if (!q.title) return;
   const o = { id: newId('e'), date: q.date, end: '', time: q.time, title: q.title, cat: q.cat, type: '', done: false, cd: false, notes: '' };
-  if (f.closest('dialog')) f.closest('dialog').close();
+  if (dlg) dlg.close();
   if (await withBusy('Adding…', () => addRows('Plan', [o]))) { inp.value = ''; quickPreview(f); toast(`Added ${o.title} to ${o.date === todayIso() ? 'today' : fmt(o.date, { weekday: 'long', day: 'numeric', month: 'short' })}`); }
 });
 document.addEventListener('click', e => {
-  const el = e.target.closest('[data-go],[data-qaopen],[data-more],[data-sheetclose],[data-hfilter],[data-hmore]'); if (!el) return;
+  const el = e.target.closest('[data-go],[data-qaopen],[data-more],[data-sheetclose],[data-efilter],[data-emore],[data-acc],[data-calday],[data-calnav],[data-ssec]'); if (!el) return;
   const sheet = el.closest('dialog.sheet');
   if (el.dataset.go) { if (sheet) sheet.close(); if (el.dataset.go === 'settings') { openSettings(); return; } showTab(el.dataset.go); window.scrollTo({ top: 0 }); return; }
-  if (el.hasAttribute('data-qaopen')) { const d = $('qaDlg'); d.showModal(); quickPreview($('qaSheet')); setTimeout(() => $('qsText').focus(), 30); return; }
+  if (el.hasAttribute('data-qaopen')) { $('qaDlg').showModal(); previewAll(); setTimeout(() => $('qsText').focus(), 30); return; }
   if (el.hasAttribute('data-more')) { $('moreDlg').showModal(); return; }
   if (el.hasAttribute('data-sheetclose')) { sheet.close(); return; }
-  if (el.dataset.hfilter != null) { state.hFilter = el.dataset.hfilter; renderHome(); return; }
-  if (el.hasAttribute('data-hmore')) { state.hMore = !state.hMore; renderHome(); }
+  if (el.dataset.efilter != null) { state.eFilter = el.dataset.efilter; renderEvents(); return; }
+  if (el.hasAttribute('data-emore')) { state.eMore = !state.eMore; renderEvents(); return; }
+  if (el.dataset.acc) { state.acc = state.acc === el.dataset.acc ? '' : el.dataset.acc; renderHomeNext(); return; }
+  if (el.dataset.calday) { state.calDay = el.dataset.calday; if (!state.calDay.startsWith(state.calMonth)) state.calMonth = state.calDay.slice(0, 7); renderUpcoming(); return; }
+  if (el.dataset.calnav != null) { const n = Number(el.dataset.calnav), t = todayIso(); let ym = state.calMonth || t.slice(0, 7);
+    if (n === 0) ym = t.slice(0, 7); else { const [y, m] = ym.split('-').map(Number), d = new Date(y, m - 1 + n, 1); ym = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; }
+    state.calMonth = ym; state.calDay = ''; renderUpcoming(); return; }
+  if (el.dataset.ssec) { state.sSec = el.dataset.ssec; renderSetup(); }
 });
 document.querySelectorAll('dialog.sheet').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
-document.querySelectorAll('[data-qa]').forEach(quickPreview);
 
-/* ---------- render: calendar ---------- */
+/* ---------- render: statistics ---------- */
 function yearOptions(sel, cur) {
   const ys = new Set([Number(todayIso().slice(0, 4))]);
   (state.data.Plan || []).forEach(p => p.date && ys.add(Number(p.date.slice(0, 4))));
   (state.data.Log || []).forEach(p => p.date && ys.add(Number(p.date.slice(0, 4))));
   const list = [...ys].sort(); sel.innerHTML = list.map(y => `<option ${y === cur ? 'selected' : ''}>${y}</option>`).join('');
 }
-function renderCalendar() {
-  const sel = $('calYear'), y = Number(sel.value) || Number(todayIso().slice(0, 4)); yearOptions(sel, y);
-  const t = todayIso(), pay = paydayInfo();
-  const plan = (state.data.Plan || []).filter(p => p.date && p.type !== 'Routine' && !(p.cat === 'Sport' && p.type !== 'Sport'));
-  let h = '<div></div>' + Array.from({ length: 31 }, (_, i) => `<div class="h">${i + 1}</div>`).join('');
-  for (let m = 1; m <= 12; m++) {
-    h += `<div class="m">${MONTHS[m - 1]}</div>`;
-    const dim = new Date(y, m, 0).getDate();
-    for (let d = 1; d <= 31; d++) {
-      if (d > dim) { h += '<div class="c" data-x></div>'; continue; }
-      const s = `${y}-${pad(m)}-${pad(d)}`;
-      const hit = plan.filter(p => p.date <= s && (p.end || p.date) >= s);
-      const first = hit[0];
-      h += `<button type="button" class="c" data-focus="${s}" ${s < t ? 'data-past' : ''} ${s === t ? 'data-today' : ''} ${pay.is(s) ? 'data-pay' : ''}
-        style="${first ? `background:${CATVAR(first.cat)}` : ''}" title="${esc(fmt(s, { weekday: 'short', day: 'numeric', month: 'short' }) + (hit.length ? ': ' + hit.map(x => x.title + (dayOf(x, s) ? ' (' + dayTag(x, s).toLowerCase() + ')' : '')).join(', ') : ''))}" aria-label="${esc(fmt(s, { day: 'numeric', month: 'long' }) + (hit.length ? ': ' + hit.map(x => x.title).join(', ') : ''))}"></button>`;
-    }
-  }
-  $('cal').innerHTML = h;
-  $('calLegend').innerHTML = CATS.map(c => `<span><i style="background:${CATVAR(c)}"></i>${c}</span>`).join('') + '<span><i style="background:var(--ok);border-radius:50%;width:6px;height:6px"></i>Payday</span><span>Routine items and sport fixtures stay off the calendar (set a fixture\'s type to "Sport" to show it). Hover for details, click a day to plan it.</span>';
-}
-
-/* ---------- render: stats ---------- */
-/* This month: totals, averages vs goal and a day-by-day grid, like the old 💪 tab */
 function renderMonth() {
   const t = todayIso(); if (!state.month) state.month = t.slice(0, 7);
   const [y, m] = state.month.split('-').map(Number), dim = new Date(y, m, 0).getDate();
@@ -1275,7 +1338,7 @@ function renderMonth() {
     }
   });
   const label = fromIso(state.month + '-01').toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
-  $('monthPanel').innerHTML = `<div class="panel-head"><div class="nav" style="display:flex;gap:6px;align-items:center">
+  $('monthPanel').innerHTML = `<div class="eyebrow" style="margin-bottom:6px">Monthly progress</div><div class="panel-head"><div class="nav" style="display:flex;gap:6px;align-items:center">
       <button class="btn" type="button" data-month="-1" aria-label="Previous month">‹</button><h2 class="navlabel" style="width:10.5em">${esc(label)}</h2><button class="btn" type="button" data-month="1" aria-label="Next month">›</button></div>
       <span class="muted" style="font-size:13px">${cnt('steps')} of ${state.month === t.slice(0, 7) ? Number(t.slice(8, 10)) : dim} days logged</span></div>
     ${ytd}<div class="tiles">${tiles.join('')}</div>
@@ -1388,12 +1451,6 @@ function renderNotes() {
   const ns = (state.data.Notes || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   $('notes').innerHTML = ns.map(n => `<div class="note" data-note="${esc(n.id)}"><h3>${esc(n.topic)} ${n.date ? `<span class="muted" style="font-weight:400;font-size:12px">${esc(fmt(n.date, { day: 'numeric', month: 'short', year: 'numeric' }))}</span>` : ''}</h3><p>${esc(n.note)}</p></div>`).join('') || '<p class="empty">No notes yet.</p>';
 }
-function renderLinkTab() {
-  const ls = state.data.Links || [], cats = [...new Set(ls.map(l => l.cat || 'Other'))];
-  $('linkGroups').innerHTML = cats.map(c => `<div class="panel"><div class="panel-head"><h2>${esc(c)}</h2></div>${ls.filter(l => (l.cat || 'Other') === c).map(l => `<div class="linkrow">
-    ${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.notes || '')}">${esc(l.name)}</a>` : `<span style="flex:1" class="muted" title="No link yet">${esc(l.name)}</span>`}
-    <label class="muted" style="font-size:12px;display:flex;gap:5px;align-items:center"><input type="checkbox" data-pin="${esc(l.name)}" data-row="${l._row}" ${l.pin ? 'checked' : ''}> Pin</label></div>`).join('')}</div>`).join('');
-}
 const PAPER_URL = 'https://jcm-book-library.github.io/daily-paper/';
 function renderPaper() {
   const url = setting('paper_url', PAPER_URL);
@@ -1402,8 +1459,9 @@ function renderPaper() {
 }
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
-  renderChips(); renderLinks(); $('chips').hidden = state.tab === 'home';
-  ({ home: renderHome, week: renderWeek, paper: renderPaper, stats: () => { renderLog(); renderMonth(); renderStats(); }, people: renderPeople, lists: () => { renderLists(); renderNotes(); }, links: renderLinkTab, setup: renderSetup })[state.tab]();
+  renderChips(); renderLinks();
+  ({ home: renderHome, upcoming: renderUpcoming, paper: renderPaper, fitness: () => { renderMonth(); renderLog(); renderStats(); }, people: renderPeople, notes: () => { renderNotes(); renderLists(); }, setup: renderSetup })[state.tab]();
+  previewAll();
 }
 
 /* ---------- setup tab: edit Routine, Goals, Links and app settings ---------- */
@@ -1417,30 +1475,37 @@ const SF = {
 const SETUP_KEYS = [['payday_anchor', 'A recent payday', 'date'], ['payday_every', 'Days between paydays', 'number'], ['birthday_window', 'Show birthdays this many days ahead', 'number'], ['weather_place', 'Weather place name', 'text'], ['weather_lat', 'Weather latitude', 'number'], ['weather_lon', 'Weather longitude', 'number'], ['bom_link', 'BOM forecast link', 'url'], ['paper_url', 'Paper link', 'url']];
 function sInput([c, l, t, opt, wide], v) {
   const a = `name="${c}" aria-label="${l}"`;
-  if (t === 'chk') return `<label class="c">${l}<input type="checkbox" ${a} ${v ? 'checked' : ''}></label>`;
+  if (t === 'chk') return `<label class="c"><span class="lt">${l}</span><input type="checkbox" ${a} ${v ? 'checked' : ''}></label>`;
   const os = opt && (opt.some(([x]) => String(x) === String(v)) || v == null || v === '' ? opt : opt.concat([[v, v]]));
   const h = os ? `<select ${a}>${os.map(([x, y]) => `<option value="${esc(x)}" ${String(x) === String(v) ? 'selected' : ''}>${esc(y)}</option>`).join('')}</select>`
     : `<input ${a} type="${t === 'num' ? 'number' : 'text'}" ${t === 'num' ? 'step="any"' : ''} ${t === 'url' ? 'inputmode="url"' : ''} ${t === 'list' ? 'list="sCats"' : ''} value="${esc(v ?? '')}">`;
-  return `<label class="${wide ? 'w' : ''}">${l}${h}</label>`;
+  return `<label class="${wide ? 'w' : ''}"><span class="lt">${l}</span>${h}</label>`;
 }
 const sRows = tab => { const a = state.data[tab] || []; return tab === 'Goals' ? a.slice().sort((x, y) => (x.year - y.year) || (x.month - y.month)) : a; };
+/* grid columns per section, so every row lines up under one header (Save and remove sit in the last column) */
+const SCOLS = { Routine: '110px 130px 90px minmax(0,1fr) 64px 118px', Goals: '90px 110px repeat(4,minmax(0,1fr)) 118px', Links: 'minmax(0,1fr) 130px minmax(0,1.4fr) 56px 64px minmax(0,1fr) 156px' };
 function sPanel(tab, title, note) {
   const f = SF[tab], addF = f.filter(x => !(tab === 'Routine' && x[0] === 'active'));
   let blank = {}; if (tab === 'Goals') { const g = sRows(tab).filter(x => x.year && x.month).pop(), n = g ? g.year * 12 + g.month : new Date().getFullYear() * 12 + new Date().getMonth(); blank = { year: Math.floor(n / 12), month: n % 12 + 1 }; }
   const del = r => `<button type="button" class="btn btn-ghost" data-sdel="${tab}" data-row="${esc(r._row)}" aria-label="Remove">×</button>`;
-  return `<div class="panel"><div class="panel-head"><h2>${title}</h2></div><p class="muted" style="margin:0 0 6px;font-size:13px">${note}</p>
-    ${sRows(tab).map(r => `<form class="srow" novalidate data-srow="${tab}" data-row="${esc(r._row)}">${f.map(x => sInput(x, r[x[0]])).join('')}<button class="btn btn-primary" type="submit">Save</button>${del(r)}</form>`).join('') || '<p class="empty">Nothing here yet.</p>'}
-    <form class="srow add" novalidate data-sadd="${tab}">${addF.map(x => sInput(x, blank[x[0]])).join('')}<button class="btn" type="submit">Add</button></form></div>`;
+  const open = r => tab === 'Links' && /^https?:\/\//i.test(r.url || '') ? `<a class="btn btn-ghost" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Open ${esc(r.name)}">↗</a>` : '';
+  const head = `<div class="shead">${f.map(x => `<span class="${x[2] === 'chk' ? 'c' : ''}">${x[1]}</span>`).join('')}<span></span></div>`;
+  return `<div class="panel stbl" style="--sc:${SCOLS[tab]}"><div class="panel-head"><h2>${title}</h2></div><p class="muted" style="margin:0 0 6px;font-size:13px">${note}</p>${head}
+    <form class="srow add" novalidate data-sadd="${tab}">${addF.map(x => sInput(x, blank[x[0]])).join('')}${tab === 'Routine' ? '<span></span>' : ''}<span class="sact"><button class="btn btn-primary" type="submit">Add</button></span></form>
+    ${sRows(tab).map(r => `<form class="srow" novalidate data-srow="${tab}" data-row="${esc(r._row)}">${f.map(x => sInput(x, r[x[0]])).join('')}<span class="sact">${open(r)}<button class="btn" type="submit">Save</button>${del(r)}</span></form>`).join('') || '<p class="empty">Nothing here yet.</p>'}</div>`;
 }
 const sCur = (r, k) => !r ? '' : k === 'payday_anchor' ? toIso(r.value) : String(r.value ?? '');
+const SSEC = [['Routine', 'Routine'], ['Goals', 'Goals'], ['Links', 'Links'], ['Settings', 'App settings']];
 function renderSetup() {
+  if (!SSEC.some(([k]) => k === state.sSec)) state.sSec = 'Routine';
+  $('setupNav').innerHTML = SSEC.map(([k, l]) => `<button type="button" data-ssec="${k}" aria-pressed="${state.sSec === k}">${l}</button>`).join('');
   const st = state.data.Settings || [], known = new Set(SETUP_KEYS.map(k => k[0])), fld = (k, l, t, v) => `<label class="w">${esc(l)}<input data-k="${esc(k)}" type="${t}" ${t === 'number' ? 'step="any"' : ''} ${t === 'url' ? 'inputmode="url"' : ''} value="${esc(v)}"></label>`;
-  $('setupGrid').innerHTML = `<datalist id="sCats">${[...new Set((state.data.Links || []).map(l => l.cat).filter(Boolean))].sort().map(c => `<option value="${esc(c)}">`).join('')}</datalist>`
-    + sPanel('Routine', 'Routine', 'The weekly pattern that "Plan my week" adds to the Week tab.')
-    + sPanel('Goals', 'Goals', 'Monthly targets. Leave a box blank for no goal.')
-    + sPanel('Links', 'Links', 'Shown on the Links tab. Pinned links also sit on the Week tab.')
-    + `<div class="panel"><div class="panel-head"><h2>App settings</h2></div><form class="srow" style="border-top:0" novalidate id="sApp">${SETUP_KEYS.map(([k, l, t]) => fld(k, l, t, sCur(st.find(r => r.key === k), k))).join('')
+  const body = state.sSec === 'Routine' ? sPanel('Routine', 'Routine', 'The weekly pattern that "Plan my week" adds to Home.')
+    : state.sSec === 'Goals' ? sPanel('Goals', 'Goals', 'Monthly targets. Leave a box blank for no goal.')
+    : state.sSec === 'Links' ? sPanel('Links', 'Links', 'Every link in one place. Pinned links also sit under the title bar.')
+    : `<div class="panel"><div class="panel-head"><h2>App settings</h2></div><form class="srow" style="border-top:0" novalidate id="sApp">${SETUP_KEYS.map(([k, l, t]) => fld(k, l, t, sCur(st.find(r => r.key === k), k))).join('')
     + st.filter(r => !known.has(r.key)).map(r => fld(r.key, r.key, 'text', sCur(r, r.key))).join('')}<button class="btn btn-primary" type="submit">Save settings</button></form></div>`;
+  $('setupGrid').innerHTML = `<datalist id="sCats">${[...new Set((state.data.Links || []).map(l => l.cat).filter(Boolean))].sort().map(c => `<option value="${esc(c)}">`).join('')}</datalist>` + body;
 }
 const sNorm = (c, v) => BOOL_COLS.has(c) ? !!v : NUM_COLS.has(c) ? (v === '' || v == null ? null : Number(v)) : String(v ?? '');
 function sRead(tab, f) { const o = {}; SF[tab].forEach(([c, , t]) => { const e = f.elements[c]; if (e) o[c] = t === 'chk' ? e.checked : sNorm(c, e.value.trim()); }); return o; }
@@ -1485,10 +1550,10 @@ function openItem(o, presetDate) {
   editing = o || null;
   $('itemDlgTitle').textContent = o ? 'Edit' : 'Add to ' + fmt(presetDate, { weekday: 'long', day: 'numeric', month: 'short' });
   $('fCat').innerHTML = CATS.map(c => `<option>${c}</option>`).join('');
-  $('typeList').innerHTML = [...new Set((state.data.Plan || []).map(p => p.type).filter(Boolean))].sort().map(t => `<option value="${esc(t)}">`).join('');
+  $('typeList').innerHTML = [...new Set((state.data.Plan || []).map(p => plainType(p.type)).filter(Boolean))].sort().map(t => `<option value="${esc(t)}">`).join('');
   $('fTitle').value = o ? o.title : ''; $('fDate').value = o ? o.date : presetDate; $('fEnd').value = o ? (o.end || '') : '';
   $('fTime').value = o ? (o.time || '') : ''; $('fCat').value = o ? (CATS.includes(o.cat) ? o.cat : 'Other') : 'Social';
-  $('fType').value = o ? (o.type || '') : ''; $('fNotes').value = o ? (o.notes || '') : '';
+  $('fType').value = o ? plainType(o.type) : ''; $('fEvent').checked = !!(o && hasStar(o.type)); $('fNotes').value = o ? (o.notes || '') : '';
   $('fDone').checked = !!(o && o.done); $('fCd').checked = !!(o && o.cd); $('itemDel').hidden = !o;
   state.itemKey = o ? 'item@' + o.id : 'item@new@' + presetDate;
   try { sessionStorage.setItem('brain-open-item', JSON.stringify({ id: o ? o.id : '', date: presetDate || '' })); } catch (e) {}
@@ -1505,7 +1570,7 @@ function normTime(s) {
 $('itemForm').addEventListener('submit', async e => {
   e.preventDefault();
   const o = { ...(editing || { id: newId('e') }), title: $('fTitle').value.trim(), date: $('fDate').value, end: $('fEnd').value && $('fEnd').value > $('fDate').value ? $('fEnd').value : '',
-    time: normTime($('fTime').value), cat: $('fCat').value, type: $('fType').value.trim(), notes: $('fNotes').value.trim(), done: $('fDone').checked, cd: $('fCd').checked };
+    time: normTime($('fTime').value), cat: $('fCat').value, type: withStar($('fType').value, $('fEvent').checked), notes: $('fNotes').value.trim(), done: $('fDone').checked, cd: $('fCd').checked };
   $('itemDlg').close();
   await withBusy('Saving…', () => editing ? updateRow('Plan', o) : addRows('Plan', [o]));
 });
@@ -1736,7 +1801,7 @@ $('itemDlg').addEventListener('close', () => { try { sessionStorage.removeItem('
 /* ---------- events ---------- */
 const findPlan = id => (state.data.Plan || []).find(p => p.id === id);
 document.addEventListener('click', async e => {
-  const el = e.target.closest('[data-draftdiscard],[data-nxedit],[data-nxcancel],[data-nxclear],[data-gpick],[data-unlink],[data-pgroup],[data-pview],[data-month],[data-logday],[data-focus],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
+  const el = e.target.closest('[data-draftdiscard],[data-nxedit],[data-nxcancel],[data-nxclear],[data-gpick],[data-unlink],[data-pgroup],[data-pview],[data-month],[data-logday],[data-edit],[data-add],[data-person],[data-seen],[data-cycle],[data-ldel],[data-note],[data-new-person],.mood');
   if (!el) return;
   if (el.dataset.nxedit) { state.pEditNext = el.dataset.nxedit; renderPeople(); const f = document.querySelector(`[data-nxform="${el.dataset.nxedit}"] input`); if (f) f.focus(); return; }
   if (el.hasAttribute('data-nxcancel')) { clearDraft(formKey(el.closest('form'))); state.pEditNext = null; renderPeople(); return; }
@@ -1747,7 +1812,6 @@ document.addEventListener('click', async e => {
   if (el.dataset.pview) { state.pView = el.dataset.pview; renderPeople(); return; }
   if (el.dataset.logday) { state.logDate = el.dataset.logday; renderLog(); if (el.closest('#monthPanel')) $('logPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   if (el.dataset.month) { const [yy, mm] = state.month.split('-').map(Number), d = new Date(yy, mm - 1 + Number(el.dataset.month), 1); state.month = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; renderMonth(); return; }
-  if (el.dataset.focus) { state.focus = el.dataset.focus; if (state.tab !== 'week') showTab('week'); else renderWeek(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   if (el.dataset.edit) { const o = findPlan(el.dataset.edit); if (o) openItem(o); return; }
   if (el.dataset.add) { openItem(null, el.dataset.add); return; }
   if (el.dataset.person) { openPerson((state.data.People || []).find(p => p.id === el.dataset.person)); return; }
@@ -1769,8 +1833,6 @@ document.addEventListener('change', async e => {
   if (t.id === 'logDate' && t.value) { state.logDate = t.value; renderLog(); return; }
   if (t.dataset.status) { const l = (state.data.Lists || []).find(x => x.id === t.dataset.status); if (l) await withBusy('Saving…', () => updateRow('Lists', { ...l, status: t.value })); return; }
   if (t.dataset.tick) { const o = findPlan(t.dataset.tick); if (o) await withBusy('Saving…', () => updateRow('Plan', { ...o, done: t.checked })); }
-  if (t.dataset.booked) { const l = (state.data.Lists || []).find(x => x.id === t.dataset.booked); if (l && await withBusy('Saving…', () => updateRow('Lists', { ...l, status: 'Done' }))) toast(l.item + ' booked'); }
-  if (t.dataset.pin) { const l = (state.data.Links || []).find(x => String(x._row) === t.dataset.row); if (l) await withBusy('Saving…', () => updateRow('Links', { ...l, pin: t.checked })); }
 });
 document.addEventListener('submit', async e => {
   const f = e.target;
@@ -1781,9 +1843,6 @@ document.addEventListener('submit', async e => {
     const dupe = (state.data.People || []).some(p => p.name.toLowerCase() === n.toLowerCase());
     const o = { id: newId('p'), name: n, bday: '', seen: '', tosee: false, every: null, notes: '', groups: state.pGroup && state.pGroup !== '__due' ? state.pGroup : '', links: '', ndate: '', ntime: '', nplan: '', nid: '' };
     if (await withBusy('Adding…', () => addRows('People', [o]))) $('pqName').value = '', toast(`Added ${n}${o.groups ? ' to ' + o.groups : ''}${dupe ? ' (you already had someone with that name)' : ''}`); return; }
-  if (f.id === 'quickAdd') { e.preventDefault();
-    const o = { id: newId('e'), date: state.focus || todayIso(), end: '', time: normTime($('qaTime').value), title: $('qaTitle').value.trim(), cat: $('qaCat').value, type: '', done: false, cd: false, notes: '' };
-    if (o.title) await withBusy('Adding…', () => addRows('Plan', [o])); }
   if (f.id === 'logForm') { e.preventDefault();
     const d = state.logDate || todayIso(), ex = (state.data.Log || []).find(r => r.date === d), num = id => $(id).value === '' ? null : Number($(id).value);
     const mood = (f.querySelector('.mood[aria-pressed=true]') || {}).dataset;
@@ -1791,7 +1850,7 @@ document.addEventListener('submit', async e => {
     if (await withBusy('Saving log…', () => ex ? updateRow('Log', o) : addRows('Log', [o]))) { toast('Logged ' + fmt(d, { weekday: 'long', day: 'numeric' }));
       const next = (state.data.Log || []); const logged = new Set(next.filter(r => r.steps != null || r.mood).map(r => r.date));
       for (let k = dayDiff(d, todayIso()) - 1; k >= 0; k--) { const n = addDays(todayIso(), -k); if (!logged.has(n)) { state.logDate = n; break; } }
-      if (state.tab === 'stats') { renderLog(); renderMonth(); } } }
+      if (state.tab === 'fitness') { renderLog(); renderMonth(); } } }
   if (f.dataset.list) { e.preventDefault(); const inp = f.querySelector('input'), v = inp.value.trim(); if (!v) return;
     const n = f.dataset.list, o = { id: newId('l'), list: n, item: v, status: n === 'To book' ? 'Open' : 'Up next', added: todayIso(), notes: '' };
     await withBusy('Adding…', () => addRows('Lists', [o])); }
@@ -1799,22 +1858,17 @@ document.addEventListener('submit', async e => {
 function showTab(t) {
   state.tab = t; document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   document.querySelectorAll('section[id^=v-]').forEach(s => s.hidden = s.id !== 'v-' + t);
-  const inMore = !['home', 'week', 'stats'].includes(t);
+  const inMore = !['home', 'upcoming', 'fitness'].includes(t);
   document.querySelectorAll('.bbar [data-go],.bbar [data-more]').forEach(b => b.toggleAttribute('aria-current', b.dataset.go ? b.dataset.go === t : inMore));
   document.querySelectorAll('.bbar [aria-current]').forEach(b => b.setAttribute('aria-current', 'page'));
-  $('chips').hidden = t === 'home';
   try { sessionStorage.setItem('brain-tab', t); } catch (e) {}
   if (t === 'paper') renderPaper();
   else if (state.live) renderAll();
 }
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
-$('prevWk').addEventListener('click', () => { state.focus = addDays(state.focus || todayIso(), -7); renderWeek(); });
-$('nextWk').addEventListener('click', () => { state.focus = addDays(state.focus || todayIso(), 7); renderWeek(); });
-$('todayBtn').addEventListener('click', () => { state.focus = todayIso(); renderWeek(); });
-$('calYear').addEventListener('change', renderCalendar);
 $('statYear').addEventListener('change', renderStats);
 $('peopleSearch').addEventListener('input', renderPeople);
-$('refreshBtn').addEventListener('click', () => state.live || canLoad() ? (loadWeather().then(refresh)) : connect());
+$('refreshBtn').addEventListener('click', () => state.live || canLoad() ? (loadWeather().then(refresh).then(() => { try { sessionStorage.removeItem('brain-news'); } catch (e) {} return loadNews(); }).then(() => { if (state.live && state.tab === 'home') renderHomeNews(); })) : connect());
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state.live && !state.busy) refresh(); });
 setInterval(() => { if (state.live && state.focus === null) renderAll(); }, 60e3);
 
@@ -1824,16 +1878,16 @@ setInterval(() => { if (state.live && state.focus === null) renderAll(); }, 60e3
   try { const v = JSON.parse(sessionStorage.getItem('brain-view') || 'null'); if (v) { if (v.focus) state.focus = v.focus; if (v.logDate) state.logDate = v.logDate; if (v.month) state.month = v.month; } } catch (e) {}
   const saveView = () => { try { sessionStorage.setItem('brain-view', JSON.stringify({ focus: state.focus, logDate: state.logDate, month: state.month })); } catch (e) {} };
   addEventListener('pagehide', saveView); document.addEventListener('visibilitychange', () => { if (document.hidden) saveView(); }); setInterval(saveView, 1000);
-  let t0 = 'home'; try { const t = sessionStorage.getItem('brain-tab'); if (t && $('v-' + t)) t0 = t; } catch (e) {} showTab(t0);
+  let t0 = 'home'; try { let t = sessionStorage.getItem('brain-tab'); t = { week: 'home', stats: 'fitness', lists: 'notes', links: 'setup' }[t] || t; if (t && $('v-' + t)) t0 = t; } catch (e) {} showTab(t0);
   setStatus('loading', 'Connecting…');
   loadGis().catch(() => {});
   const back = sb.fromRedirect();
   if (window.__BRAIN_DEMO__) { await window.__BRAIN_DEMO__(g); }
   if (back) openSettings(back.ok ? 'Signed in to Supabase' + (back.email ? ' as ' + back.email : '') + '.' : 'Supabase sign-in didn\'t work: ' + back.message);
-  if (canLoad()) { await refresh(); loadWeather().then(() => { if (state.live) renderAll(); });
+  if (canLoad()) { await refresh(); loadWeather().then(() => { if (state.live) renderAll(); }); loadNews().then(() => { if (state.live && state.tab === 'home') renderHomeNews(); });
     try { const oi = JSON.parse(sessionStorage.getItem('brain-open-item') || 'null');
       if (oi && state.live) { const o = oi.id ? findPlan(oi.id) : null, k = o ? 'item@' + o.id : 'item@new@' + oi.date;
-        if (drafts[k] && (o || oi.date)) { if (state.tab !== 'week') showTab('week'); openItem(o, oi.date); } } } catch (e) {}
+        if (drafts[k] && (o || oi.date)) { if (state.tab !== 'home') showTab('home'); openItem(o, oi.date); } } } catch (e) {}
     return; }
   signedOut(); loadWeather();
   if (useSb()) { notice('Press Connect to sign in to Supabase and load your Brain.'); return; }

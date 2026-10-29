@@ -52,7 +52,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.route('https://brain.test/', r => r.fulfill({ contentType: 'text/html', body: HTML }));
-  await page.route('https://jcm-book-library.github.io/daily-paper/', r => r.fulfill({ contentType: 'text/html', body: '<h1 style="font-family:serif">The Overnight Sentinel (stub)</h1>' }));
+  await page.route('https://jcm-book-library.github.io/daily-paper/', r => r.fulfill({ contentType: 'text/html', body: '<h1 style="font-family:serif">The Overnight Sentinel (stub)</h1><section class="watch"><div class="feed watch-grid" data-ed="Morning" hidden><div class="watch-item"><a class="story" href="https://example.com/old"><span class="kicker"><span class="src">old</span></span><h3>Hidden edition story</h3></a></div></div><div class="feed watch-grid" data-ed="Afternoon"><div class="watch-item"><a class="story" href="https://example.com/a"><span class="kicker"><span class="src">3 outlets</span></span><h3>First top story</h3></a></div><div class="watch-item"><a class="story" href="https://example.com/b"><span class="kicker"><span class="src">ABC top story</span></span><h3>Second top story</h3></a></div><div class="watch-item"><a class="story" href="javascript:alert(1)"><span class="kicker"><span class="src">2 outlets</span></span><h3>Third top story</h3></a></div><div class="watch-item"><a class="story" href="https://example.com/d"><h3>Fourth is not shown</h3></a></div></div></section>' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ body: '' }));
   await page.route(/accounts\.google\.com/, r => r.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.route(/api\.open-meteo\.com/, r => { const time = [], mx = [], mn = [], rn = [], wc = []; for (let i = -7; i < 14; i++) { time.push(add(i)); mx.push(18 + (i % 5)); mn.push(9); rn.push(20 + i); wc.push(i % 3 ? 3 : 61); }
@@ -82,49 +82,57 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const log = [];
   const check = (name, ok) => log.push((ok ? 'PASS ' : 'FAIL ') + name);
 
-  // home: the default tab
+  // home: the default tab, rows in the agreed order
   await page.screenshot({ path: path.join(OUT, 'shot-home.png'), fullPage: true });
-  check('home is the default tab', await page.isVisible('#v-home') && !(await page.isVisible('#v-week')));
-  check('home: today shows schedule and to-do', /Strength & Conditioning/.test(await page.locator('#homeToday').innerText()) && /Office/.test(await page.locator('#homeToday').innerText()));
-  check('home: three cards share one width and height', await page.evaluate(() => { const r = ['homeFit', 'homeSteps', 'homePeople'].map(id => document.getElementById(id).getBoundingClientRect());
-    return r.every(x => Math.abs(x.width - r[0].width) < 1 && Math.abs(x.height - r[0].height) < 1 && Math.abs(x.top - r[0].top) < 1); }));
-  check('home: today and upcoming run full width', await page.evaluate(() => { const w = id => document.getElementById(id).getBoundingClientRect().width; return Math.abs(w('homeUp') - w('homeToday')) < 1 && Math.abs(w('homeUp') - document.querySelector('#v-home .qa').getBoundingClientRect().width) < 1; }));
-  { const up = await page.locator('#homeUp').innerText();
-    check('home: upcoming merges plan, birthdays and paydays', /Sam's birthday/.test(up) && /Payday/.test(up) && /Opera night/.test(up) && /Finance Coaching/.test(up));
-    check('home: multi-day item listed once, done and routine left out', (up.match(/Housesitting/g) || []).length === 1 && !/Strength/.test(up)); }
-  await page.click('[data-hfilter="Social"]'); await page.waitForTimeout(100);
-  { const ups = await page.evaluate(() => [...document.querySelectorAll('#homeUp .uprow')].map(r => r.textContent).join('|'));
-    check('home: category filter narrows upcoming', !ups.includes('Payday') && ups.includes('Opera night') && !ups.includes('Finance Coaching')); }
-  await page.click('[data-hfilter=""]');
-  check('home: countdown chips hidden (upcoming covers them)', !(await page.isVisible('#chips')));
-  await page.click('.tab[data-tab=week]'); await page.waitForTimeout(200);
-  await page.screenshot({ path: path.join(OUT, 'shot-week.png'), fullPage: true });
-
+  check('home is the default tab', await page.isVisible('#v-home') && !(await page.isVisible('#v-upcoming')));
+  check('tabs in the agreed order', JSON.stringify(await page.locator('.tabs .tab').allInnerTexts()) === JSON.stringify(['Home', 'Upcoming', 'Paper', 'Fitness', 'Family & Friends', 'Notes', 'Setup']));
+  const box = id => page.evaluate(i => { const r = document.getElementById(i).getBoundingClientRect(); return { x: r.x, y: r.y + scrollY, w: r.width, h: r.height }; }, id);
+  { const ys = []; for (const id of ['chips', 'homeNews', 'homeSteps', 'qaHome', 'homeToday', 'homeNext']) ys.push((await box(id)).y);
+    check('home rows run: countdowns, headlines/weather, steps/pages, add/notes, today, next 6 days', ys.every((y, i) => i === 0 || y > ys[i - 1]), ys); }
+  for (const [a, b] of [['homeNews', 'homeWx'], ['homeSteps', 'homePages'], ['qaHome', 'noteHome']]) { const A = await box(a), B = await box(b);
+    check(`home: ${a} and ${b} are a matched pair (same width, height and row)`, Math.abs(A.w - B.w) < 1 && Math.abs(A.h - B.h) < 1 && Math.abs(A.y - B.y) < 1 && B.x > A.x, [A, B]); }
+  { const w = await page.evaluate(() => ['chips', 'homeToday', 'homeNext'].map(i => document.getElementById(i).getBoundingClientRect().width));
+    check('home: countdowns, today and next 6 days run the full width', w.every(x => Math.abs(x - w[0]) < 1), w);
+    const cw = await page.evaluate(() => [...document.querySelectorAll('#chips .cd')].map(c => Math.round(c.getBoundingClientRect().width)));
+    check('home: countdown cells are all the same width', cw.length >= 2 && new Set(cw).size === 1, cw); }
   check('chips include payday', await page.locator('.cd.pay').count() === 1); { const pd = await page.locator('.cd.pay b').innerText(); const exp = (()=>{const a=Date.UTC(2026,0,9);const n=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());const d=Math.round((n-a)/864e5);const r=((14-(d%14))%14);return r===0?'Today':r===1?'Tomorrow':r+' days';})(); check('payday countdown correct ('+pd+')', pd===exp); }
   check('ticked countdown shown', (await page.locator('#chips').innerText()).includes('Dinner with friends'));
-  check('today items rendered', (await page.locator('#focusPanel').innerText()).includes('Strength & Conditioning'));
-  check('six day cards', await page.locator('.dcard').count() === 6);
-  check('multi-day item shows day number on focus day', /Day 1 of 3/.test(await page.locator('#days').innerText()) || /Day \d of 3/.test(await page.locator('#focusPanel').innerText()));
-  check('multi-day item counts up across days', await page.evaluate(() => { const t = document.getElementById('days').innerText; return /Day 1 of 3/.test(t) && /Day 2 of 3/.test(t) && /Day 3 of 3/.test(t); }));
-  check('day cards stack in one column', await page.evaluate(() => getComputedStyle(document.getElementById('days')).gridTemplateColumns.split(' ').length === 1));
   check('pinned links', await page.locator('#links a').count() === 2);
+  { const rows = await page.locator('#homeNews .news li a').evaluateAll(a => a.map(x => [x.querySelector('.hl').textContent, x.getAttribute('href') || '']));
+    check('home: top 3 headlines from the paper (current edition only)', rows.length === 3 && rows[0][0] === 'First top story' && rows[1][0] === 'Second top story' && rows[2][0] === 'Third top story' && !(await page.locator('#homeNews').innerText()).includes('Hidden edition'), rows);
+    check('home: headline links open the story, and unsafe links are dropped', rows[0][1] === 'https://example.com/a' && rows[2][1] === ''); }
+  check('home: weather shows today and the next three days', /°/.test(await page.locator('#homeWx .wxbig').innerText()) && await page.locator('#homeWx .wx3 > div').count() === 3);
+  { const ym = T.slice(0, 7), rows = db.Log.slice(1).filter(r => r[0] && (() => { const d = new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}` === ym; })());
+    const avg = k => { const v = rows.map(r => r[k]).filter(x => x != null && x !== ''); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length).toLocaleString('en-AU') : '–'; };
+    check('home: average steps (' + avg(1) + ') and average pages (' + avg(4) + ')', (await page.locator('#homeSteps .big').innerText()).startsWith(avg(1)) && (await page.locator('#homePages .big').innerText()).startsWith(avg(4)) && /Average steps/.test(await page.locator('#homeSteps').innerText()) && /Average pages read/.test(await page.locator('#homePages').innerText())); }
+  check('home: today shows schedule and to-do', /Strength & Conditioning/.test(await page.locator('#homeToday').innerText()) && /Office/.test(await page.locator('#homeToday').innerText()));
+  // next 6 days: accordion, one open at a time
+  check('home: six day rows, all closed to start', await page.locator('#nextBody .acc').count() === 6 && await page.locator('#nextBody .acc[data-open=true]').count() === 0);
+  { const hd = await page.locator('#nextBody .acc-h').allInnerTexts();
+    check('home: each row is the day plus its task count', /2 tasks/.test(hd[1]) && /1 task\b/.test(hd[0]) && new RegExp(new Date(add(1) + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long' })).test(hd[0]), hd); }
+  check('home: multi-day item counts up across the days', await page.evaluate(() => { const t = document.getElementById('nextBody').textContent; return /Day 1 of 3/.test(t) && /Day 2 of 3/.test(t) && /Day 3 of 3/.test(t); }));
+  await page.click(`[data-acc="${add(2)}"]`); await page.waitForTimeout(80);
+  check('home: opening a day shows its tasks', await page.isVisible(`#acc-${add(2)}`) && (await page.locator(`#acc-${add(2)}`).innerText()).includes('Matchday'));
+  await page.click(`[data-acc="${add(1)}"]`); await page.waitForTimeout(80);
+  check('home: only one day is open at a time', await page.locator('#nextBody .acc[data-open=true]').count() === 1 && !(await page.isVisible(`#acc-${add(2)}`)) && await page.isVisible(`#acc-${add(1)}`));
+  await page.screenshot({ path: path.join(OUT, 'shot-home-open.png'), fullPage: true });
 
   // tick an item
-  await page.locator('#v-week [data-tick="e1"]').check(); await page.waitForSelector('#status[data-state=live]');
+  await page.locator('#homeToday [data-tick="e1"]').check(); await page.waitForSelector('#status[data-state=live]');
   check('tick saved to sheet', db.Plan[1][7] === true);
 
   // quick add
-  await page.fill('#qaTitle', 'Call Mum'); await page.fill('#qaTime', '730pm'); await page.selectOption('#qaCat', 'Social');
-  await page.click('#quickAdd button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  await page.fill('#qhText', 'Call Mum #social 7:30pm'); await page.click('#qaHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   const added = db.Plan.find(r => r[4] === 'Call Mum');
   check('quick add wrote row after last item (row 10)', db.Plan.indexOf(added) === 9 && added[3] === '19:30' && added[5] === 'Social' && added[1] === serial(T));
 
   // edit via dialog
-  await page.click('#v-week [data-edit="e2"]'); await page.fill('#fTitle', 'WFH'); await page.click('#itemForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('#homeToday [data-edit="e2"]'); await page.fill('#fTitle', 'WFH'); await page.click('#itemForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   check('edit saved', db.Plan[2][4] === 'WFH');
 
   // delete
-  await page.click('#v-week [data-edit="e3"]'); await page.click('#itemDel'); await page.waitForSelector('#status[data-state=live]');
+  if (!(await page.isVisible(`#acc-${add(1)}`))) await page.click(`[data-acc="${add(1)}"]`);
+  await page.click('#nextBody [data-edit="e3"]'); await page.click('#itemDel'); await page.waitForSelector('#status[data-state=live]');
   check('delete removed row', !db.Plan.some(r => r[0] === 'e3'));
 
   // plan my week
@@ -137,22 +145,61 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('plan my week is idempotent', await page.locator('#planPreview li').count() === 0);
   await page.click('#planDlg [data-close]');
 
-  // focus another day
-  await page.locator('.dcard-h button').nth(2).click();
-  await page.waitForTimeout(200);
-  await page.screenshot({ path: path.join(OUT, 'shot-week2.png'), fullPage: true });
+  // the event star: a trailing ★ on Type marks an event; multi-day items always count
+  await page.click('#homeToday [data-star="e1"]'); await page.waitForSelector('#status[data-state=live]');
+  check('star: marks the item as an event (Type keeps its text, gains a ★)', db.Plan[1][6] === 'Gym ★', db.Plan[1][6]);
+  check('star: shown pressed, and the type reads as before', (await page.getAttribute('#homeToday [data-star="e1"]', 'aria-pressed')) === 'true' && (await page.locator('#homeToday').innerText()).includes('Gym') && !(await page.locator('#homeToday .ty').first().innerText()).includes('★'));
+  check('star: multi-day items always show, and the star is locked on', await page.evaluate(() => { const b = document.querySelector('#nextBody [data-star="e6"]'); return b && b.hasAttribute('data-auto') && b.getAttribute('aria-pressed') === 'true'; }));
+  await page.click('#homeToday [data-edit="e2"]'); await page.waitForSelector('#itemDlg[open]');
+  check('item pop-up has the event tick, off for a plain item', (await page.isChecked('#fEvent')) === false);
+  await page.check('#fEvent'); await page.click('#itemForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('pop-up event tick saves the star', db.Plan[2][6] === 'Routine ★' || db.Plan[2][6] === '★', db.Plan[2][6]);
+  await page.click('#homeToday [data-edit="e2"]'); await page.uncheck('#fEvent'); await page.click('#itemForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('pop-up event tick clears the star', !String(db.Plan[2][6] || '').includes('★'), db.Plan[2][6]);
 
-  // to book tick
-  await page.locator('[data-booked="l2"]').check(); await page.waitForSelector('#status[data-state=live]');
-  check('to-book ticked -> Done', db.Lists.find(r => r[0] === 'l2')[3] === 'Done');
+  // upcoming: month calendar of events, the selected day, and events coming up
+  await page.click('.tab[data-tab=upcoming]'); await page.waitForTimeout(200);
+  await page.screenshot({ path: path.join(OUT, 'shot-upcoming.png'), fullPage: true });
+  check('upcoming: one month, six rows of seven', await page.locator('#calPanel .mc').count() === 42 && await page.locator('#calPanel .mh').count() === 7);
+  { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .mc')].map(c => Math.round(c.getBoundingClientRect().width))), pw = await page.evaluate(() => document.getElementById('calPanel').getBoundingClientRect().width);
+    check('upcoming: every day cell the same width, calendar full width', new Set(w).size === 1 && w[0] * 7 > pw * 0.8, [w[0], pw]); }
+  check('upcoming: starred item shows on the calendar, plain tasks do not', await page.evaluate(d => { const c = document.querySelector(`#calPanel [data-calday="${d}"]`).textContent; return /Strength/.test(c) && !/Call Mum/.test(c); }, T));
+  check('upcoming: selected day starts on today and lists every item', /today/i.test(await page.locator('#dayPanel').innerText()) && (await page.locator('#dayPanel').innerText()).includes('Call Mum') && (await page.locator('#dayPanel').innerText()).includes('Strength'));
+  await page.click(`#calPanel [data-calday="${add(2)}"]`); await page.waitForTimeout(100);
+  check('upcoming: clicking a day lists its other tasks (not on the calendar)', (await page.locator('#dayPanel').innerText()).includes('Matchday') && !(await page.locator(`#calPanel [data-calday="${add(2)}"]`).innerText()).includes('Matchday'));
+  { const ev = await page.locator('#evPanel').innerText();
+    check('upcoming: events list has birthdays, paydays and multi-day items, not plain tasks', /Sam's birthday/.test(ev) && /Payday/.test(ev) && /Housesitting/.test(ev) && !/Matchday/.test(ev) && !/Opera night/.test(ev)); }
+  await page.click('#evPanel [data-efilter="Home"]'); await page.waitForTimeout(80);
+  check('upcoming: category filter narrows the events list', (await page.locator('#evPanel .uprow').count()) >= 1 && !(await page.locator('#evPanel').innerText()).includes('Payday'));
+  await page.click('#evPanel [data-efilter=""]');
+  await page.click('#dayPanel [data-add]'); await page.waitForSelector('#itemDlg[open]');
+  check('upcoming: add to the selected day opens the pop-up for that date', (await page.inputValue('#fDate')) === add(2)); await page.click('#itemDlg [data-close]');
+  { const lab = await page.locator('#calPanel h2').innerText(); await page.click('[data-calnav="1"]'); await page.waitForTimeout(80);
+    const lab2 = await page.locator('#calPanel h2').innerText(); await page.click('[data-calnav="0"]'); await page.waitForTimeout(80);
+    check('upcoming: month arrows move and Today comes back', lab !== lab2 && (await page.locator('#calPanel h2').innerText()) === lab && await page.locator('#calPanel .mc').count() === 42, [lab, lab2]); }
+  { const xs = []; for (let i = 0; i < 6; i++) { xs.push(Math.round((await page.locator('[data-calnav="1"]').boundingBox()).x)); await page.click('[data-calnav="1"]'); await page.waitForTimeout(40); }
+    check('upcoming: month arrow stays put (' + [...new Set(xs)].join(',') + ')', new Set(xs).size === 1); await page.click('[data-calnav="0"]'); }
+  const gotoDay = async d => { if (!(await page.locator(`#calPanel [data-calday="${d}"]`).count())) await page.click('[data-calnav="1"]'); await page.click(`#calPanel [data-calday="${d}"]`); await page.waitForTimeout(100); };
+  await gotoDay(add(12));
+  await page.click('#dayPanel [data-star="e7"]'); await page.waitForSelector('#status[data-state=live]');
+  check('upcoming: starring from the day panel adds it to the events list', db.Plan.find(r => r[0] === 'e7')[6] === 'Event ★' && (await page.locator('#evPanel').innerText()).includes('Opera night'));
+  await page.screenshot({ path: path.join(OUT, 'shot-upcoming2.png'), fullPage: true });
+
+  // to book: status dropdown on the Notes tab
+  await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(150);
+  await page.selectOption('[data-status="l2"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
+  check('to-book set to Done', db.Lists.find(r => r[0] === 'l2')[3] === 'Done');
 
   await page.click('.tab[data-tab=paper]'); await page.waitForTimeout(400);
   check('paper tab embeds the paper', (await page.locator('#paperFrame').getAttribute('src')) === 'https://jcm-book-library.github.io/daily-paper/' && (await page.frameLocator('#paperFrame').locator('h1').innerText()).includes('Sentinel'));
   await page.screenshot({ path: path.join(OUT, 'shot-paper.png') });
-  check('calendar sits on the week tab', await page.locator('#v-week #cal .c').count() > 300 && await page.locator('.tab[data-tab=calendar]').count() === 0);
 
-  // stats tab: backdate a log
-  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(200);
+  // fitness tab: backdate a log
+  await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(200);
+  { const ys = []; for (const id of ['monthPanel', 'logPanel']) ys.push((await box(id)).y);
+    check('fitness: monthly progress, then log, then year to date, then the two coming-later cards', ys[0] < ys[1] && (await page.locator('#v-fitness .later-card').count()) === 2 && /Year to date/.test(await page.locator('#v-fitness').innerText()) && /monthly progress/i.test(await page.locator('#monthPanel').innerText())); }
+  { const a = await box('monthPanel'), b = await box('logPanel'), soon = await page.evaluate(() => [...document.querySelectorAll('#v-fitness .later-card')].map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), Math.round(r.top)]; }));
+    check('fitness: panels run the full width; the two future cards match', Math.abs(a.w - b.w) < 1 && soon[0][0] === soon[1][0] && soon[0][1] === soon[1][1] && soon[0][2] === soon[1][2], soon); }
   const missingBtns = await page.locator('[data-logday]').count();
   check('missing days offered', missingBtns >= 1);
   await page.fill('#logDate', add(-5)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
@@ -164,7 +211,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('existing day loads its saved values', (await page.inputValue('#lSteps')) === '14000');
 
   // this month panel
-  check('this month panel shows totals', (await page.locator('#monthPanel .tile').count()) === 6 && (await page.locator('#monthPanel').innerText()).includes('so far'));
+  check('monthly progress shows totals', (await page.locator('#monthPanel .tile').count()) === 6 && (await page.locator('#monthPanel').innerText()).includes('so far'));
   { // catch-up figure: (goal * (logged + h) - total) / h, h = next 5 days (or fewer left in month)
     const ym = T.slice(0, 7), rows = db.Log.slice(1).filter(r => r[0] && (() => { const d = new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}` === ym; })() && r[1] != null && r[1] !== '');
     const dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
@@ -229,33 +276,30 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('groups and link saved to sheet', jo[7] === 'HFP, IV' && jo[8] === 'p1:Sibling');
 
   // nav labels keep the arrows still
-  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(150);
+  await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(150);
   const xs = []; for (let i = 0; i < 6; i++) { xs.push(Math.round((await page.locator('[data-month="1"]').boundingBox()).x)); await page.click('[data-month="-1"]'); await page.waitForTimeout(50); }
   check('month arrow stays put (' + [...new Set(xs)].join(',') + ')', new Set(xs).size === 1);
-  await page.click('.tab[data-tab=week]'); await page.waitForTimeout(100);
-  const wx2 = []; for (let i = 0; i < 6; i++) { wx2.push(Math.round((await page.locator('#nextWk').boundingBox()).x)); await page.click('#nextWk'); await page.waitForTimeout(50); }
-  check('week arrow stays put (' + [...new Set(wx2)].join(',') + ')', new Set(wx2).size === 1);
-  await page.click('#todayBtn');
-
   // lists: status dropdown
-  await page.click('.tab[data-tab=lists]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('.tab[data-tab=notes]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
   check('list status dropdown saves', db.Lists.find(r => r[0] === 'l1')[3] === 'Done');
 
-  check('lists and notes share a tab', (await page.locator('.tab[data-tab=notes]').count()) === 0 && (await page.locator('#v-lists #notes').count()) === 1);
-  for (const t of ['week', 'stats', 'people', 'lists', 'links']) {
+  check('notes tab holds the notes and the lists, and there is no Links tab or Week tab', (await page.locator('#v-notes #notes').count()) === 1 && (await page.locator('#v-notes #lists').count()) === 1 && (await page.locator('.tab[data-tab=links]').count()) === 0 && (await page.locator('.tab[data-tab=week]').count()) === 0);
+  for (const t of ['home', 'upcoming', 'fitness', 'people', 'notes']) {
     await page.click(`.tab[data-tab=${t}]`); await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(OUT, `shot-${t}.png`), fullPage: true });
   }
   await page.click('.tab[data-tab=people]'); await page.click('[data-seen="p1"]'); await page.waitForSelector('#status[data-state=live]');
   check('seen today', db.People[1][3] === serial(T) && db.People[1][4] === false);
-  await page.click('.tab[data-tab=lists]'); await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('.tab[data-tab=notes]'); await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button'); await page.waitForSelector('#status[data-state=live]');
   check('list add', db.Lists.some(r => r[2] === 'New Show' && r[3] === 'Up next'));
 
   // setup tab
   await page.setViewportSize({ width: 1280, height: 1000 });
   const live = () => page.waitForSelector('#status[data-state=live]');
   await page.click('.tab[data-tab=setup]'); await page.waitForTimeout(200);
-  check('setup: four panels', await page.locator('#setupGrid > .panel').count() === 4 && await page.locator('[data-srow=Routine]').count() === 4);
+  check('setup: four sections, one shown at a time, links among them', await page.locator('#setupNav button').count() === 4 && await page.locator('#setupGrid > .panel').count() === 1 && await page.locator('[data-srow=Routine]').count() === 4 && (await page.locator('#setupNav').innerText()).includes('Links'));
+  { const lx = await page.evaluate(() => [...document.querySelectorAll('.stbl [name=title]')].map(i => Math.round(i.getBoundingClientRect().left)).concat([Math.round(document.querySelectorAll('.stbl .shead span')[3].getBoundingClientRect().left)]));
+    check('setup: every row and the header line up in columns', new Set(lx).size === 1, lx); }
   await page.screenshot({ path: path.join(OUT, 'shot-setup-1280.png'), fullPage: true });
   const rt0 = JSON.stringify(db.Routine[2]);
   await page.locator('[data-srow=Routine]').nth(1).locator('[name=time]').fill('8am'); await page.locator('[data-srow=Routine]').nth(1).locator('button[type=submit]').click(); await live();
@@ -268,6 +312,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const rdel = page.locator('[data-sdel=Routine]').nth(3); await rdel.click(); check('setup: first press asks Remove?', (await rdel.innerText()) === 'Remove?'); const rn = db.Routine.length; await page.waitForTimeout(200);
   check('setup: first press does not delete', db.Routine.length === rn); await rdel.click(); await live();
   check('setup: routine item removed (two presses)', db.Routine.length === rn - 1 && !db.Routine.some(r => r[3] === 'Walk'));
+  await page.click('[data-ssec=Goals]'); await page.waitForTimeout(100);
   const gl = db.Goals.length; const gy = today.getFullYear(), gm = today.getMonth() + 1, nm = gm === 12 ? 1 : gm + 1, ny = gm === 12 ? gy + 1 : gy;
   check('setup: goal add defaults to next month', (await page.inputValue('[data-sadd=Goals] [name=year]')) === String(ny) && (await page.inputValue('[data-sadd=Goals] [name=month]')) === String(nm));
   await page.fill('[data-sadd=Goals] [name=steps]', '12000'); await page.fill('[data-sadd=Goals] [name=km]', '9'); await page.click('[data-sadd=Goals] button[type=submit]'); await live();
@@ -276,10 +321,13 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.selectOption('[data-sadd=Goals] [name=month]', String(nm)); await page.fill('[data-sadd=Goals] [name=year]', String(ny));
   const gc = calls.length; await page.click('[data-sadd=Goals] button[type=submit]'); await page.waitForTimeout(300);
   check('setup: duplicate goal month refused, no write', db.Goals.length === gl + 1 && calls.length === gc && (await page.locator('#toast').innerText()).includes('already a goal'));
+  await page.click('[data-ssec=Links]'); await page.waitForTimeout(100);
+  check('setup: links show an open arrow when there is a web address', (await page.locator('[data-srow=Links] a[href^=https]').count()) >= 1);
   await page.locator('[data-srow=Links]').nth(0).locator('[name=url]').fill('https://example.com/new'); await page.locator('[data-srow=Links]').nth(0).locator('button[type=submit]').click(); await live();
   check('setup: link url saved', db.Links[1][2] === 'https://example.com/new' && db.Links[1][0] === 'Books' && db.Links[1][3] === true && db.Links[1][4] === 1, db.Links[1]);
   await page.fill('[data-sadd=Links] [name=name]', 'Weather'); await page.fill('[data-sadd=Links] [name=cat]', 'Sport'); await page.click('[data-sadd=Links] button[type=submit]'); await live();
   check('setup: link added', db.Links.some(r => r[0] === 'Weather' && r[1] === 'Sport'));
+  await page.click('[data-ssec=Settings]'); await page.waitForTimeout(100);
   await page.fill('#sApp [data-k=payday_every]', '21'); await page.click('#sApp button[type=submit]'); await live();
   check('setup: payday_every updated', String(db.Settings[2][1]) === '21' && db.Settings[1][1] === serial('2026-01-09') && String(db.Settings[3][1]) === '60', db.Settings);
   check('setup: payday date shown via toIso', (await page.inputValue('#sApp [data-k=payday_anchor]')) === '2026-01-09');
@@ -296,31 +344,32 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.setViewportSize({ width: 1360, height: 1000 });
   // drafts: typing survives the refresh that runs when you come back to the tab, and a full reload
   const backToTab = async () => { await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await page.waitForTimeout(150); await page.waitForSelector('#status[data-state=live]'); };
-  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(150);
+  await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(150);
   await page.fill('#logDate', add(-4)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
   await page.fill('#lSteps', '7777'); await page.fill('#lNote', 'half typed'); await page.click('.mood[data-m=P]');
   check('unsaved note shows while typing', await page.isVisible('[data-draftflag]'));
   await backToTab();
   check('log typing survives coming back to the tab', (await page.inputValue('#lSteps')) === '7777' && (await page.inputValue('#lNote')) === 'half typed' && (await page.getAttribute('.mood[data-m=P]', 'aria-pressed')) === 'true');
-  await page.click('.tab[data-tab=week]'); await page.fill('#qaTitle', 'Buy milk'); await page.fill('#qaTime', '5pm');
+  await page.click('.tab[data-tab=home]'); await page.fill('#qhText', 'Buy milk 5pm'); await page.fill('#nhText', 'Ideas: half a thought');
   await backToTab();
-  check('quick add typing survives coming back to the tab', (await page.inputValue('#qaTitle')) === 'Buy milk' && (await page.inputValue('#qaTime')) === '5pm');
-  await page.locator('[data-add]').first().click(); await page.fill('#fTitle', 'Half-written plan'); await page.fill('#fNotes', 'details');
+  check('quick add and quick note typing survive coming back to the tab', (await page.inputValue('#qhText')) === 'Buy milk 5pm' && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
+  if (!(await page.isVisible(`#acc-${add(1)}`))) await page.click(`[data-acc="${add(1)}"]`);
+  await page.locator(`#acc-${add(1)} [data-add]`).click(); await page.fill('#fTitle', 'Half-written plan'); await page.fill('#fNotes', 'details');
   await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
   check('add-item pop-up comes back after a reload', await page.isVisible('#itemDlg[open]') && (await page.inputValue('#fTitle')) === 'Half-written plan');
   await page.click('#itemDlg [data-close]');
   check('cancel throws the pop-up draft away', !(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('brain-drafts') || '{}')).some(k => k.startsWith('item@')))));
-  check('quick add typing survives a reload', (await page.inputValue('#qaTitle')) === 'Buy milk');
-  await page.click('#quickAdd button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
-  check('saving clears the quick add draft', db.Plan.some(r => r[4] === 'Buy milk') && (await page.inputValue('#qaTitle')) === '');
-  await page.click('.tab[data-tab=stats]'); await page.waitForTimeout(150);
+  check('quick add typing survives a reload (and the preview comes back with it)', (await page.inputValue('#qhText')) === 'Buy milk 5pm' && /Buy milk/.test(await page.locator('#qaHome .qa-prev').innerText()) && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
+  await page.click('#qaHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('saving clears the quick add draft', db.Plan.some(r => r[4] === 'Buy milk' && r[3] === '17:00') && (await page.inputValue('#qhText')) === '' && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
+  await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(150);
   check('log typing survives a reload', (await page.inputValue('#lSteps')) === '7777');
   await page.click('[data-draftdiscard]'); await page.waitForTimeout(100);
   check('discard puts the saved values back', (await page.inputValue('#lSteps')) !== '7777' && !(await page.isVisible('[data-draftflag]')));
   await page.fill('#lSteps', '8888'); await page.click('#logForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   check('saving the log clears its draft', !(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('brain-drafts') || '{}')).some(k => k.startsWith('log@')))));
 
-  // home quick add: one line, read for date, time and category
+  // home quick add: one line, read for date, time and category; quick note
   await page.click('.tab[data-tab=home]'); await page.waitForTimeout(150);
   const fri = (() => { const d = new Date(today); let n = (5 - d.getDay() + 7) % 7; if (n === 0) n = 7; return add(n); })();
   await page.fill('#qhText', 'Dinner IV fri 7pm');
@@ -334,23 +383,39 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.fill('#qhText', 'Sort winter clothes'); await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const qa3 = db.Plan.find(r => r[4] === 'Sort winter clothes');
   check('quick add: no date means today', !!qa3 && qa3[1] === serial(T) && qa3[3] === '', qa3);
-  check('quick add: shows on home straight away', (await page.locator('#homeToday').innerText()).includes('Sort winter clothes') && (await page.locator('#homeUp').innerText()).includes('Dinner IV'));
+  check('quick add: shows on home straight away', (await page.locator('#homeToday').innerText()).includes('Sort winter clothes'));
+  await page.fill('#nhText', 'Gift ideas: a book for Sam'); check('quick note preview shows the topic', /Gift ideas/.test(await page.locator('#noteHome .qa-prev').innerText()));
+  await page.press('#nhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  const nt = db.Notes.find(r => r[2] === 'Gift ideas');
+  check('quick note: topic and text saved with today\'s date', !!nt && nt[3] === 'a book for Sam' && nt[1] === serial(T) && (await page.inputValue('#nhText')) === '', nt);
+  await page.fill('#nhText', 'Remember the bins'); await page.press('#nhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  check('quick note: no topic goes under Quick note', db.Notes.some(r => r[2] === 'Quick note' && r[3] === 'Remember the bins'));
+  await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(100);
+  check('quick notes show on the Notes tab', (await page.locator('#notes').innerText()).includes('a book for Sam'));
+  await page.click('.tab[data-tab=home]');
 
-  // phone: bottom tab bar, quick add sheet, More sheet
+  // phone: bottom tab bar, add sheet (planner and notes), More sheet
   await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
   check('phone: bottom bar replaces the top tabs', await page.isVisible('.bbar') && !(await page.isVisible('.tabs')));
-  check('phone: bottom bar has five equal slots', await page.evaluate(() => { const w = [...document.querySelectorAll('.bbar > *')].map(x => x.getBoundingClientRect().width); return w.length === 5; }));
+  check('phone: bottom bar has five equal slots', await page.evaluate(() => document.querySelectorAll('.bbar > *').length === 5));
+  check('phone: home pairs stack, nothing scrolls sideways', await page.evaluate(() => { const a = document.getElementById('homeNews').getBoundingClientRect(), b = document.getElementById('homeWx').getBoundingClientRect(); return b.top > a.bottom - 1 && Math.abs(a.width - b.width) < 1 && document.documentElement.scrollWidth <= innerWidth; }));
   await page.screenshot({ path: path.join(OUT, 'shot-home-390.png'), fullPage: true });
   await page.click('.bbar [data-qaopen]'); await page.waitForSelector('#qaDlg[open]');
   await page.fill('#qsText', 'Call the bank thu'); await page.screenshot({ path: path.join(OUT, 'shot-sheet-390.png') }); await page.press('#qsText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
-  check('phone: + sheet adds and closes', db.Plan.some(r => r[4] === 'Call the bank' && r[5] === 'Home') && !(await page.isVisible('#qaDlg')));
-  await page.click('.bbar [data-more]'); await page.waitForSelector('#moreDlg[open]'); await page.click('#moreDlg [data-go=people]'); await page.waitForTimeout(150);
+  check('phone: + sheet adds to the planner and closes', db.Plan.some(r => r[4] === 'Call the bank' && r[5] === 'Home') && !(await page.isVisible('#qaDlg')));
+  await page.click('.bbar [data-qaopen]'); await page.waitForSelector('#qaDlg[open]'); await page.fill('#nsText', 'Phone note'); await page.press('#nsText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  check('phone: + sheet adds a note too', db.Notes.some(r => r[3] === 'Phone note'));
+  await page.click('.bbar [data-more]'); await page.waitForSelector('#moreDlg[open]');
+  check('phone: More lists the rest of the tabs', JSON.stringify(await page.locator('#moreDlg .more button').allInnerTexts()) === JSON.stringify(['Paper', 'Family & Friends', 'Notes', 'Setup', 'Settings']));
+  await page.click('#moreDlg [data-go=people]'); await page.waitForTimeout(150);
   check('phone: More opens other sections', await page.isVisible('#v-people') && !(await page.isVisible('#moreDlg')) && (await page.getAttribute('.bbar [data-more]', 'aria-current')) === 'page');
-  await page.click('.bbar [data-go=week]'); await page.waitForTimeout(150);
-  check('phone: bar marks the open section', (await page.getAttribute('.bbar [data-go=week]', 'aria-current')) === 'page' && await page.isVisible('#v-week'));
+  await page.click('.bbar [data-go=upcoming]'); await page.waitForTimeout(150);
+  check('phone: bar marks the open section', (await page.getAttribute('.bbar [data-go=upcoming]', 'aria-current')) === 'page' && await page.isVisible('#v-upcoming'));
+  await page.screenshot({ path: path.join(OUT, 'shot-upcoming-390.png'), fullPage: true });
+  check('phone: calendar fits the screen', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
 
   // mobile
-  await page.setViewportSize({ width: 390, height: 900 }); await page.click('.bbar [data-go=week]'); await page.waitForTimeout(200);
+  await page.setViewportSize({ width: 390, height: 900 }); await page.click('.bbar [data-go=home]'); await page.waitForTimeout(200);
   await page.screenshot({ path: path.join(OUT, 'shot-mobile.png'), fullPage: true });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
   check('no horizontal scroll on phone', !overflow);
