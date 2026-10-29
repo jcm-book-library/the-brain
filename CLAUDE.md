@@ -5,6 +5,8 @@
 ## This repo
 
 - One file, `index.html`, no build step (plus `apple-touch-icon.png`, the 180px home-screen icon: the blue lens eye on the navy grid). Live: https://jcm-book-library.github.io/the-brain/ (from `main`).
+- Layout rule from the owner: keep everything as symmetrical as possible. Fixed-size cards sit in equal-width pairs or rows (a test checks the Home pairs); anything that can grow (Upcoming lists, the next 6 days) takes a full-width row of its own.
+- The ★ event marker lives in the Plan `Type` text (trailing ★). Use `hasStar` / `plainType` / `withStar` / `calEvent`, never read `type` raw, so a real column can replace it later.
 - Data: the Google Sheet (tabs in README) or, in the Supabase pilot, the `brain` schema of the `jcm-apps` project. The data layer is `refresh` / `addRows` / `updateRow` / `deleteRow`; each branches on `useSb()`. Screens never call either backend directly.
 - Tests: `tools/test.js` (Sheets mode), `tools/test-supabase.js` (Supabase mode) and `tools/test-copyback.js` (Supabase → Sheet copy), all against fakes. Run all three before every push.
 - Supabase → Sheet copy (`diffTabs` / `copyToSheet` / `backupTabs`) is the app's only bulk write to the Sheet: preview first, hidden dated backup tab per changed tab (newest 3 kept), cell-level writes, re-check before writing, read-back after. Change it with care and keep its test passing.

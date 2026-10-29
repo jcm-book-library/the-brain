@@ -7,6 +7,9 @@ A week planner and daily log that reads and writes a Google Sheet. One page (`in
 - No personal data is stored in this repo. Everything loads from the sheet after sign-in.
 - The sheet link and OAuth Client ID are saved in your browser (Settings). The Client ID is picked up from the book library automatically when both run on `jcm-book-library.github.io`.
 - Weather comes from Open-Meteo (no key needed).
+- **Tabs:** Home (countdowns, top headlines, weather, average steps and pages, quick add, today, next 6 days), Upcoming (month calendar of events, any day's full list, events coming up), Paper, Fitness (monthly progress, log, year to date), Family & Friends, Notes (notes and lists) and Setup (routine, goals, links, app settings).
+- **Events:** the ★ on an item marks it as an event, which puts it on the Upcoming calendar. Multi-day items and planned catch-ups always show. The ★ is stored as a trailing ★ on the Plan tab's **Type** cell (for example `Gym ★`), so no column was added; the app strips it when showing the type.
+- The Home headlines are read from the paper's page (the same site), so they need no setup.
 - The **Paper** tab shows [The Overnight Sentinel](https://jcm-book-library.github.io/daily-paper/) inside the page. To point it somewhere else, add a `paper_url` row to the sheet's Settings tab.
 
 ## Supabase pilot
@@ -31,7 +34,7 @@ The page can also use a Supabase database (project `jcm-apps`, schema `brain`) i
 
 Birthdays saved without a year are stored as 1904 (for example 1904-10-17); the page hides that year. The sheet's Birthday column shows day and month only.
 
-People: **Groups** is a comma-separated list (for example `IV, HFP`). **Links** connects people as `ID:Relationship`, separated by semicolons (for example `p008:Partner; p016:Parent of`). A link only needs to be on one person; the other side shows it in reverse. A planned catch-up also creates an item on the Plan tab; **Plan ID** keeps the two in step, so change or remove catch-ups from the People tab on the page.
+People: **Groups** is a comma-separated list (for example `IV, HFP`). **Links** connects people as `ID:Relationship`, separated by semicolons (for example `p008:Partner; p016:Parent of`). A link only needs to be on one person; the other side shows it in reverse. A planned catch-up also creates an item on the Plan tab; **Plan ID** keeps the two in step, so change or remove catch-ups from the Family & Friends tab on the page.
 
 Keep the column order. Rows can be added, edited or sorted by hand in the sheet; the page finds rows by ID.
 
