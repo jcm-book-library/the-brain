@@ -70,6 +70,7 @@ async function install(page, w) {
     const req = r.request(), u = new URL(req.url()), method = req.method(), h = req.headers();
     const json = (o, status = 200) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(o) });
     if (u.pathname === '/auth/v1/token') { w.refreshes++; return json({ access_token: FRESH, refresh_token: 'rt2', expires_in: 3600 }); }
+    if (u.pathname === '/auth/v1/verify') { const b = JSON.parse(req.postData()); w.verify = (w.verify || []).concat(b); return b.token === '123456' && b.type === 'email' ? json({ access_token: GOOD, refresh_token: 'rtV', expires_in: 3600, token_type: 'bearer' }) : json({ code: 403, error_code: 'otp_expired', msg: 'Token has expired or is invalid' }, 403); }
     if (u.pathname === '/auth/v1/logout') { w.logouts++; return r.fulfill({ status: 204, body: '' }); }
     if (u.pathname === '/auth/v1/otp') { w.otp = (w.otp || []).concat({ url: req.url(), body: JSON.parse(req.postData()) }); return w.otpFail ? json({ msg: 'email rate limit exceeded' }, 429) : json({}); }
     if (u.pathname === '/auth/v1/authorize') { w.authorize.push(req.url()); return r.fulfill({ contentType: 'text/html', body: '<p>google</p>' }); }
@@ -249,6 +250,39 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     const u = new URL((await req).url());
     check('signed out: Google button goes to Supabase Google authorize', u.origin === SBU && u.pathname === '/auth/v1/authorize' && u.searchParams.get('provider') === 'google' && u.searchParams.get('redirect_to') === 'https://brain.test/', u.href);
     check('signed out: no data calls made', w.sbCalls.length === 0 && w.sheetCalls.length === 0);
+  } });
+
+  // 6b. Sign in with the emailed code (works inside a home-screen app)
+  await scenario(b, 'code', { init: { ...cfgSb }, setup: seedSbBasic, run: async (page, w) => {
+    await page.waitForSelector('#notice:not([hidden])'); await page.click('#refreshBtn'); await page.waitForSelector('#setDlg[open]');
+    check('code: box shown while signed out', await page.locator('#sbCode').isVisible() && !(await page.locator('#sbCheck').isVisible()));
+    await page.click('#sbVerify'); check('code: asks for the email first', (await page.locator('#sbMsg').innerText()).includes('Type your email'));
+    await page.fill('#sbEmail', 'me@example.com'); await page.click('#sbVerify'); check('code: asks for a number code', (await page.locator('#sbMsg').innerText()).includes('number code'));
+    await page.fill('#sbCode', '000000'); await page.click('#sbVerify'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Couldn'));
+    check('code: wrong code explained, still signed out', (await page.locator('#sbMsg').innerText()).includes('didn\'t work') && !(await page.evaluate(() => localStorage.getItem('brain-sb-session'))));
+    await page.fill('#sbCode', '123 456'); await page.click('#sbVerify'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Signed in to Supabase'));
+    const v = (w.verify || []).slice(-1)[0], s = await page.evaluate(() => JSON.parse(localStorage.getItem('brain-sb-session')));
+    check('code: right code signs in (spaces ignored) and keeps the session', v.token === '123456' && v.email === 'me@example.com' && v.type === 'email' && s && s.at === GOOD && s.rt === 'rtV' && s.email === 'me@example.com', [v, s]);
+    check('code: sign-in rows hide, Check shows, data loads in Supabase mode', !(await page.locator('#sbCodeRow').isVisible()) && await page.locator('#sbCheck').isVisible());
+    await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live', null, { timeout: 8000 });
+    check('code: this device then loads Supabase data', w.sbCalls.some(c => c.method === 'GET'));
+  } });
+
+  // 6c. Check: Sheet against Supabase, read-only
+  await scenario(b, 'check', { init: copyInit, run: async (page, w) => {
+    await page.click('#settingsBtn'); await page.waitForSelector('#setDlg[open]');
+    const say = async () => page.locator('#sbMsg').innerText();
+    await page.click('#sbCheck'); await page.waitForFunction(() => /differ|match/.test(document.getElementById('sbMsg').textContent));
+    let m = await say();
+    check('check: empty Supabase reads as different, tab by tab, in plain words', m.startsWith('They differ') && /✗ Plan: Sheet 5 · Supabase 0 \(5 only in the Sheet\)/.test(m) && /using the Sheet on this device/.test(m), m);
+    await page.click('#sbCopy'); await page.click('#sbCopy'); await page.waitForFunction(() => /^(Copied|Copy stopped)/.test(document.getElementById('sbMsg').textContent), null, { timeout: 8000 });
+    await page.click('#sbCheck'); await page.waitForFunction(() => /match on every tab/.test(document.getElementById('sbMsg').textContent), null, { timeout: 8000 });
+    await page.screenshot({ path: path.join(OUT, 'shot-sb-check.png') });
+    m = await say(); check('check: after the copy every tab matches', /^Supabase and your Sheet match on every tab/.test(m) && !/✗/.test(m) && /✓ Plan/.test(m), m);
+    await page.evaluate(() => 0); w.insert('plan', { id: 'extra', date: T, title: 'only here' });
+    await page.click('#sbCheck'); await page.waitForFunction(() => /differ/.test(document.getElementById('sbMsg').textContent), null, { timeout: 8000 });
+    check('check: a row only in Supabase is named', /✗ Plan: .*1 only in Supabase/.test(await say()), await say());
+    check('check: never writes to the Sheet', w.sheetCalls.every(c => c.startsWith('GET ') || c.startsWith('GET')), w.sheetCalls.filter(c => !c.startsWith('GET')));
   } });
 
   // 7. Layout
