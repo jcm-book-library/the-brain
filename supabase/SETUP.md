@@ -32,6 +32,13 @@ If you can't find it, press **Ctrl+K** (Cmd+K on a Mac) in the dashboard and typ
 2. **Site URL**: `https://jcm-book-library.github.io/the-brain/` then **Save**.
 3. **Redirect URLs**: click **Add URL**, enter `https://jcm-book-library.github.io/the-brain/**`, click **Save URLs**.
 4. Check email sign-in is on: **Authentication → Sign In / Providers → Email** should be enabled (it is by default). Leave its settings as they are.
+5. **Put a code in the email** (this is what makes sign-in work inside the home-screen app on your phone): **Authentication → Email Templates → Magic link**. In the message body, add this line under the existing link, then **Save**:
+
+   ```html
+   <p>Your sign-in code: <b>{{ .Token }}</b></p>
+   ```
+
+   Leave the link as it is. The email then has both: the link, and a 6-digit code you can type into The Brain.
 
 ## 4. Merge the pull request
 
@@ -41,13 +48,19 @@ Merging adds the Supabase options to Settings. Nothing changes day to day: the p
 
 1. Open https://jcm-book-library.github.io/the-brain/ and make sure it's connected to Google as usual.
 2. Click **Settings**. In the Supabase box, type your email and click **Email me a sign-in link**.
-3. Open the email from Supabase **on the same device and browser** and click the link. You come back to the page with Settings open, saying "Signed in to Supabase as …".
+3. Open the email from Supabase and sign in one of two ways:
+   - **Type the code** into the box under the email address and click **Sign in with the code**. This works anywhere, including the home-screen app on your phone.
+   - Or **click the link**, on the same device and browser. You come back to the page with Settings open, saying "Signed in to Supabase as …".
 4. Click **Copy Sheet → Supabase**, then click it again when it says **Replace Supabase copy?**.
 5. Wait for "Copied N rows and checked them: Supabase matches your Sheet." The copy reads your Sheet, writes Supabase, then reads Supabase back and compares every row.
 
 Each device (laptop, phone) needs the email link once; after that it stays signed in. Supabase's built-in email sends only a few emails an hour, so if one doesn't arrive, wait rather than pressing the button repeatedly.
 
 While **Where your data lives** is set to Google Sheet, this button copies Sheet → Supabase and replaces whatever is in Supabase. Once you switch to Supabase it turns round (see step 7), so it can never overwrite the source you're working in.
+
+### Check where things stand
+
+Any time you're unsure, open **Settings** (signed in to Supabase and Google) and click **Check Sheet and Supabase match**. It only reads. It lists every tab with its row count in each place, and says in plain words what differs ("3 only in the Sheet", "2 cells differ"). If you've been working in the Sheet, copy Sheet → Supabase; if you've been working in Supabase, copy Supabase → Sheet.
 
 ## 6. Lock the door (Supabase, 1 minute)
 
