@@ -12,7 +12,7 @@ Free Supabase projects pause after about a week without use. If the dashboard sh
 
 1. Open https://supabase.com/dashboard and click **jcm-apps**.
 2. Click the green **Restore project** button, then wait a few minutes until the project opens.
-3. Your tables, users and settings come back as they were. Check with **Settings → Check Sheet and Supabase match** in The Brain. You may need to sign in again on each device (email, then the code).
+3. Your tables, users and settings come back as they were. Check with **Settings → Check Sheet and Supabase match** in The Brain. You may need to sign in again on each device (the email link, or your email and password).
 4. If there is no restore button and the dashboard says the project can't be restored, stop and ask Claude. The Sheet still has everything.
 
 Using The Brain in Supabase mode counts as use, so once you've switched over this stops happening.
@@ -43,13 +43,8 @@ If you can't find it, press **Ctrl+K** (Cmd+K on a Mac) in the dashboard and typ
 2. **Site URL**: `https://jcm-book-library.github.io/the-brain/` then **Save**.
 3. **Redirect URLs**: click **Add URL**, enter `https://jcm-book-library.github.io/the-brain/**`, click **Save URLs**.
 4. Check email sign-in is on: **Authentication → Sign In / Providers → Email** should be enabled (it is by default). Leave its settings as they are.
-5. **Put a code in the email** (this is what makes sign-in work inside the home-screen app on your phone): **Authentication → Email Templates → Magic link**. In the message body, add this line under the existing link, then **Save**:
 
-   ```html
-   <p>Your sign-in code: <b>{{ .Token }}</b></p>
-   ```
-
-   Leave the link as it is. The email then has both: the link, and a 6-digit code you can type into The Brain.
+(Supabase's built-in email can't be edited unless you connect your own email service, so the email carries a link only. That's why phones sign in with a password: see step 5.)
 
 ## 4. Merge the pull request
 
@@ -59,15 +54,23 @@ Merging adds the Supabase options to Settings. Nothing changes day to day: the p
 
 1. Open https://jcm-book-library.github.io/the-brain/ and make sure it's connected to Google as usual.
 2. Click **Settings**. In the Supabase box, type your email and click **Email me a sign-in link**.
-3. Open the email from Supabase and sign in one of two ways:
-   - **Type the code** into the box under the email address and click **Sign in with the code**. This works anywhere, including the home-screen app on your phone.
-   - Or **click the link**, on the same device and browser. You come back to the page with Settings open, saying "Signed in to Supabase as …".
+3. Open the email from Supabase **on the same device and browser** and click the link. You come back to the page with Settings open, saying "Signed in to Supabase as …".
 4. Click **Copy Sheet → Supabase**, then click it again when it says **Replace Supabase copy?**.
 5. Wait for "Copied N rows and checked them: Supabase matches your Sheet." The copy reads your Sheet, writes Supabase, then reads Supabase back and compares every row.
 
-Each device (laptop, phone) needs the email link once; after that it stays signed in. Supabase's built-in email sends only a few emails an hour, so if one doesn't arrive, wait rather than pressing the button repeatedly.
+Your laptop needs the email link once; your phone signs in with a password (see below). After that each device stays signed in. Supabase's built-in email sends only a few emails an hour, so if one doesn't arrive, wait rather than pressing the button repeatedly.
 
 While **Where your data lives** is set to Google Sheet, this button copies Sheet → Supabase and replaces whatever is in Supabase. Once you switch to Supabase it turns round (see step 7), so it can never overwrite the source you're working in.
+
+### Sign in on your phone: set a password
+
+A phone's home-screen app keeps its own storage, separate from Safari, so an emailed link signs in the wrong place. A password works inside the app.
+
+1. On the laptop, signed in to Supabase: **Settings → New password → Set password**. Use 12 or more characters: a few random words strung together is easy to remember and hard to guess. Keep it in a password manager. The Brain never stores it.
+2. On the phone: **Settings**, type your email, type the password, **Sign in with password**. Then choose **Supabase** under *Where your data lives* and **Save & connect**.
+3. After that you stay signed in on that device until you press **Sign out of Supabase**.
+
+Supabase limits repeated wrong guesses, but a long password is what protects your data.
 
 ### Check where things stand
 
