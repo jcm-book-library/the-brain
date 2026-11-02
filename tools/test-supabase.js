@@ -69,8 +69,10 @@ async function install(page, w) {
   await page.route(SBU + '/**', async r => {
     const req = r.request(), u = new URL(req.url()), method = req.method(), h = req.headers();
     const json = (o, status = 200) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(o) });
+    if (u.pathname === '/auth/v1/token' && u.searchParams.get('grant_type') === 'password') { const b = JSON.parse(req.postData()); w.pwTries = (w.pwTries || []).concat(b);
+      return b.password === 'correct horse battery staple' && b.email === 'me@example.com' ? json({ access_token: GOOD, refresh_token: 'rtP', expires_in: 3600, token_type: 'bearer' }) : json({ error_code: 'invalid_credentials', msg: 'Invalid login credentials' }, 400); }
+    if (u.pathname === '/auth/v1/user' && method === 'PUT') { w.pwSet = { auth: h.authorization, apikey: h.apikey, body: JSON.parse(req.postData()) }; return json({ id: 'u1', email: 'me@example.com' }); }
     if (u.pathname === '/auth/v1/token') { w.refreshes++; return json({ access_token: FRESH, refresh_token: 'rt2', expires_in: 3600 }); }
-    if (u.pathname === '/auth/v1/verify') { const b = JSON.parse(req.postData()); w.verify = (w.verify || []).concat(b); return b.token === '123456' && b.type === 'email' ? json({ access_token: GOOD, refresh_token: 'rtV', expires_in: 3600, token_type: 'bearer' }) : json({ code: 403, error_code: 'otp_expired', msg: 'Token has expired or is invalid' }, 403); }
     if (u.pathname === '/auth/v1/logout') { w.logouts++; return r.fulfill({ status: 204, body: '' }); }
     if (u.pathname === '/auth/v1/otp') { w.otp = (w.otp || []).concat({ url: req.url(), body: JSON.parse(req.postData()) }); return w.otpFail ? json({ msg: 'email rate limit exceeded' }, 429) : json({}); }
     if (u.pathname === '/auth/v1/authorize') { w.authorize.push(req.url()); return r.fulfill({ contentType: 'text/html', body: '<p>google</p>' }); }
@@ -252,20 +254,30 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     check('signed out: no data calls made', w.sbCalls.length === 0 && w.sheetCalls.length === 0);
   } });
 
-  // 6b. Sign in with the emailed code (works inside a home-screen app)
-  await scenario(b, 'code', { init: { ...cfgSb }, setup: seedSbBasic, run: async (page, w) => {
+  // 6b. Sign in with email and password (works inside a home-screen app); set the password while signed in
+  await scenario(b, 'password', { init: { ...cfgSb }, setup: seedSbBasic, run: async (page, w) => {
     await page.waitForSelector('#notice:not([hidden])'); await page.click('#refreshBtn'); await page.waitForSelector('#setDlg[open]');
-    check('code: box shown while signed out', await page.locator('#sbCode').isVisible() && !(await page.locator('#sbCheck').isVisible()));
-    await page.click('#sbVerify'); check('code: asks for the email first', (await page.locator('#sbMsg').innerText()).includes('Type your email'));
-    await page.fill('#sbEmail', 'me@example.com'); await page.click('#sbVerify'); check('code: asks for a number code', (await page.locator('#sbMsg').innerText()).includes('number code'));
-    await page.fill('#sbCode', '000000'); await page.click('#sbVerify'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Couldn'));
-    check('code: wrong code explained, still signed out', (await page.locator('#sbMsg').innerText()).includes('didn\'t work') && !(await page.evaluate(() => localStorage.getItem('brain-sb-session'))));
-    await page.fill('#sbCode', '123 456'); await page.click('#sbVerify'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Signed in to Supabase'));
-    const v = (w.verify || []).slice(-1)[0], s = await page.evaluate(() => JSON.parse(localStorage.getItem('brain-sb-session')));
-    check('code: right code signs in (spaces ignored) and keeps the session', v.token === '123456' && v.email === 'me@example.com' && v.type === 'email' && s && s.at === GOOD && s.rt === 'rtV' && s.email === 'me@example.com', [v, s]);
-    check('code: sign-in rows hide, Check shows, data loads in Supabase mode', !(await page.locator('#sbCodeRow').isVisible()) && await page.locator('#sbCheck').isVisible());
+    check('password: sign-in box shown while signed out, set-password box hidden', await page.locator('#sbPw').isVisible() && !(await page.locator('#sbNewPw').isVisible()) && !(await page.locator('#sbCheck').isVisible()));
+    await page.click('#sbPwIn'); check('password: asks for the email first', (await page.locator('#sbMsg').innerText()).includes('Type your email'));
+    await page.fill('#sbEmail', 'me@example.com'); await page.click('#sbPwIn'); check('password: asks for the password', (await page.locator('#sbMsg').innerText()).includes('Type your password'));
+    await page.fill('#sbPw', 'not the password'); await page.click('#sbPwIn'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Couldn'));
+    check('password: wrong password explained, still signed out', (await page.locator('#sbMsg').innerText()).includes('didn\'t match') && !(await page.evaluate(() => localStorage.getItem('brain-sb-session'))));
+    await page.fill('#sbPw', 'correct horse battery staple'); await page.press('#sbPw', 'Enter'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Signed in to Supabase'));
+    const t = (w.pwTries || []).slice(-1)[0], s = await page.evaluate(() => JSON.parse(localStorage.getItem('brain-sb-session')));
+    check('password: Enter signs in, session kept, dialog still open', t.email === 'me@example.com' && s && s.at === GOOD && s.rt === 'rtP' && s.email === 'me@example.com' && await page.isVisible('#setDlg[open]'), [t, s]);
+    check('password: password box emptied and never stored', (await page.inputValue('#sbPw')) === '' && !(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).includes('correct horse'));
+    check('password: sign-in rows hide, set-password and Check show', !(await page.locator('#sbPwRow').isVisible()) && await page.locator('#sbSetRow').isVisible() && await page.locator('#sbCheck').isVisible());
     await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live', null, { timeout: 8000 });
-    check('code: this device then loads Supabase data', w.sbCalls.some(c => c.method === 'GET'));
+    check('password: this device then loads Supabase data', w.sbCalls.some(c => c.method === 'GET'));
+  } });
+  await scenario(b, 'setpw', { init: { ...cfgSb, ...ses() }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page); await page.click('#settingsBtn'); await page.waitForSelector('#setDlg[open]');
+    await page.fill('#sbNewPw', 'short'); await page.click('#sbSetPw');
+    check('set password: too short is refused locally, nothing sent', (await page.locator('#sbMsg').innerText()).includes('at least 12') && !w.pwSet);
+    await page.fill('#sbNewPw', 'four random words here'); await page.press('#sbNewPw', 'Enter'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Password set'));
+    check('set password: sent once with this session, Enter did not close Settings', w.pwSet && w.pwSet.auth === 'Bearer ' + GOOD && w.pwSet.body.password === 'four random words here' && await page.isVisible('#setDlg[open]'), w.pwSet);
+    check('set password: box emptied and the password is not kept in the browser', (await page.inputValue('#sbNewPw')) === '' && !(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).includes('four random'));
+    await page.screenshot({ path: path.join(OUT, 'shot-sb-password.png') });
   } });
 
   // 6c. Check: Sheet against Supabase, read-only

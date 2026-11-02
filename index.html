@@ -580,8 +580,9 @@ dialog.sheet form{padding:0}
   <div class="field"><label for="sSource">Where your data lives</label><select id="sSource"><option value="sheets">Google Sheet</option><option value="supabase">Supabase (pilot)</option></select></div>
   <div class="sb-box">
     <p class="muted" id="sbState" style="margin:0;font-size:13px"></p>
-    <div class="sb-acts" id="sbEmailRow"><input id="sbEmail" type="email" autocomplete="email" placeholder="Your email" aria-label="Email for Supabase sign-in"><button class="btn" type="button" id="sbMail">Email me a sign-in link</button></div>
-    <div class="sb-acts" id="sbCodeRow"><input id="sbCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Code from the email" aria-label="Sign-in code from the email"><button class="btn" type="button" id="sbVerify">Sign in with the code</button></div>
+    <div class="sb-acts" id="sbEmailRow"><input id="sbEmail" type="email" autocomplete="username" placeholder="Your email" aria-label="Email for Supabase sign-in"><button class="btn" type="button" id="sbMail">Email me a sign-in link</button></div>
+    <div class="sb-acts" id="sbPwRow"><input id="sbPw" type="password" autocomplete="current-password" placeholder="Password" aria-label="Supabase password"><button class="btn" type="button" id="sbPwIn">Sign in with password</button></div>
+    <div class="sb-acts" id="sbSetRow"><input id="sbNewPw" type="password" autocomplete="new-password" placeholder="New password (12+ characters)" aria-label="New Supabase password"><button class="btn" type="button" id="sbSetPw">Set password</button></div>
     <div class="sb-acts"><button class="btn" type="button" id="sbIn">Sign in with Google</button><button class="btn btn-ghost" type="button" id="sbOut">Sign out of Supabase</button><button class="btn" type="button" id="sbCheck">Check Sheet and Supabase match</button><button class="btn" type="button" id="sbCopy">Copy Sheet → Supabase</button></div>
     <p class="muted" id="sbMsg" style="margin:0;font-size:13px;white-space:pre-line"></p>
   </div>
@@ -698,12 +699,18 @@ const sb = {
     const b = await r.json().catch(() => ({}));
     throw { message: r.status === 429 ? 'too many emails for now. Wait an hour, or use the last link you were sent.' : (b.msg || b.message || b.error_description || 'HTTP ' + r.status) };
   },
-  /* Sign in with the code from the email: works inside a home-screen app, where the link would open in the browser instead. */
-  async verifyCode(email, token) {
-    const r = await fetch(`${SB.url}/auth/v1/verify`, { method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'email', email, token }) });
+  /* Email and password: works inside a home-screen app, where an emailed link would open in the browser instead. */
+  async signInPassword(email, password) {
+    const r = await fetch(`${SB.url}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     const b = await r.json().catch(() => ({}));
-    if (!r.ok || !b.access_token) throw { message: r.status === 429 ? 'too many tries. Wait a minute and try again.' : r.status >= 500 ? 'Supabase had a problem (HTTP ' + r.status + '). Try again shortly.' : 'that code didn\'t work. Codes last about an hour and work once. Press "Email me a sign-in link" for a new one.' };
+    if (!r.ok || !b.access_token) throw { message: r.status === 429 ? 'too many tries. Wait a few minutes and try again.' : r.status >= 500 ? 'Supabase had a problem (HTTP ' + r.status + '). Try again shortly.' : 'that email and password didn\'t match. If you haven\'t set a password yet, sign in with the email link on your laptop and set one in Settings first.' };
     return this.keep(b);
+  },
+  async setPassword(password) {
+    const t = await this.token();
+    const r = await fetch(`${SB.url}/auth/v1/user`, { method: 'PUT', headers: { apikey: SB.key, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok) throw { message: b.msg || b.message || b.error_description || 'HTTP ' + r.status };
   },
   signIn() { location.href = `${SB.url}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(location.origin + location.pathname)}`; },
   async signOut() { const s = this.ses(); this.forget();
@@ -1658,7 +1665,7 @@ $('planForm').addEventListener('submit', async e => { e.preventDefault(); $('pla
 function drawSb() {
   const s = sb.ses();
   $('sbState').textContent = s && s.rt ? 'Supabase: signed in' + (s.email ? ' as ' + s.email : '') + '. You stay signed in on this device until you sign out.' : 'Supabase: not signed in on this device.';
-  $('sbIn').hidden = $('sbEmailRow').hidden = $('sbCodeRow').hidden = !!(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbCopy').hidden = $('sbCheck').hidden = !(s && s.rt);
+  $('sbIn').hidden = $('sbEmailRow').hidden = $('sbPwRow').hidden = !!(s && s.rt); $('sbSetRow').hidden = !(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbCopy').hidden = $('sbCheck').hidden = !(s && s.rt);
   $('sbCopy').dataset.armed = ''; $('sbCopy').textContent = copyLabel();
 }
 /* The copy always goes from the source in use to the other one, so it can never overwrite what you're working in. */
@@ -1678,21 +1685,32 @@ $('sbMail').addEventListener('click', async () => {
   const em = $('sbEmail').value.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('sbMsg').textContent = 'Type your email address first.'; return; }
   g.saveCfg({ sbEmail: em }); $('sbMail').disabled = true; $('sbMsg').textContent = 'Sending…';
-  try { await sb.emailLink(em); $('sbMsg').textContent = 'Check your email. Either type the code from it into the box below, or click the link (open it on this device, in this browser).'; }
+  try { await sb.emailLink(em); $('sbMsg').textContent = 'Check your email and click the sign-in link. Open it on this device, in this browser: it brings you back here signed in.'; }
   catch (err) { $('sbMsg').textContent = 'Couldn\'t send the link: ' + (err.message || err); }
   $('sbMail').disabled = false;
 });
-$('sbVerify').addEventListener('click', async () => {
-  const em = $('sbEmail').value.trim(), code = $('sbCode').value.replace(/\s/g, '');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('sbMsg').textContent = 'Type your email address first (the one the code was sent to).'; return; }
-  if (!/^\d{6,10}$/.test(code)) { $('sbMsg').textContent = 'Type the number code from the email (6 digits).'; return; }
-  g.saveCfg({ sbEmail: em }); $('sbVerify').disabled = true; $('sbMsg').textContent = 'Checking the code…';
-  try { const ses = await sb.verifyCode(em, code); $('sbCode').value = ''; drawSb();
+$('sbPwIn').addEventListener('click', async () => {
+  const em = $('sbEmail').value.trim(), pw = $('sbPw').value;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('sbMsg').textContent = 'Type your email address first.'; return; }
+  if (!pw) { $('sbMsg').textContent = 'Type your password.'; return; }
+  g.saveCfg({ sbEmail: em }); $('sbPwIn').disabled = true; $('sbMsg').textContent = 'Signing in…';
+  try { const ses = await sb.signInPassword(em, pw); $('sbPw').value = ''; drawSb();
     $('sbMsg').textContent = 'Signed in to Supabase as ' + (ses.email || em) + '.' + (useSb() ? '' : ' To use it on this device, pick Supabase in "Where your data lives" and press Save & connect.');
     if (useSb()) { state.live = false; refresh(); } }
   catch (err) { $('sbMsg').textContent = 'Couldn\'t sign in: ' + (err.message || err); }
-  $('sbVerify').disabled = false;
+  $('sbPwIn').disabled = false;
 });
+$('sbSetPw').addEventListener('click', async () => {
+  const pw = $('sbNewPw').value;
+  if (pw.length < 12) { $('sbMsg').textContent = 'Use at least 12 characters. A few random words strung together is easy to remember and hard to guess.'; return; }
+  $('sbSetPw').disabled = true; $('sbMsg').textContent = 'Saving…';
+  try { await sb.setPassword(pw); $('sbNewPw').value = ''; $('sbMsg').textContent = 'Password set. On your phone, type your email and this password under "Sign in with password". Keep it in a password manager.'; }
+  catch (err) { $('sbMsg').textContent = 'Couldn\'t set the password: ' + (err.code === 'signin' ? 'please sign in again.' : (err.message || err)); }
+  $('sbSetPw').disabled = false;
+});
+/* Enter inside these boxes does that box's job, not "Save & connect". */
+[['sbPw', 'sbPwIn'], ['sbNewPw', 'sbSetPw']].forEach(([i, b]) => $(i).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $(b).click(); } }));
+$('sbEmail').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $($('sbPw').value ? 'sbPwIn' : 'sbMail').click(); } });
 /* Read-only: compare the Sheet and Supabase, tab by tab, and say in plain words what differs. */
 function compareReport(sheet, base) {
   const diffs = diffTabs(sheet, base), by = Object.fromEntries(diffs.map(p => [p.n, p]));
