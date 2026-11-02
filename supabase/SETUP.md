@@ -6,6 +6,17 @@ Project: `jcm-apps` (Sydney), `https://apeflgdzclpxiktaxyfk.supabase.co`. Tables
 
 You never need the `service_role` key or the database password for any of this. Don't paste either one into a chat. If you later add Google sign-in, its **client secret** goes straight into Supabase, never into a chat either.
 
+## First: is the project paused?
+
+Free Supabase projects pause after about a week without use. If the dashboard shows **jcm-apps** as paused (or The Brain says it can't reach Supabase), restore it before anything else:
+
+1. Open https://supabase.com/dashboard and click **jcm-apps**.
+2. Click the green **Restore project** button, then wait a few minutes until the project opens.
+3. Your tables, users and settings come back as they were. Check with **Settings → Check Sheet and Supabase match** in The Brain. You may need to sign in again on each device (email, then the code).
+4. If there is no restore button and the dashboard says the project can't be restored, stop and ask Claude. The Sheet still has everything.
+
+Using The Brain in Supabase mode counts as use, so once you've switched over this stops happening.
+
 ## 1. Create the tables (Supabase, 2 minutes)
 
 1. Open https://supabase.com/dashboard and click the **jcm-apps** project.
@@ -116,5 +127,5 @@ Tip while you're in Google: add a backup way to verify (myaccount.google.com →
 
 ## Good to know
 
-- Free projects pause after 7 days with no use. Opening The Brain in Supabase mode counts as use. A paused project can be restored from the dashboard with one click (Restore project); no data is lost.
+- Free projects pause after about a week with no use. Opening The Brain in Supabase mode counts as use. See **First: is the project paused?** at the top for how to restore one.
 - Switch-over (later, when you say): the page would default to Supabase, the copy button goes away, and the Sheet tabs get a "Moved to Supabase on <date>" note. Not done yet.
