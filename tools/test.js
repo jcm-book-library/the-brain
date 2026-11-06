@@ -237,6 +237,48 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.click('[data-month="1"]'); if (early) await page.click('[data-month="1"]');
   await page.screenshot({ path: path.join(OUT, 'shot-month.png'), fullPage: true });
 
+  // fitness: this month against earlier months
+  { const tp = '#trendPanel', nLines = async () => page.locator(tp + ' svg path[stroke-width]').count();
+    const click = async sel => { await page.click(tp + ' ' + sel); await page.waitForTimeout(60); };
+    const ymT = T.slice(0, 7), dayNow = today.getDate(), sumSteps = db.Log.slice(1).filter(r => r[0] && r[1] != null && r[1] !== '' && new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5).toISOString().startsWith(ymT)).reduce((a, r) => a + r[1], 0);
+    const savedLog = await page.evaluate(() => { const old = state.data.Log; state.data.Log = old.concat(Array.from({ length: 12 }, (_, i) => { const d = new Date(new Date().getFullYear(), new Date().getMonth() - 1 - i, 1), ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); return [10, 11, 12].map(n => ({ date: ym + '-' + String(n).padStart(2, '0'), steps: 6000 + i * 300 + n * 100, km: 4 + i / 4, act: 30 + i, pages: 20 + n, tmax: null, tmin: null, mood: '', note: '' })); }).flat()); renderTrend(); return old; });
+    check('trend: first panel in Fitness', await page.evaluate(() => document.querySelector('#v-fitness .panel').id === 'trendPanel'));
+    check('trend: title names the stat', /^Steps: this month against earlier months/.test(await page.locator(tp + ' h2').innerText()));
+    check('trend: default is this month and last month', (await page.locator(tp + ' .legend span').count()) === 3 && (await nLines()) === 2 && (await page.getAttribute(tp + ' [data-trend-cmp=last]', 'aria-pressed')) === 'true' && (await page.getAttribute(tp + ' [data-trend-view=run]', 'aria-pressed')) === 'true');
+    check('trend: svg has a label', /Steps/.test(await page.getAttribute(tp + ' svg', 'aria-label') || ''));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend.png'), fullPage: true });
+    await click('[data-trend-cmp=m3]');
+    check('trend: last 3 months average adds one line', (await nLines()) === 3 && (await page.locator(tp + ' [data-trend-mode="m3:avg"]').getAttribute('aria-pressed')) === 'true');
+    await click('[data-trend-mode="m3:each"]');
+    check('trend: last 3 months each adds three lines', (await nLines()) === 5);
+    await click('[data-trend-cmp=m3]'); await click('[data-trend-cmp=m12]'); await click('[data-trend-mode="m12:each"]');
+    check('trend: last 12 months each adds twelve lines', (await nLines()) === 2 + 12);
+    await click('[data-trend-view=daily]'); await page.screenshot({ path: path.join(OUT, 'shot-trend-daily.png') });
+    await click('[data-trend-cmp=m12]'); await click('[data-trend-cmp=m3]'); await click('[data-trend-view=total]');
+    const endVal = await page.evaluate(() => { const l = [...document.querySelectorAll('#trendPanel svg text')].find(x => x.textContent.startsWith('This month')); return l ? l.textContent : ''; });
+    check('trend: total view ends at the month total (' + sumSteps + ')', sumSteps ? endVal.includes(sumSteps.toLocaleString('en-AU')) : /no data/.test(await page.locator(tp + ' .legend').innerText()), endVal);
+    check('trend: total tiles read "by day N"', (await page.locator(tp + ' .tr-tiles').innerText()).includes('by day ' + dayNow));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend-total.png') });
+    await click('[data-trend-view=run]');
+    { const r = await page.locator(tp + ' svg').boundingBox(); await page.mouse.move(r.x + r.width * 0.3, r.y + r.height * 0.5); await page.waitForTimeout(80); }
+    check('trend: hover shows a tooltip with the day', /Day \d+/.test(await page.locator(tp + ' [role=status]').textContent()));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend-hover.png') });
+    await page.mouse.move(5, 5); await page.waitForTimeout(80);
+    check('trend: tooltip hides on leave', (await page.locator(tp + ' [role=status]').textContent()).trim() === '');
+    check('trend: table hidden at first', (await page.locator(tp + ' tbody tr').count()) === 0);
+    await click('[data-trend-table]');
+    check('trend: table shows 13 months', (await page.locator(tp + ' tbody tr').count()) === 13 && (await page.getAttribute(tp + ' [data-trend-table]', 'aria-expanded')) === 'true' && /Hide the table/.test(await page.locator(tp + ' [data-trend-table]').innerText()));
+    await click('[data-trend-table]');
+    await click('[data-trend-stat=pages]');
+    check('trend: Pages changes the title', /^Pages: /.test(await page.locator(tp + ' h2').innerText()));
+    await click('[data-trend-stat=steps]');
+    await page.setViewportSize({ width: 390, height: 800 }); await page.waitForTimeout(150);
+    check('trend: no sideways scroll at 390px', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth) && await page.evaluate(() => { const r = document.getElementById('trendPanel').getBoundingClientRect(); return r.right <= innerWidth + 0.5; }));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend-narrow.png'), fullPage: true });
+    await page.setViewportSize({ width: 1360, height: 900 }); await page.waitForTimeout(100);
+    await page.evaluate(l => { state.data.Log = l; renderTrend(); }, savedLog);
+  }
+
   // people: birthday without a year
   await page.click('.tab[data-tab=people]'); await page.click('[data-new-person]');
   await page.fill('#pName', 'Kirby'); await page.selectOption('#pDay', '17'); await page.selectOption('#pMon', '10');
