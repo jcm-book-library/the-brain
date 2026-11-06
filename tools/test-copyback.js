@@ -25,7 +25,7 @@ const COLS = {
   Goals: ['year', 'month', 'steps', 'km', 'active_mins', 'pages'],
   People: ['id', 'name', 'birthday', 'last_seen', 'to_see', 'see_every_days', 'notes', 'groups', 'links', 'next_catchup', 'next_time', 'catchup_plan', 'plan_id'],
   Lists: ['id', 'list', 'item', 'status', 'added', 'notes'],
-  Notes: ['id', 'date', 'topic', 'note'],
+  Notes: ['id', 'date', 'topic', 'note', 'links', 'color', 'pos'],
   Links: ['name', 'category', 'url', 'pin', 'sort_order', 'notes'],
   Settings: ['key', 'value', 'notes']
 };
@@ -41,7 +41,7 @@ function sheetRows() {
     Goals: [[today.getFullYear(), today.getMonth() + 1, 11000, 8, 90, 100]],
     People: [['p1', 'Sam', serial('1904-03-04'), '', true, '', 'Ask about job', 'IV', '', '', '', '', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP', 'p1:Friend', '', '', '', '']],
     Lists: [['l1', 'Reading', 'A Book', 'Current', serial(T), '']],
-    Notes: [['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two']],
+    Notes: [['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two', '', '', '']],
     Links: [['Books', 'Entertainment', 'https://example.com/books', true, 1, ''], ['NRL', 'Sport', 'https://example.com/nrl', true, 2, '']],
     Settings: [['payday_anchor', serial('2026-01-09'), ''], ['payday_every', 14, ''], ['birthday_window', 60, '']]
   };

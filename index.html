@@ -383,6 +383,52 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 @media (max-width:700px){.cds{grid-template-columns:repeat(2,minmax(0,1fr))}.cds .cd:last-child:nth-child(odd){grid-column:1/-1}}
 @media (max-width:700px){.mcal{gap:3px}.mc{min-height:62px;padding:4px 4px 5px}.mn{font-size:13px}.mlist{display:flex;flex-wrap:wrap;gap:3px}.ce{width:7px;height:7px;padding:0;border:0;border-radius:50%;font-size:0;background:var(--c)}.mmore{font-size:10px;padding:0}.mpay{top:4px;right:5px;font-size:11px}}
 
+/* notes: ideas map */
+#v-notes{--ic-violet:#a78bfa;--ic-cobalt:#5b8cff;--ic-teal:#2dd4bf;--ic-green:#4ade80;--ic-yellow:#facc15;--ic-orange:#fb923c;--ic-red:#f87171;--ic-pink:#f472b6}
+html[data-mode=light] #v-notes{--ic-violet:#7c5cd6;--ic-cobalt:#2f5fd0;--ic-teal:#0f8f84;--ic-green:#2f9e4f;--ic-yellow:#b8860b;--ic-orange:#d9650f;--ic-red:#cc3b3b;--ic-pink:#c2417f}
+.ifilt{display:grid;gap:6px;margin-bottom:12px}
+.ifilt .gchips{margin:0;align-items:center}
+.ifilt .fl{font-size:12px;color:var(--muted);font-weight:600;min-width:52px}
+.isw{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ic);box-shadow:0 0 6px var(--ic);margin-right:6px;vertical-align:-1px;flex:none}
+.ilayout{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.imapwrap{flex:999 1 640px;min-width:0;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--bg) 70%,transparent)}
+#ideaMap{position:relative;height:640px;min-width:900px;--spark:#ff9a4d;overflow:hidden}
+#ideaMap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ie{transition:opacity .25s}
+.iedge{fill:none;stroke:color-mix(in srgb,var(--muted) 55%,transparent);stroke-width:1.2}
+.ie.hot .iedge{stroke:var(--fg);stroke-width:2}
+.ispark{fill:none;stroke:var(--spark,#ff9a4d);stroke-width:3;stroke-linecap:round;stroke-dasharray:1.6 98.4;filter:drop-shadow(0 0 3px var(--spark,#ff9a4d));animation:ispark var(--d,5s) linear var(--dl,0s) infinite}
+@keyframes ispark{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.inode{position:absolute;transform:translate(-50%,-50%);border:0;background:none;padding:0;margin:0;color:var(--fg);font:inherit;cursor:pointer;transition:opacity .25s;-webkit-tap-highlight-color:transparent}
+.inode[data-drag]{touch-action:none;cursor:grab}
+.inode.t{width:44px;height:44px}.inode.n{width:18px;height:18px}.inode.pe{width:16px;height:16px}
+.inode .if{position:absolute;inset:0;animation:ifloat var(--fd,7s) ease-in-out var(--fdl,0s) infinite alternate}
+@keyframes ifloat{from{transform:translate(-2px,-3px)}to{transform:translate(3px,3px)}}
+.idot{position:absolute;inset:0;border-radius:50%;transition:transform .15s,box-shadow .15s}
+.inode.t .idot{background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--ic) 45%,#fff),var(--ic) 55%,color-mix(in srgb,var(--ic) 55%,transparent));box-shadow:0 0 22px var(--ic),0 0 0 2px color-mix(in srgb,var(--ic) 40%,transparent)}
+.inode.n .idot{background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--ic) 40%,#fff) 0,var(--ic) 45%,color-mix(in srgb,var(--ic) 35%,transparent) 100%);box-shadow:0 0 12px var(--ic)}
+.inode.pe .idot{border:2px solid var(--spark,#ff9a4d);background:var(--bg);box-shadow:0 0 8px color-mix(in srgb,var(--spark,#ff9a4d) 60%,transparent)}
+.inode:hover .idot,.inode:focus-visible .idot{transform:scale(1.25)}
+.inode.sel .idot{box-shadow:0 0 0 3px var(--fg),0 0 16px var(--ic,var(--spark))}
+.inode:focus-visible{outline:none}
+.ilab{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);width:max-content;max-width:120px;font-size:11px;line-height:1.25;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;color:var(--fg);text-shadow:0 0 3px var(--bg),0 0 6px var(--bg),0 0 6px var(--bg)}
+.inode.t .ilab{max-width:130px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;white-space:normal}
+.inode.pe .ilab{color:var(--muted)}
+.inode.off,.ie.off{opacity:.14}
+.inode.dim,.ie.dim{opacity:.28}
+.ipanel{flex:1 1 300px;min-width:0;display:grid;gap:10px;align-content:start}
+.ipanel h3{font-size:16px;line-height:1.3}
+.ipanel .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ipanel .txt{margin:0;white-space:pre-line;font-size:14px}
+.iswrow{display:flex;gap:6px;flex-wrap:wrap}
+.isb{width:26px;height:26px;border-radius:50%;border:2px solid transparent;background:var(--ic);box-shadow:0 0 8px color-mix(in srgb,var(--ic) 60%,transparent);padding:0}
+.isb[aria-pressed=true]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg),0 0 8px var(--ic)}
+.ichips{display:flex;gap:6px;flex-wrap:wrap}
+.ichip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;overflow:hidden;max-width:100%}
+.ichip button{background:none;border:0;color:var(--fg);padding:3px 10px;font:inherit;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ichip button+button{padding:3px 8px 3px 4px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.inode .if{animation:none}.ispark{animation:none;display:none}.ie,.inode,.idot{transition:none}}
+
 /* fitness placeholders */
 .later-card{border-style:dashed;background:transparent;display:grid;gap:4px;align-content:start}
 .later-card p{margin:0;color:var(--muted);font-size:14px}
@@ -567,7 +613,10 @@ dialog.sheet form{padding:0}
     </div>
   </section>
 
-  <section id="v-notes" class="home" hidden><div class="panel"><div class="panel-head"><h2>Notes</h2><button class="btn" type="button" id="newNote">New note</button></div><div id="notes"></div></div><div class="grid2" id="lists"></div></section>
+  <section id="v-notes" class="home" hidden><div class="panel"><div class="panel-head"><h2>Notes</h2><div class="seg" role="group" aria-label="Notes view"><button type="button" class="chip-t" data-iview="map" aria-pressed="true">Map</button><button type="button" class="chip-t" data-iview="list" aria-pressed="false">List</button></div><button class="btn" type="button" id="newNote">New note</button></div>
+    <div class="ifilt" id="ideaFilters"></div>
+    <div class="ilayout" id="ideaBox"><div class="imapwrap"><div id="ideaMap"></div></div><aside class="ipanel panel" id="ideaSide" aria-live="polite"></aside></div>
+    <div id="notes"></div></div><div class="grid2" id="lists"></div></section>
   <section id="v-setup" hidden><div class="seg setupnav" id="setupNav" role="group" aria-label="Setup sections"></div><div id="setupGrid"></div></section>
 </div>
 
@@ -697,7 +746,7 @@ const TABS = {
   Goals:    { sid: 3, key: 'year', cols: ['year', 'month', 'steps', 'km', 'act', 'pages'] },
   People:   { sid: 4, key: 'id',   cols: ['id', 'name', 'bday', 'seen', 'tosee', 'every', 'notes', 'groups', 'links', 'ndate', 'ntime', 'nplan', 'nid'] },
   Lists:    { sid: 5, key: 'id',   cols: ['id', 'list', 'item', 'status', 'added', 'notes'] },
-  Notes:    { sid: 6, key: 'id',   cols: ['id', 'date', 'topic', 'note'] },
+  Notes:    { sid: 6, key: 'id',   cols: ['id', 'date', 'topic', 'note', 'links', 'color', 'pos'] },
   Links:    { sid: 7, key: 'name', cols: ['name', 'cat', 'url', 'pin', 'order', 'notes'] },
   Settings: { sid: 8, key: 'key',  cols: ['key', 'value', 'notes'] }
 };
@@ -762,7 +811,7 @@ const SBT = {
   Goals:    ['goals',    { year: 'year', month: 'month', steps: 'steps', km: 'km', act: 'active_mins', pages: 'pages' }],
   People:   ['people',   { id: 'id', name: 'name', bday: 'birthday', seen: 'last_seen', tosee: 'to_see', every: 'see_every_days', notes: 'notes', groups: 'groups', links: 'links', ndate: 'next_catchup', ntime: 'next_time', nplan: 'catchup_plan', nid: 'plan_id' }],
   Lists:    ['lists',    { id: 'id', list: 'list', item: 'item', status: 'status', added: 'added', notes: 'notes' }],
-  Notes:    ['notes',    { id: 'id', date: 'date', topic: 'topic', note: 'note' }],
+  Notes:    ['notes',    { id: 'id', date: 'date', topic: 'topic', note: 'note', links: 'links', color: 'color', pos: 'pos' }],
   Links:    ['links',    { name: 'name', cat: 'category', url: 'url', pin: 'pin', order: 'sort_order', notes: 'notes' }],
   Settings: ['settings', { key: 'key', value: 'value', notes: 'notes' }]
 };
@@ -1458,7 +1507,7 @@ document.addEventListener('submit', async e => {
   const f = e.target; if (!f.matches('[data-qa],[data-nq]')) return; e.preventDefault();
   const inp = f.querySelector('input'), dlg = f.closest('dialog');
   if (f.matches('[data-nq]')) { const q = parseNote(inp.value); if (!q.note) return; if (dlg) dlg.close();
-    if (await withBusy('Saving note…', () => addRows('Notes', [{ id: newId('n'), date: todayIso(), topic: q.topic, note: q.note }]))) { inp.value = ''; quickPreview(f); toast('Saved to Notes under ' + q.topic); } return; }
+    if (await withBusy('Saving note…', () => addRows('Notes', [{ id: newId('n'), date: todayIso(), topic: q.topic, note: q.note, links: '', color: '', pos: '' }]))) { inp.value = ''; quickPreview(f); toast('Saved to Notes under ' + q.topic); } return; }
   const q = parseQuick(inp.value); if (!q.title) return;
   const o = { id: newId('e'), date: q.date, end: '', time: q.time, title: q.title, cat: q.cat, type: '', done: false, cd: false, notes: '' };
   if (dlg) dlg.close();
@@ -1767,10 +1816,155 @@ function renderLists() {
       ${items.map(i => `<div class="li"><span title="${esc(i.notes || '')}">${esc(i.item)}</span><select class="pill" data-s="${esc(i.status)}" data-status="${esc(i.id)}" aria-label="Status of ${esc(i.item)}">${(n === 'To book' ? ['Open', 'Done'] : ['Current', 'Up next', 'Done']).concat(i.status && !['Open', 'Done', 'Current', 'Up next'].includes(i.status) ? [i.status] : []).map(o => `<option ${o === (i.status || (n === 'To book' ? 'Open' : 'Up next')) ? 'selected' : ''}>${o}</option>`).join('')}</select><button type="button" class="iconbtn" data-ldel="${esc(i.id)}" aria-label="Remove ${esc(i.item)}">×</button></div>`).join('') || '<p class="empty">Empty.</p>'}
       <form class="inline-add" data-list="${esc(n)}"><input placeholder="Add to ${esc(n)}" aria-label="Add to ${esc(n)}" required><button class="btn" type="submit">Add</button></form></div>`; }).join('');
 }
-function renderNotes() {
-  const ns = (state.data.Notes || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  $('notes').innerHTML = ns.map(n => `<div class="note" data-note="${esc(n.id)}"><h3>${esc(n.topic)} ${n.date ? `<span class="muted" style="font-weight:400;font-size:12px">${esc(fmt(n.date, { day: 'numeric', month: 'short', year: 'numeric' }))}</span>` : ''}</h3><p>${esc(n.note)}</p></div>`).join('') || '<p class="empty">No notes yet.</p>';
+/* ---------- notes: ideas map ---------- */
+const IDEA_COLS = ['violet', 'cobalt', 'teal', 'green', 'yellow', 'orange', 'red', 'pink'];
+const ideaHash = s => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const topicOf = n => (n.topic || '').trim() || 'No topic';
+const ideaTopicCol = t => IDEA_COLS[ideaHash(t) % 8];
+const ideaCol = n => IDEA_COLS.includes(n.color) ? n.color : ideaTopicCol(topicOf(n));
+const ideaCap = s => s[0].toUpperCase() + s.slice(1);
+const ideaTokens = n => String(n.links || '').split(';').map(s => s.trim()).filter(Boolean);
+const ideaTitle = n => String(n.note || '').split('\n').map(s => s.trim()).find(Boolean) || topicOf(n);
+const ideaLabel = n => { const t = ideaTitle(n); return t.length > 40 ? t.slice(0, 40).trimEnd() + '…' : t; };
+const ideaPos = n => { const m = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(n.pos || ''); return m ? [Math.min(980, Math.max(20, +m[1])), Math.min(620, Math.max(20, +m[2]))] : null; };
+const ideaOn = n => (!state.notesTopic || topicOf(n) === state.notesTopic) && (!state.notesColor || ideaCol(n) === state.notesColor);
+let ideaM = null;
+// nodes (topic hubs, notes, linked people and events) and edges, laid out the same way every time
+function ideaModel() {
+  const notes = state.data.Notes || [], people = state.data.People || [], plan = state.data.Plan || [];
+  const N = {}, nodes = [], edges = [], seen = new Set();
+  const add = nd => { N[nd.k] = nd; nodes.push(nd); return nd; };
+  const topics = [...new Set(notes.map(topicOf))].sort((a, b) => a.localeCompare(b));
+  topics.forEach((t, i) => { const a = -Math.PI / 2 + 2 * Math.PI * i / topics.length, one = topics.length === 1;
+    add({ k: 't:' + t, kind: 't', label: t, col: ideaTopicCol(t), x: one ? 500 : 500 + 300 * Math.cos(a), y: one ? 320 : 320 + 185 * Math.sin(a), fixed: 1, w: 130, h: 70, a }); });
+  topics.forEach(t => { const hub = N['t:' + t], ns = notes.filter(n => topicOf(n) === t);
+    ns.forEach((n, j) => { const p = ideaPos(n), a = hub.a + 2 * Math.PI * j / ns.length, r = 120 + (j % 2) * 40;
+      add({ k: 'n:' + n.id, kind: 'n', n, label: ideaLabel(n), col: ideaCol(n), x: p ? p[0] : hub.x + r * 1.25 * Math.cos(a), y: p ? p[1] : hub.y + r * Math.sin(a), fixed: p ? 1 : 0, w: 120, h: 40, a }); }); });
+  const edge = (a, b, cls) => { const id = a < b ? a + '|' + b : b + '|' + a; if (a !== b && N[a] && N[b] && !seen.has(id)) { seen.add(id); edges.push({ a, b, cls }); } };
+  notes.forEach(n => { const me = N['n:' + n.id]; edge('t:' + topicOf(n), me.k, 't');
+    ideaTokens(n).forEach(tk => { const kind = tk[0], id = tk.slice(2); if (tk[1] !== ':') return;
+      if (kind === 'n') edge(me.k, tk, 'l');
+      else if (kind === 'p' || kind === 'e') {
+        if (!N[tk]) { const src = (kind === 'p' ? people : plan).find(x => x.id === id); if (!src) return;
+          const c = me.pe = (me.pe || 0) + 1, a = me.a + 0.9 * c * (c % 2 ? 1 : -1);
+          add({ k: tk, kind: 'pe', sub: kind, label: kind === 'p' ? src.name : src.title, src, x: me.x + 75 * Math.cos(a), y: me.y + 75 * Math.sin(a), w: 110, h: 36 }); }
+        edge(me.k, tk, 'l'); } }); });
+  for (let it = 0; it < 40; it++) {
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const A = nodes[i], B = nodes[j]; if (A.fixed && B.fixed) continue;
+      const dx = B.x - A.x, dy = B.y - A.y, ox = (A.w + B.w) / 2 - Math.abs(dx), oy = (A.h + B.h) / 2 - Math.abs(dy); if (ox <= 0 || oy <= 0) continue;
+      const vert = oy < ox, s = (vert ? dy : dx) < 0 ? -1 : 1, m = vert ? oy : ox, sa = A.fixed ? 0 : B.fixed ? 1 : .5, sb = B.fixed ? 0 : A.fixed ? 1 : .5;
+      if (vert) { A.y -= s * m * sa; B.y += s * m * sb; } else { A.x -= s * m * sa; B.x += s * m * sb; } }
+    nodes.forEach(nd => { if (!nd.fixed) { nd.x = Math.min(940, Math.max(60, nd.x)); nd.y = Math.min(600, Math.max(35, nd.y)); } }); }
+  // filters dim rather than remove
+  const off = new Set();
+  if (state.notesTopic || state.notesColor) {
+    nodes.forEach(nd => { if (nd.kind === 'n' && !ideaOn(nd.n)) off.add(nd.k); });
+    nodes.forEach(nd => { if (nd.kind === 't' && !nodes.some(o => o.kind === 'n' && topicOf(o.n) === nd.label && !off.has(o.k))) off.add(nd.k); });
+    nodes.forEach(nd => { if (nd.kind === 'pe' && !edges.some(e => (e.a === nd.k || e.b === nd.k) && (N[e.a === nd.k ? e.b : e.a].kind === 'n') && !off.has(e.a === nd.k ? e.b : e.a))) off.add(nd.k); }); }
+  return { nodes, edges, N, off };
 }
+const ideaNodeBy = key => ideaM && ideaM.N[key];
+function ideaEdgesHtml(M) {
+  const f = v => v.toFixed(1);
+  return M.edges.map(e => { const A = M.N[e.a], B = M.N[e.b], dx = B.x - A.x, dy = B.y - A.y, sg = ideaHash(e.a + e.b) & 1 ? 1 : -1, h = ideaHash(e.b + e.a);
+    const d = `M${f(A.x)} ${f(A.y)}Q${f((A.x + B.x) / 2 - dy * .12 * sg)} ${f((A.y + B.y) / 2 + dx * .12 * sg)} ${f(B.x)} ${f(B.y)}`;
+    return `<g class="ie ${e.cls}${M.off.has(e.a) || M.off.has(e.b) ? ' off' : ''}" data-a="${esc(e.a)}" data-b="${esc(e.b)}" style="--d:${3 + h % 5}s;--dl:-${h % 7}s"><path class="iedge" d="${d}" vector-effect="non-scaling-stroke"/><path class="ispark" pathLength="100" d="${d}" vector-effect="non-scaling-stroke"/></g>`; }).join('');
+}
+function ideaNodeHtml(nd, M) {
+  const h = ideaHash(nd.k), cls = `inode ${nd.kind}${M.off.has(nd.k) ? ' off' : ''}${state.notesSel === nd.k ? ' sel' : ''}`;
+  const pos = `left:${(nd.x / 10).toFixed(2)}%;top:${(nd.y / 6.4).toFixed(2)}%;--fd:${6 + h % 5}s;--fdl:-${h % 6}s`;
+  const lab = nd.kind === 'n' ? 'Note: ' + nd.label : nd.kind === 't' ? 'Topic: ' + nd.label : (nd.sub === 'p' ? 'Person: ' : 'Event: ') + nd.label;
+  return `<button type="button" class="${cls}" data-ik="${esc(nd.k)}" ${nd.kind === 'n' ? 'data-drag' : ''} style="${pos};--ic:var(--ic-${nd.col})" aria-label="${esc(lab)}" aria-pressed="${state.notesSel === nd.k}"><span class="if"><span class="idot"></span><span class="ilab">${esc(nd.label)}</span></span></button>`;
+}
+function ideaSide() {
+  const M = ideaM, nd = M && ideaNodeBy(state.notesSel), box = $('ideaSide');
+  if (!nd) { box.innerHTML = '<p class="muted" style="margin:0;font-size:14px">Pick a note, topic, person or event on the map to see it here. Drag a note to move it.</p>'; return; }
+  const chip = k => { const o = ideaNodeBy(k); return o ? `<span class="ichip"><button type="button" data-ik="${esc(k)}">${esc(o.label)}</button>${nd.kind === 'n' && o.kind !== 't' ? `<button type="button" data-iunlink="${esc(k)}" aria-label="Remove link to ${esc(o.label)}">×</button>` : ''}</span>` : ''; };
+  const nbrs = M.edges.filter(e => e.a === nd.k || e.b === nd.k).map(e => e.a === nd.k ? e.b : e.a);
+  if (nd.kind === 't') { const ns = nbrs.filter(k => k[0] === 'n');
+    box.innerHTML = `<div class="eyebrow">Topic</div><h3>${esc(nd.label)}</h3><p class="muted" style="margin:0;font-size:13px">${ns.length} note${ns.length === 1 ? '' : 's'}</p><div class="ichips">${ns.map(chip).join('')}</div>`; return; }
+  if (nd.kind === 'pe') { const s = nd.src;
+    box.innerHTML = `<div class="eyebrow">${nd.sub === 'p' ? 'Person' : 'Event'}</div><h3>${esc(nd.label)}</h3>${nd.sub === 'e' && s.date ? `<p class="muted" style="margin:0;font-size:13px">${esc(fmt(s.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</p>` : ''}<div class="eyebrow">Notes</div><div class="ichips">${nbrs.map(chip).join('')}</div>`; return; }
+  const n = nd.n, cur = ideaCol(n), taken = new Set(nbrs.concat('n:' + n.id));
+  const others = (state.data.Notes || []).filter(o => !taken.has('n:' + o.id)), ppl = (state.data.People || []).filter(p => !taken.has('p:' + p.id)).sort((a, b) => a.name.localeCompare(b.name)),
+    evs = (state.data.Plan || []).filter(p => hasStar(p.type) && !taken.has('e:' + p.id)).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  box.innerHTML = `<div class="eyebrow">${esc(topicOf(n))}</div><h3>${esc(ideaTitle(n))}</h3>${n.date ? `<div class="muted" style="font-size:12px">${esc(fmt(n.date, { day: 'numeric', month: 'short', year: 'numeric' }))}</div>` : ''}
+    <p class="txt">${esc(n.note)}</p>
+    <div class="eyebrow">Colour</div><div class="iswrow">${IDEA_COLS.map(c => `<button type="button" class="isb" data-icolor="${c}" style="--ic:var(--ic-${c})" aria-label="Colour: ${ideaCap(c)}" aria-pressed="${c === cur}" title="${ideaCap(c)}"></button>`).join('')}</div>
+    <div class="eyebrow">Linked to</div><div class="ichips">${nbrs.filter(k => k[0] !== 't').map(chip).join('') || '<span class="muted" style="font-size:13px">Nothing yet.</span>'}</div>
+    <select id="ideaLink" class="pill" aria-label="Link to…" style="padding:6px 10px;font-size:13px"><option value="">Link to…</option>
+      ${others.length ? `<optgroup label="Notes">${others.map(o => `<option value="n:${esc(o.id)}">${esc(topicOf(o) + ': ' + ideaLabel(o))}</option>`).join('')}</optgroup>` : ''}
+      ${ppl.length ? `<optgroup label="People">${ppl.map(p => `<option value="p:${esc(p.id)}">${esc(p.name)}</option>`).join('')}</optgroup>` : ''}
+      ${evs.length ? `<optgroup label="Events">${evs.map(p => `<option value="e:${esc(p.id)}">${esc(p.title + (p.date ? ' · ' + fmt(p.date, { day: 'numeric', month: 'short' }) : ''))}</option>`).join('')}</optgroup>` : ''}</select>
+    <div><button type="button" class="btn" data-iedit="${esc(n.id)}">Edit note</button></div>`;
+}
+function renderNotes() {
+  const all = state.data.Notes || [], view = state.notesView === 'list' ? 'list' : 'map', none = !all.length;
+  const topics = [...new Set(all.map(topicOf))].sort((a, b) => a.localeCompare(b));
+  if (state.notesTopic && !topics.includes(state.notesTopic)) state.notesTopic = '';
+  document.querySelectorAll('[data-iview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.iview === view)));
+  $('ideaFilters').hidden = none;
+  $('ideaFilters').innerHTML = `<div class="gchips"><span class="fl">Topic</span><button type="button" class="chip-t" data-itopic="" aria-pressed="${!state.notesTopic}">All</button>${topics.map(t => `<button type="button" class="chip-t" data-itopic="${esc(t)}" aria-pressed="${state.notesTopic === t}">${esc(t)}</button>`).join('')}</div>
+    <div class="gchips"><span class="fl">Colour</span><button type="button" class="chip-t" data-icf="" aria-pressed="${!state.notesColor}">All</button>${IDEA_COLS.map(c => `<button type="button" class="chip-t" data-icf="${c}" aria-pressed="${state.notesColor === c}"><span class="isw" style="--ic:var(--ic-${c})"></span>${ideaCap(c)}</button>`).join('')}</div>`;
+  const ns = all.filter(ideaOn).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  $('notes').innerHTML = ns.map(n => `<div class="note" data-note="${esc(n.id)}"><h3><span class="isw" style="--ic:var(--ic-${ideaCol(n)})"></span>${esc(topicOf(n))} ${n.date ? `<span class="muted" style="font-weight:400;font-size:12px">${esc(fmt(n.date, { day: 'numeric', month: 'short', year: 'numeric' }))}</span>` : ''}</h3><p>${esc(n.note)}</p></div>`).join('') || `<p class="empty">${none ? 'No notes yet. Add one and it will show up on the map.' : 'No notes match those filters.'}</p>`;
+  $('notes').hidden = view === 'map' && !none ? true : false;
+  $('ideaBox').hidden = view !== 'map' || none;
+  if (none || view !== 'map') { ideaM = null; return; }
+  ideaM = ideaModel();
+  if (!ideaNodeBy(state.notesSel)) state.notesSel = '';
+  $('ideaMap').innerHTML = `<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">${ideaEdgesHtml(ideaM)}</svg>` + ideaM.nodes.map(nd => ideaNodeHtml(nd, ideaM)).join('');
+  ideaSide();
+}
+function ideaSelect(key) {
+  state.notesSel = ideaNodeBy(key) ? key : '';
+  document.querySelectorAll('#ideaMap .inode').forEach(b => { const on = b.dataset.ik === state.notesSel; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); });
+  ideaSide();
+}
+function ideaHover(key) {
+  const map = $('ideaMap'), nb = new Set([key]);
+  map.querySelectorAll('.ie').forEach(g => { const hit = !!key && (g.dataset.a === key || g.dataset.b === key); g.classList.toggle('hot', hit); g.classList.toggle('dim', !!key && !hit); if (hit) { nb.add(g.dataset.a); nb.add(g.dataset.b); } });
+  map.querySelectorAll('.inode').forEach(b => b.classList.toggle('dim', !!key && !nb.has(b.dataset.ik)));
+}
+const ideaSelNote = () => { const nd = ideaNodeBy(state.notesSel); return nd && nd.kind === 'n' ? (state.data.Notes || []).find(x => x.id === nd.n.id) : null; };
+const ideaSave = (n, patch) => withBusy('Saving…', () => updateRow('Notes', { ...n, ...patch }));
+$('ideaMap').addEventListener('mouseover', e => { const b = e.target.closest('.inode'); ideaHover(b ? b.dataset.ik : ''); });
+$('ideaMap').addEventListener('mouseleave', () => ideaHover(''));
+$('ideaMap').addEventListener('focusin', e => { const b = e.target.closest('.inode'); if (b) ideaHover(b.dataset.ik); });
+$('ideaMap').addEventListener('focusout', () => ideaHover(''));
+let ideaDrag = null, ideaNoClick = false;
+$('ideaMap').addEventListener('pointerdown', e => {
+  const b = e.target.closest('.inode[data-drag]'), nd = b && ideaNodeBy(b.dataset.ik); if (!nd || e.button) return;
+  ideaDrag = { b, nd, id: e.pointerId, x0: e.clientX, y0: e.clientY, sx: nd.x, sy: nd.y, moved: false }; try { b.setPointerCapture(e.pointerId); } catch (x) {} });
+$('ideaMap').addEventListener('pointermove', e => {
+  const d = ideaDrag; if (!d || e.pointerId !== d.id) return;
+  const dx = e.clientX - d.x0, dy = e.clientY - d.y0; if (!d.moved && Math.hypot(dx, dy) <= 4) return;
+  d.moved = true; const r = $('ideaMap').getBoundingClientRect();
+  d.nd.x = Math.min(980, Math.max(20, d.sx + dx / r.width * 1000)); d.nd.y = Math.min(620, Math.max(20, d.sy + dy / r.height * 640));
+  d.b.style.left = (d.nd.x / 10) + '%'; d.b.style.top = (d.nd.y / 6.4) + '%'; $('ideaMap').querySelector('svg').innerHTML = ideaEdgesHtml(ideaM); });
+$('ideaMap').addEventListener('pointerup', async e => {
+  const d = ideaDrag; if (!d || e.pointerId !== d.id) return; ideaDrag = null; if (!d.moved) return;
+  ideaNoClick = true; setTimeout(() => { ideaNoClick = false; }, 0);
+  const n = (state.data.Notes || []).find(x => x.id === d.nd.n.id); state.notesSel = d.nd.k;
+  if (n) await ideaSave(n, { pos: Math.round(d.nd.x) + ',' + Math.round(d.nd.y) }); });
+$('ideaMap').addEventListener('pointercancel', () => { ideaDrag = null; if (ideaM) renderNotes(); });
+$('v-notes').addEventListener('click', async e => {
+  const el = e.target.closest('[data-ik],[data-iview],[data-itopic],[data-icf],[data-icolor],[data-iunlink],[data-iedit]'); if (!el) return;
+  if (el.dataset.ik != null) { if (!ideaNoClick) ideaSelect(el.dataset.ik); return; }
+  if (el.dataset.iview) { state.notesView = el.dataset.iview; renderNotes(); return; }
+  if (el.dataset.itopic != null) { state.notesTopic = el.dataset.itopic; renderNotes(); return; }
+  if (el.dataset.icf != null) { state.notesColor = el.dataset.icf; renderNotes(); return; }
+  const n = ideaSelNote(); if (!n) return;
+  if (el.dataset.iedit) { openNote(n); return; }
+  if (el.dataset.icolor) { await ideaSave(n, { color: el.dataset.icolor === n.color ? '' : el.dataset.icolor }); return; }
+  if (el.dataset.iunlink) { const k = el.dataset.iunlink, mine = ideaTokens(n);
+    if (mine.includes(k)) { await ideaSave(n, { links: mine.filter(t => t !== k).join(';') }); return; }
+    const o = k[0] === 'n' && (state.data.Notes || []).find(x => 'n:' + x.id === k); // linked from the other end
+    if (o) await ideaSave(o, { links: ideaTokens(o).filter(t => t !== 'n:' + n.id).join(';') }); } });
+$('v-notes').addEventListener('change', async e => {
+  if (e.target.id !== 'ideaLink' || !e.target.value) return;
+  const n = ideaSelNote(); if (n) await ideaSave(n, { links: ideaTokens(n).concat(e.target.value).join(';') }); });
 const PAPER_URL = 'https://jcm-book-library.github.io/daily-paper/';
 function renderPaper() {
   const url = setting('paper_url', PAPER_URL);
@@ -1939,7 +2133,7 @@ let editingN = null;
 function openNote(n) { editingN = n || null; $('nTopic').value = n ? n.topic : ''; $('nDate').value = n ? n.date : todayIso(); $('nText').value = n ? n.note : ''; $('noteDel').hidden = !n; $('noteDlg').showModal(); }
 $('noteForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const o = { ...(editingN || { id: newId('n') }), topic: $('nTopic').value.trim(), date: $('nDate').value, note: $('nText').value };
+  const o = { links: '', color: '', pos: '', ...(editingN || { id: newId('n') }), topic: $('nTopic').value.trim(), date: $('nDate').value, note: $('nText').value };
   $('noteDlg').close(); await withBusy('Saving…', () => editingN ? updateRow('Notes', o) : addRows('Notes', [o]));
 });
 $('noteDel').addEventListener('click', async () => { const n = editingN; if (!n) return; $('noteDlg').close(); await withBusy('Deleting…', () => deleteRow('Notes', n)); });
