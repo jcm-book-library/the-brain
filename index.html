@@ -102,6 +102,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .status[data-state=live] .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
 .status[data-state=error] .dot{background:var(--danger)}
+.status[data-state=live] .dot[data-sync]{box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 30%,transparent),0 0 10px var(--ok)}
 .status[data-state=loading] .dot{background:var(--accent);animation:pulse 1s infinite alternate}
 @keyframes pulse{to{opacity:.3}}
 @media (prefers-reduced-motion:reduce){.status[data-state=loading] .dot{animation:none}}
@@ -832,6 +833,49 @@ const sb = {
     return body;
   }
 };
+/* ---------- live sync: Supabase Realtime ----------
+   One websocket listens for any change to the brain tables (RLS still applies: you only hear about your own rows).
+   A change from another device triggers a quiet reload a moment later; our own saves are ignored because
+   they reload anyway. If the socket drops it retries with growing gaps; coming back to the tab also reloads
+   when the data is over a minute old, so a missed message never leaves a device stale for long. */
+const rt = {
+  ws: null, ref: 0, hb: null, retry: 0, timer: null, want: false, joined: false, pend: null, lastSave: 0, lastLoad: 0,
+  url() { return SB.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + encodeURIComponent(SB.key) + '&vsn=1.0.0'; },
+  send(topic, event, payload) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify({ topic, event, payload, ref: String(++this.ref) })); },
+  async start() {
+    this.want = true; if (this.ws || typeof WebSocket === 'undefined') return;
+    let at; try { at = await sb.token(); } catch (e) { return; }
+    if (!this.want || this.ws) return;
+    this._at = at;
+    const ws = this.ws = new WebSocket(this.url());
+    ws.onopen = () => {
+      this.send('realtime:brain', 'phx_join', { config: { broadcast: { self: false }, presence: { key: '' }, postgres_changes: [{ event: '*', schema: SB.schema }] }, access_token: at });
+      clearInterval(this.hb); this.hb = setInterval(() => { this.send('phoenix', 'heartbeat', {}); this.keepToken(); }, 25000);
+    };
+    ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (m.event === 'phx_reply' && m.topic === 'realtime:brain' && m.payload) {
+        if (m.payload.status === 'ok') { if (!this.joined) { this.joined = true; this.retry = 0; this.show(); } }
+        else if (m.payload.status === 'error') { this.joined = false; this.show(); }
+      }
+      if (m.event === 'system' && m.payload && m.payload.status === 'error') { this.joined = false; this.show(); }
+      if (m.event === 'postgres_changes') this.changed();
+    };
+    ws.onclose = () => { this.ws = null; this.joined = false; clearInterval(this.hb); this.show();
+      if (this.want) { clearTimeout(this.timer); this.timer = setTimeout(() => this.start(), Math.min(60000, 2000 * Math.pow(2, this.retry++))); } };
+    ws.onerror = () => { try { ws.close(); } catch (e) {} };
+  },
+  stop() { this.want = false; clearTimeout(this.timer); clearInterval(this.hb); if (this.ws) { const w = this.ws; this.ws = null; try { w.close(); } catch (e) {} } this.joined = false; this.show(); },
+  /* hand the socket a fresh token before the old one runs out */
+  async keepToken() { try { const at = await sb.token(); if (at !== this._at) { this._at = at; this.send('realtime:brain', 'access_token', { access_token: at }); } } catch (e) {} },
+  changed() {
+    if (Date.now() - this.lastSave < 2500) return;
+    clearTimeout(this.pend); this.pend = setTimeout(() => this.pull(), 800);
+  },
+  pull() { if (state.busy) { this.pend = setTimeout(() => this.pull(), 800); return; } refresh(); },
+  show() { const d = document.querySelector('#status .dot'); if (d) { d.toggleAttribute('data-sync', this.joined); d.title = this.joined ? 'Live sync on: changes from your other devices show here straight away' : ''; } }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && useSb() && state.live && !state.busy && Date.now() - rt.lastLoad > 60000) refresh(); });
+
 function sbIn(tab, r) { const o = { _row: r.row_id }; Object.entries(SBT[tab][1]).forEach(([c, d]) => { o[c] = parseCell(c, r[d]); }); return o; }
 function sbVal(c, v) {
   if (BOOL_COLS.has(c)) return !!v;
@@ -884,7 +928,7 @@ function googleSignIn() {
   } catch (err) { notice(err.message, 'error'); }
 }
 const canLoad = () => useSb() ? sb.signedIn() : g.valid();
-function signedOut() { state.live = false; setStatus('error', 'Not connected'); $('refreshBtn').textContent = 'Connect'; }
+function signedOut() { rt.stop(); state.live = false; setStatus('error', 'Not connected'); $('refreshBtn').textContent = 'Connect'; }
 
 /* ---------- read ---------- */
 function parseCell(col, v) {
@@ -920,7 +964,8 @@ async function refresh() {
   try {
     if (useSb()) state.data = await sbReadAll();
     else { const r = await readSheet(); state.data = r.data; state.rowCount = r.rowCount; }
-    state.live = true;
+    state.live = true; rt.lastLoad = Date.now();
+    if (useSb()) rt.start(); else if (rt.want) rt.stop();
     $('refreshBtn').textContent = 'Refresh';
     setStatus('live', (useSb() ? 'Supabase · ' : 'Live · ') + new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }));
     hideNotice();
@@ -993,7 +1038,7 @@ new MutationObserver(() => { if (draftQueued) return; draftQueued = true; queueM
 
 async function withBusy(label, fn) {
   state.busy = true; setStatus('loading', label);
-  try { await fn(); state.busy = false; clearDraft(draftPending); draftPending = null; await refresh(); return true; }
+  try { await fn(); rt.lastSave = Date.now(); state.busy = false; clearDraft(draftPending); draftPending = null; await refresh(); return true; }
   catch (e) { state.busy = false; if (e.code !== 'signin') notice('Couldn\'t save: ' + (e.message || e), 'error'); setStatus('error', 'Not saved'); return false; }
 }
 async function ensureRows(tab, need) {

@@ -66,6 +66,14 @@ async function install(page, w) {
     if (p === '/values:batchGet') return json({ valueRanges: u.searchParams.getAll('ranges').map(rg => { const a = parseA1(rg); return { range: rg, values: w.sheets[a.tab].slice(a.r0 - 1).map(row => row.slice(a.c0, a.c1 + 1)) }; }) });
     return json({});
   });
+  // fake Supabase Realtime: answers joins and heartbeats; tests push postgres_changes through w.rt.push
+  w.rt = { socks: [], joins: [], tokens: [], push(rec) { this.socks.forEach(ws => ws.send(JSON.stringify({ topic: 'realtime:brain', event: 'postgres_changes', payload: { data: rec }, ref: null }))); } };
+  await page.routeWebSocket(/\/realtime\/v1\/websocket/, ws => { w.rt.socks.push(ws); w.rt.url = ws.url();
+    ws.onMessage(m => { let o; try { o = JSON.parse(m); } catch (e) { return; }
+      if (o.event === 'phx_join') { w.rt.joins.push(o.payload); ws.send(JSON.stringify({ topic: o.topic, event: 'phx_reply', payload: w.rtFail ? { status: 'error', response: { reason: 'no publication' } } : { status: 'ok', response: { postgres_changes: [{ id: 1, event: '*', schema: 'brain' }] } }, ref: o.ref })); }
+      else if (o.event === 'access_token') w.rt.tokens.push(o.payload.access_token);
+      else if (o.event === 'heartbeat') ws.send(JSON.stringify({ topic: 'phoenix', event: 'phx_reply', payload: { status: 'ok', response: {} }, ref: o.ref })); });
+    ws.onClose(() => { w.rt.socks = w.rt.socks.filter(x => x !== ws); }); });
   await page.route(SBU + '/**', async r => {
     const req = r.request(), u = new URL(req.url()), method = req.method(), h = req.headers();
     const json = (o, status = 200) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(o) });
@@ -186,6 +194,35 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     const d = w.sbCalls.slice(b3).filter(c => c.method === 'DELETE');
     check('sbmode: remove list item -> DELETE row_id=eq.N', d.length === 1 && d[0].table === 'lists' && d[0].query === `?row_id=eq.${dentist.row_id}`, d.map(x => x.query));
     check('sbmode: zero calls to sheets.googleapis.com', w.sheetCalls.length === 0, w.sheetCalls);
+  } });
+
+  // 3a. Live sync: a change on another device shows here without pressing Refresh
+  await scenario(b, 'realtime', { init: { ...cfgSb, ...ses() }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page); await page.waitForFunction(() => document.querySelector('#status .dot[data-sync]'), null, { timeout: 5000 });
+    const j = w.rt.joins[0] || {};
+    check('realtime: joins with the signed-in token and listens to the brain schema only', w.rt.joins.length === 1 && j.access_token === GOOD && JSON.stringify(j.config.postgres_changes) === JSON.stringify([{ event: '*', schema: 'brain' }]) && /apikey=/.test(w.rt.url) && /^wss:/.test(w.rt.url), [j, w.rt.url]);
+    check('realtime: the status dot shows live sync is on', /Live sync on/.test(await page.getAttribute('#status .dot', 'title')));
+    // another device adds a plan item
+    w.insert('plan', { id: 'e9', date: T, end_date: null, time: '12:00', title: 'Lunch from the phone', category: 'Social', type: 'Social', done: false, countdown: false, notes: '' });
+    const g0 = w.sbCalls.filter(c => c.method === 'GET').length;
+    w.rt.push({ table: 'plan', type: 'INSERT', schema: 'brain' });
+    await page.waitForFunction(() => document.getElementById('homeToday').innerText.includes('Lunch from the phone'), null, { timeout: 5000 }).catch(() => {});
+    check('realtime: a change from another device appears without pressing Refresh', (await page.locator('#homeToday').innerText()).includes('Lunch from the phone'));
+    check('realtime: one reload per burst of changes', await (async () => { const g1 = w.sbCalls.filter(c => c.method === 'GET').length; w.rt.push({ table: 'plan', type: 'UPDATE' }); w.rt.push({ table: 'plan', type: 'UPDATE' }); w.rt.push({ table: 'log', type: 'UPDATE' }); await page.waitForTimeout(1600); const g2 = w.sbCalls.filter(c => c.method === 'GET').length; return g1 > g0 && g2 - g1 > 0 && g2 - g1 === g1 - g0; })());
+    // our own save: its echo doesn't cause a second reload
+    await page.locator('#homeToday [data-tick="e1"]').check(); await live(page);
+    const g3 = w.sbCalls.filter(c => c.method === 'GET').length;
+    w.rt.push({ table: 'plan', type: 'UPDATE' }); await page.waitForTimeout(1400);
+    check('realtime: the echo of our own save is ignored', w.sbCalls.filter(c => c.method === 'GET').length === g3);
+    // the socket drops: it reconnects by itself
+    w.rt.socks.forEach(ws => ws.close()); await page.waitForTimeout(300);
+    check('realtime: dot drops back when the socket closes', !(await page.$('#status .dot[data-sync]')));
+    await page.waitForFunction(() => document.querySelector('#status .dot[data-sync]'), null, { timeout: 6000 }).catch(() => {});
+    check('realtime: reconnects by itself', w.rt.joins.length === 2 && !!(await page.$('#status .dot[data-sync]')));
+  } });
+  await scenario(b, 'realtime-off', { init: { ...cfgSb, ...ses() }, setup: w => { seedSbBasic(w); w.rtFail = true; }, run: async (page, w) => {
+    await live(page); await page.waitForTimeout(400);
+    check('realtime: if the tables are not published yet, the app still works and just shows no sync', !(await page.$('#status .dot[data-sync]')) && (await page.locator('#homeToday').innerText()).includes('Strength'));
   } });
 
   // 3b. Setup tab in Supabase mode
