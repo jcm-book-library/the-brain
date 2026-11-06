@@ -87,15 +87,18 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('home is the default tab', await page.isVisible('#v-home') && !(await page.isVisible('#v-upcoming')));
   check('tabs in the agreed order', JSON.stringify(await page.locator('.tabs .tab').allInnerTexts()) === JSON.stringify(['Home', 'Upcoming', 'Paper', 'Fitness', 'Family & Friends', 'Notes', 'Setup']));
   const box = id => page.evaluate(i => { const r = document.getElementById(i).getBoundingClientRect(); return { x: r.x, y: r.y + scrollY, w: r.width, h: r.height }; }, id);
-  { const ys = []; for (const id of ['chips', 'homeNews', 'homeSteps', 'qaHome', 'homeToday', 'homeNext']) ys.push((await box(id)).y);
-    check('home rows run: countdowns, headlines/weather, steps/pages, add/notes, today, next 6 days', ys.every((y, i) => i === 0 || y > ys[i - 1]), ys); }
-  for (const [a, b] of [['homeNews', 'homeWx'], ['homeSteps', 'homePages'], ['qaHome', 'noteHome']]) { const A = await box(a), B = await box(b);
-    check(`home: ${a} and ${b} are a matched pair (same width, height and row)`, Math.abs(A.w - B.w) < 1 && Math.abs(A.h - B.h) < 1 && Math.abs(A.y - B.y) < 1 && B.x > A.x, [A, B]); }
-  { const w = await page.evaluate(() => ['chips', 'homeToday', 'homeNext'].map(i => document.getElementById(i).getBoundingClientRect().width));
-    check('home: countdowns, today and next 6 days run the full width', w.every(x => Math.abs(x - w[0]) < 1), w);
+  { const ys = []; for (const id of ['homeToday', 'addBox', 'homeNext', 'chips', 'homeNews', 'homeStats']) ys.push((await box(id)).y);
+    check('home rows run: today, add, next 6 days, countdowns, headlines/weather, steps and reading', ys.every((y, i) => i === 0 || y > ys[i - 1]), ys); }
+  { const A = await box('homeNews'), B = await box('homeWx');
+    check('home: headlines and weather are a matched pair (same width, height and row)', Math.abs(A.w - B.w) < 1 && Math.abs(A.h - B.h) < 1 && Math.abs(A.y - B.y) < 1 && B.x > A.x, [A, B]); }
+  { const r = await page.evaluate(() => [...document.querySelectorAll('[data-addmode]')].map(b => { const q = b.getBoundingClientRect(); return [q.width, q.height, q.y]; }));
+    check('home: the two add buttons match', r.length === 2 && Math.abs(r[0][0] - r[1][0]) < 1 && Math.abs(r[0][1] - r[1][1]) < 1 && Math.abs(r[0][2] - r[1][2]) < 1, r);
+    check('home: the add box starts closed', await page.locator('#addHome').isHidden()); }
+  { const w = await page.evaluate(() => ['chips', 'homeToday', 'addBox', 'homeNext', 'homeStats'].map(i => document.getElementById(i).getBoundingClientRect().width));
+    check('home: today, add, next 6 days, countdowns and stats run the full width', w.every(x => Math.abs(x - w[0]) < 1), w);
     const cw = await page.evaluate(() => [...document.querySelectorAll('#chips .cd')].map(c => Math.round(c.getBoundingClientRect().width)));
     check('home: countdown cells are all the same width', cw.length >= 2 && new Set(cw).size === 1, cw); }
-  check('chips include payday', await page.locator('.cd.pay').count() === 1); { const pd = await page.locator('.cd.pay b').innerText(); const exp = (()=>{const a=Date.UTC(2026,0,9);const n=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());const d=Math.round((n-a)/864e5);const r=((14-(d%14))%14);return r===0?'Today':r===1?'Tomorrow':r+' days';})(); check('payday countdown correct ('+pd+')', pd===exp); }
+  check('countdowns: no payday, at most four', await page.locator('.cd.pay').count() === 0 && !/Payday/.test(await page.locator('#chips').innerText()) && await page.locator('#chips .cd').count() <= 4);
   check('ticked countdown shown', (await page.locator('#chips').innerText()).includes('Dinner with friends'));
   check('pinned links', await page.locator('#links a').count() === 2);
   { const rows = await page.locator('#homeNews .news li a').evaluateAll(a => a.map(x => [x.querySelector('.hl').textContent, x.getAttribute('href') || '']));
@@ -104,7 +107,8 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('home: weather shows today and the next three days', /°/.test(await page.locator('#homeWx .wxbig').innerText()) && await page.locator('#homeWx .wx3 > div').count() === 3);
   { const ym = T.slice(0, 7), rows = db.Log.slice(1).filter(r => r[0] && (() => { const d = new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}` === ym; })());
     const avg = k => { const v = rows.map(r => r[k]).filter(x => x != null && x !== ''); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length).toLocaleString('en-AU') : '–'; };
-    check('home: average steps (' + avg(1) + ') and average pages (' + avg(4) + ')', (await page.locator('#homeSteps .big').innerText()).startsWith(avg(1)) && (await page.locator('#homePages .big').innerText()).startsWith(avg(4)) && /Average steps/.test(await page.locator('#homeSteps').innerText()) && /Average pages read/.test(await page.locator('#homePages').innerText())); }
+    check('home: average steps (' + avg(1) + ') and average pages (' + avg(4) + ')', (await page.locator('#homeStats [data-stat=steps] .big').innerText()).startsWith(avg(1)) && (await page.locator('#homeStats [data-stat=pages] .big').innerText()).startsWith(avg(4)));
+    check('home: steps and reading share one box, each bar says above or under goal', await page.locator('#homeStats .stathalf').count() === 2 && /(Above|Under) goal|Nothing logged|No goal/.test(await page.locator('#homeStats').innerText())); }
   check('home: today shows schedule and to-do', /Strength & Conditioning/.test(await page.locator('#homeToday').innerText()) && /Office/.test(await page.locator('#homeToday').innerText()));
   // next 6 days: accordion, one open at a time
   check('home: six day rows, all closed to start', await page.locator('#nextBody .acc').count() === 6 && await page.locator('#nextBody .acc[data-open=true]').count() === 0);
@@ -122,7 +126,8 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('tick saved to sheet', db.Plan[1][7] === true);
 
   // quick add
-  await page.fill('#qhText', 'Call Mum #social 7:30pm'); await page.click('#qaHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('[data-addmode=date]'); check('add to planner opens the box', await page.isVisible('#addHome') && (await page.getAttribute('[data-addmode=date]', 'aria-expanded')) === 'true');
+  await page.fill('#ahText', 'Call Mum #social 7:30pm'); await page.click('#addHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   const added = db.Plan.find(r => r[4] === 'Call Mum');
   check('quick add wrote row after last item (row 10)', db.Plan.indexOf(added) === 9 && added[3] === '19:30' && added[5] === 'Social' && added[1] === serial(T));
 
@@ -352,18 +357,18 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('unsaved note shows while typing', await page.isVisible('[data-draftflag]'));
   await backToTab();
   check('log typing survives coming back to the tab', (await page.inputValue('#lSteps')) === '7777' && (await page.inputValue('#lNote')) === 'half typed' && (await page.getAttribute('.mood[data-m=P]', 'aria-pressed')) === 'true');
-  await page.click('.tab[data-tab=home]'); await page.fill('#qhText', 'Buy milk 5pm'); await page.fill('#nhText', 'Ideas: half a thought');
+  await page.click('.tab[data-tab=home]'); await page.click('[data-addmode=date]'); await page.fill('#ahText', 'Buy milk 5pm');
   await backToTab();
-  check('quick add and quick note typing survive coming back to the tab', (await page.inputValue('#qhText')) === 'Buy milk 5pm' && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
+  check('add box typing survives coming back to the tab', (await page.inputValue('#ahText')) === 'Buy milk 5pm' && await page.isVisible('#addHome'));
   if (!(await page.isVisible(`#acc-${add(1)}`))) await page.click(`[data-acc="${add(1)}"]`);
   await page.locator(`#acc-${add(1)} [data-add]`).click(); await page.fill('#fTitle', 'Half-written plan'); await page.fill('#fNotes', 'details');
   await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
   check('add-item pop-up comes back after a reload', await page.isVisible('#itemDlg[open]') && (await page.inputValue('#fTitle')) === 'Half-written plan');
   await page.click('#itemDlg [data-close]');
   check('cancel throws the pop-up draft away', !(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('brain-drafts') || '{}')).some(k => k.startsWith('item@')))));
-  check('quick add typing survives a reload (and the preview comes back with it)', (await page.inputValue('#qhText')) === 'Buy milk 5pm' && /Buy milk/.test(await page.locator('#qaHome .qa-prev').innerText()) && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
-  await page.click('#qaHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
-  check('saving clears the quick add draft', db.Plan.some(r => r[4] === 'Buy milk' && r[3] === '17:00') && (await page.inputValue('#qhText')) === '' && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
+  check('add box typing survives a reload (box reopens with the preview)', (await page.inputValue('#ahText')) === 'Buy milk 5pm' && await page.isVisible('#addHome') && /Buy milk/.test(await page.locator('#addHome .qa-prev').innerText()));
+  await page.click('#addHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('saving clears the add box draft', db.Plan.some(r => r[4] === 'Buy milk' && r[3] === '17:00') && (await page.inputValue('#ahText')) === '');
   await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(150);
   check('log typing survives a reload', (await page.inputValue('#lSteps')) === '7777');
   await page.click('[data-draftdiscard]'); await page.waitForTimeout(100);
@@ -374,33 +379,60 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   // home quick add: one line, read for date, time and category; quick note
   await page.click('.tab[data-tab=home]'); await page.waitForTimeout(150);
   const fri = (() => { const d = new Date(today); let n = (5 - d.getDay() + 7) % 7; if (n === 0) n = 7; return add(n); })();
-  await page.fill('#qhText', 'Dinner IV fri 7pm');
-  check('quick add preview reads the line', /Dinner IV/.test(await page.locator('#qaHome .qa-prev').innerText()) && /19:00/.test(await page.locator('#qaHome .qa-prev').innerText()) && /Social/.test(await page.locator('#qaHome .qa-prev').innerText()));
-  await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  if (!(await page.isVisible('#addHome')) || (await page.getAttribute('[data-addmode=date]', 'aria-expanded')) !== 'true') await page.click('[data-addmode=date]');
+  await page.fill('#ahText', 'Dinner IV fri 7pm');
+  check('quick add preview reads the line', /Dinner IV/.test(await page.locator('#addHome .qa-prev').innerText()) && /19:00/.test(await page.locator('#addHome .qa-prev').innerText()) && /Social/.test(await page.locator('#addHome .qa-prev').innerText()));
+  await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const qa1 = db.Plan.find(r => r[4] === 'Dinner IV');
-  check('quick add: friday 7pm social', !!qa1 && qa1[1] === serial(fri) && qa1[3] === '19:00' && qa1[5] === 'Social' && (await page.inputValue('#qhText')) === '', qa1);
-  await page.fill('#qhText', 'gym tomorrow at 6:30am'); await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  check('quick add: friday 7pm social', !!qa1 && qa1[1] === serial(fri) && qa1[3] === '19:00' && qa1[5] === 'Social' && (await page.inputValue('#ahText')) === '', qa1);
+  await page.fill('#ahText', 'gym tomorrow at 6:30am'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const qa2 = db.Plan.find(r => r[4] === 'Gym');
   check('quick add: tomorrow 06:30 fitness', !!qa2 && qa2[1] === serial(add(1)) && qa2[3] === '06:30' && qa2[5] === 'Fitness', qa2);
-  await page.fill('#qhText', 'Sort winter clothes'); await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  await page.fill('#ahText', 'Sort winter clothes'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const qa3 = db.Plan.find(r => r[4] === 'Sort winter clothes');
   check('quick add: no date means today', !!qa3 && qa3[1] === serial(T) && qa3[3] === '', qa3);
   check('quick add: shows on home straight away', (await page.locator('#homeToday').innerText()).includes('Sort winter clothes'));
-  await page.fill('#nhText', 'Gift ideas: a book for Sam'); check('quick note preview shows the topic', /Gift ideas/.test(await page.locator('#noteHome .qa-prev').innerText()));
-  await page.press('#nhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('[data-addmode=note]'); check('add note switches the box to notes', await page.isVisible('#addHome') && (await page.getAttribute('[data-addmode=note]', 'aria-expanded')) === 'true' && (await page.getAttribute('[data-addmode=date]', 'aria-expanded')) === 'false');
+  await page.fill('#ahText', 'Gift ideas: a book for Sam'); check('quick note preview shows the topic', /Gift ideas/.test(await page.locator('#addHome .qa-prev').innerText()));
+  await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const nt = db.Notes.find(r => r[2] === 'Gift ideas');
-  check('quick note: topic and text saved with today\'s date', !!nt && nt[3] === 'a book for Sam' && nt[1] === serial(T) && (await page.inputValue('#nhText')) === '', nt);
-  await page.fill('#nhText', 'Remember the bins'); await page.press('#nhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  check('quick note: topic and text saved with today\'s date', !!nt && nt[3] === 'a book for Sam' && nt[1] === serial(T) && (await page.inputValue('#ahText')) === '', nt);
+  await page.fill('#ahText', 'Remember the bins'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   check('quick note: no topic goes under Quick note', db.Notes.some(r => r[2] === 'Quick note' && r[3] === 'Remember the bins'));
   await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(100);
   check('quick notes show on the Notes tab', (await page.locator('#notes').innerText()).includes('a book for Sam'));
   await page.click('.tab[data-tab=home]');
+
+  // push to tomorrow: today's open items get a button; done or other days don't
+  check('push: shown on today\'s open items only', await page.locator('#homeToday [data-push]').count() > 0 && await page.locator('#homeToday [data-push="e1"]').count() === 0 && await page.locator('#nextBody [data-push]').count() === 0);
+  await page.click('#homeToday [aria-label="Push to tomorrow: Sort winter clothes"]'); await page.waitForSelector('#status[data-state=live]');
+  { const r = db.Plan.find(x => x[4] === 'Sort winter clothes');
+    check('push: moves the item to tomorrow in the sheet and off today', !!r && r[1] === serial(add(1)) && !(await page.locator('#homeToday').innerText()).includes('Sort winter clothes'), r); }
+
+  // themes: monthly rotation by default, picker saves to Settings
+  { const th = await page.evaluate(() => [document.documentElement.dataset.theme, document.documentElement.dataset.mode]);
+    const exp = ['nebula', 'ember', 'solar', 'citrine', 'verdant'][today.getMonth() % 5];
+    check('theme: this month\'s theme applied by default (' + th + ')', th[0] === exp && th[1] === 'dark', th);
+    check('theme: animated backdrop drawn', await page.locator('#fx > *').count() > 0); }
+  await page.click('#themeBtn'); await page.waitForSelector('#themeDlg[open]');
+  check('theme: picker lists auto, five dark themes and Stone', await page.locator('#themeList [data-theme-pick]').count() === 7);
+  await page.click('#themeList [data-theme-pick=stone]'); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(100);
+  check('theme: Stone is light and saved to Settings', await page.evaluate(() => document.documentElement.dataset.theme === 'stone' && document.documentElement.dataset.mode === 'light') && db.Settings.some(r => r[0] === 'theme' && r[1] === 'stone'), db.Settings);
+  if (await page.isVisible('#themeDlg')) await page.keyboard.press('Escape');
+  await page.screenshot({ path: path.join(OUT, 'shot-home-stone.png'), fullPage: true });
+  await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(200);
+  check('theme: choice survives a reload', await page.evaluate(() => document.documentElement.dataset.theme) === 'stone');
+  await page.click('#themeBtn'); await page.waitForSelector('#themeDlg[open]'); await page.click('#themeList [data-theme-pick=ember]'); await page.waitForSelector('#status[data-state=live]');
+  check('theme: switching again updates the same Settings row', db.Settings.filter(r => r[0] === 'theme').length === 1 && db.Settings.find(r => r[0] === 'theme')[1] === 'ember' && await page.evaluate(() => document.documentElement.dataset.mode) === 'dark');
+  if (await page.isVisible('#themeDlg')) await page.keyboard.press('Escape');
+  await page.screenshot({ path: path.join(OUT, 'shot-home-ember.png'), fullPage: true });
 
   // phone: bottom tab bar, add sheet (planner and notes), More sheet
   await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
   check('phone: bottom bar replaces the top tabs', await page.isVisible('.bbar') && !(await page.isVisible('.tabs')));
   check('phone: bottom bar has five equal slots', await page.evaluate(() => document.querySelectorAll('.bbar > *').length === 5));
   check('phone: home pairs stack, nothing scrolls sideways', await page.evaluate(() => { const a = document.getElementById('homeNews').getBoundingClientRect(), b = document.getElementById('homeWx').getBoundingClientRect(); return b.top > a.bottom - 1 && Math.abs(a.width - b.width) < 1 && document.documentElement.scrollWidth <= innerWidth; }));
+  check('phone: header buttons stay on one row', await page.evaluate(() => { const ys = ['themeBtn', 'refreshBtn', 'settingsBtn'].map(i => document.getElementById(i)).filter(Boolean).map(b => Math.round(b.getBoundingClientRect().top)); return ys.length >= 2 && new Set(ys).size === 1; }));
   await page.screenshot({ path: path.join(OUT, 'shot-home-390.png'), fullPage: true });
   await page.click('.bbar [data-qaopen]'); await page.waitForSelector('#qaDlg[open]');
   await page.fill('#qsText', 'Call the bank thu'); await page.screenshot({ path: path.join(OUT, 'shot-sheet-390.png') }); await page.press('#qsText', 'Enter'); await page.waitForSelector('#status[data-state=live]');

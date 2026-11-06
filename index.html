@@ -11,31 +11,62 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='c'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.12' stop-color='%23c8f6ff'/%3E%3Cstop offset='.3' stop-color='%234fd8ff'/%3E%3Cstop offset='.7' stop-color='%2308476a'/%3E%3Cstop offset='1' stop-color='%2302070b'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='%2303080d'/%3E%3Ccircle cx='16' cy='16' r='13' fill='%234b6574'/%3E%3Ccircle cx='16' cy='16' r='11' fill='%2302070b'/%3E%3Ccircle cx='16' cy='16' r='9.5' fill='url(%23c)'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
 <style>
 /* Layout: header + countdowns + links, then Week view = two columns (focus day | the other six days). Dark-only "blue lens" look: navy grid room, frosted panels with quiet steel-blue trim, a pulsing eye for the logo. Roboto throughout, always with tabular figures.
-   Home = quick add, then Today, then three equal cards, then Upcoming. Anything that can grow takes a full-width row; fixed-size cards sit in equal columns. Phones get a bottom tab bar. */
+   Home = Today, one Add box, next 6 days, four countdowns, headlines beside weather, steps and reading. Anything that can grow takes a full-width row; fixed-size cards sit in equal columns. Phones get a bottom tab bar. */
 :root{
-  --bg:#03080d; --surface:#06111a; --raise:#0a1b27; --line:#13364a;
-  --fg:#dff6ff; --muted:#7aa9bd; --accent:#9bbccb; --accent-ink:#03080d; --danger:#ff7a7a; --ok:#7fc9a3;
+  /* Nebula until a theme is applied (html[data-theme]); every theme sets the same names */
+  --bg:#07061a; --a1:#7c5cff; --a2:#2f5bff; --accent:#b9a8ff; --fg:#f5f3ff; --muted:#b3acd6; --spark:#ff9a4d; --eye-hi:#d9d0ff;
+  --glass:rgba(20,15,48,.55); --line:rgba(255,255,255,.12); --surface:rgba(255,255,255,.05); --raise:rgba(255,255,255,.08);
+  --field:rgba(0,0,0,.28); --track:rgba(255,255,255,.12); --accent-ink:#0b0a14; --danger:#ff7a7a;
+  --ok:#4ade80; --under:#facc15; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
   --glow:transparent; --glowline:transparent;
-  --glass:linear-gradient(180deg,rgba(8,26,38,.88),rgba(5,15,23,.94));
   --c-fitness:#ff8f7e; --c-work:#7bc98f; --c-home:#5fc8c2; --c-social:#f2c35c; --c-sport:#7fa9ff; --c-other:#c39cf0;
   --m-G:#59c27a; --m-F:#6fa8dc; --m-P:#f0a04b; --m-B:#e06666;
   --display:"Roboto",ui-sans-serif,system-ui,sans-serif;
   --body:"Roboto",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
 }
+html[data-theme=ember]{--bg:#12050b;--a1:#ff3d5e;--a2:#b0127a;--accent:#ff8fa3;--fg:#fff3f5;--muted:#d6aab5;--spark:#ffd27a;--glass:rgba(44,10,24,.55);--eye-hi:#ffd0d8}
+html[data-theme=solar]{--bg:#120803;--a1:#ff8a2a;--a2:#d4410c;--accent:#ffb37a;--fg:#fff6ef;--muted:#dcb59a;--spark:#7fd6ff;--glass:rgba(44,20,6,.55);--eye-hi:#ffe0c4}
+html[data-theme=citrine]{--bg:#110f04;--a1:#ffd447;--a2:#d18b00;--accent:#ffe28a;--fg:#fffbea;--muted:#d8cf9c;--spark:#ff7aa8;--glass:rgba(40,34,6,.58);--eye-hi:#fff3c4}
+html[data-theme=verdant]{--bg:#03110e;--a1:#1fd38a;--a2:#0f8f9a;--accent:#7ff0c2;--fg:#effffa;--muted:#9fd3c3;--spark:#ffb35c;--glass:rgba(6,40,33,.55);--eye-hi:#c8ffe9}
+html[data-theme=stone]{color-scheme:light;--bg:#e9e7e3;--a1:#cdd5de;--a2:#e2d7c8;--accent:#56657a;--fg:#3e4246;--muted:#62676c;--spark:#b5653f;--eye-hi:#e6ecf2;
+  --glass:rgba(255,255,255,.55);--line:rgba(60,70,80,.16);--surface:rgba(255,255,255,.55);--raise:rgba(255,255,255,.75);--field:rgba(255,255,255,.8);--track:rgba(60,70,80,.14);
+  --accent-ink:#ffffff;--danger:#b3261e;--ok:#2f7d4c;--under:#8a6400;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100}
 *{box-sizing:border-box}
 [hidden]{display:none !important}
 html{background:var(--bg);font-feature-settings:"tnum"}
-body{color:var(--fg);font:400 15px/1.5 var(--body);margin:0;font-variant-numeric:tabular-nums;min-height:100vh;
-  background:radial-gradient(70% 40% at 100% 0%,rgba(79,216,255,.07),transparent 65%) fixed,
-    linear-gradient(rgba(79,216,255,.045) 1px,transparent 1px) 0 0/24px 24px,
-    linear-gradient(90deg,rgba(79,216,255,.045) 1px,transparent 1px) 0 0/24px 24px,var(--bg)}
-.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:18px 48px}
+body{color:var(--fg);font:400 15px/1.5 var(--body);margin:0;font-variant-numeric:tabular-nums;min-height:100vh;background:var(--bg)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:18px 48px;position:relative;z-index:1}
+/* the moving backdrop: one kind per theme, all built from the theme's two glow colours */
+.fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.fx span{position:absolute;display:block;will-change:transform}
+.fx .orb{left:74%;top:22%;width:62vmax;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);opacity:.85;background:radial-gradient(circle,rgba(255,255,255,.28) 1px,transparent 1.7px) 0 0/10px 10px,radial-gradient(circle at 40% 35%,var(--a1) 0%,var(--a2) 45%,transparent 70%);-webkit-mask-image:radial-gradient(circle,#000 50%,transparent 70%);mask-image:radial-gradient(circle,#000 50%,transparent 70%);animation:fx-beat 2.8s ease-in-out infinite}
+.fx .glow{left:20%;top:30%;width:50vmax;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);filter:blur(60px);opacity:.45;background:var(--a2)}
+.fx .glow.g2{left:80%;top:20%}
+.fx .ring{left:18%;top:30%;width:70vmax;aspect-ratio:1;border-radius:50%;border:2px solid var(--a1);transform:translate(-50%,-50%) scale(.2);animation:fx-ripple 7s linear infinite}
+.fx .ring.r2{animation-delay:-2.3s}.fx .ring.r3{animation-delay:-4.6s}
+.fx .sw{left:60%;top:30%;width:110vmax;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);filter:blur(70px);opacity:.5;background:conic-gradient(from 0deg,var(--a1),transparent 25%,var(--a2) 50%,transparent 75%,var(--a1));animation:fx-swirl 36s linear infinite}
+.fx .zm{inset:-12%;background-image:radial-gradient(circle,var(--a1) 1.3px,transparent 2px);background-size:28px 28px;animation:fx-zoom 6s ease-out infinite}
+.fx .zm.z2{animation-delay:-3s}
+.fx .fa,.fx .fb{width:70vmax;aspect-ratio:1.6;border-radius:50%;filter:blur(60px)}
+.fx .fa{left:-15%;top:10%;opacity:.55;background:var(--a1);animation:fx-flowA 16s ease-in-out infinite}
+.fx .fb{left:40%;top:-15%;opacity:.45;background:var(--a2);animation:fx-flowB 20s ease-in-out infinite}
+.fx .dr{left:45%;top:-20%;width:60vmax;aspect-ratio:1.3;border-radius:50%;filter:blur(60px);opacity:.8;background:var(--a1);animation:fx-drift 24s ease-in-out infinite}
+.fx .dr.d2{left:-15%;top:25%;background:var(--a2);animation-delay:-11s}
+.fx .veil{inset:0;background:linear-gradient(to bottom,transparent 0%,color-mix(in srgb,var(--bg) 80%,transparent) 55%,var(--bg) 100%)}
+@keyframes fx-beat{0%,100%{transform:translate(-50%,-50%) scale(1)}12%{transform:translate(-50%,-50%) scale(1.06)}24%{transform:translate(-50%,-50%) scale(1)}36%{transform:translate(-50%,-50%) scale(1.03)}}
+@keyframes fx-ripple{0%{transform:translate(-50%,-50%) scale(.2);opacity:.5}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+@keyframes fx-swirl{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes fx-zoom{0%{transform:scale(1);opacity:0}30%{opacity:.35}100%{transform:scale(1.3);opacity:0}}
+@keyframes fx-flowA{0%,100%{transform:translate(-10%,0) scale(1)}50%{transform:translate(14%,-10%) scale(1.15)}}
+@keyframes fx-flowB{0%,100%{transform:translate(8%,6%) scale(1.1)}50%{transform:translate(-14%,-4%) scale(.95)}}
+@keyframes fx-drift{0%,100%{transform:translate(0,0)}50%{transform:translate(6%,-6%)}}
+@media (prefers-reduced-motion:reduce){.fx span{animation:none!important}}
 h1,h2,h3,.num{font-family:var(--display)}
-h1{font-size:clamp(24px,3.4vw,30px);font-weight:600;letter-spacing:.01em;margin:0}
+h1{font-size:clamp(24px,3.4vw,30px);font-weight:500;letter-spacing:.01em;margin:0}
 h2{font-size:17px;font-weight:600;margin:0;letter-spacing:.01em}
 h3{font-size:14px;margin:0}
 .eyebrow{font:500 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--accent)}
@@ -79,10 +110,13 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 /* countdowns: equal-width cells that fill the row */
-.cds{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
-.cd{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:grid;gap:1px;min-width:0}
-.cd b{font-family:var(--display);font-size:22px;font-weight:500;line-height:1.2}
-.cd span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cds{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:16px}
+.cd{background:var(--glass);border:1px solid var(--line);border-radius:20px;padding:16px 18px;display:grid;gap:4px;min-width:0;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.cd b{font-family:var(--display);font-size:36px;font-weight:300;line-height:1}
+.cd b small{font-size:14px;font-weight:400;color:var(--muted);margin-left:6px}
+.cd span{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd span.cdd{font-size:13px;color:var(--muted)}
+.cds .empty{grid-column:1/-1}
 .cd.pay{border-color:color-mix(in srgb,var(--ok) 50%,var(--line))}
 .cd.pay b{color:var(--ok)}
 .links{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
@@ -93,7 +127,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .tab{border:0;background:transparent;color:var(--muted);border-radius:8px;padding:7px 14px;font:500 14px/1.4 var(--display);white-space:nowrap}
 .tab[aria-selected=true]{background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent)}
 
-.panel{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0;box-shadow:0 0 0 1px var(--glowline),0 20px 60px -34px var(--glow)}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:20px;padding:18px;min-width:0;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .stack{display:flex;flex-direction:column;gap:16px;min-width:0}
 
@@ -248,7 +282,30 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .dlg-acts div{display:flex;gap:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:9px 16px;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);z-index:10;max-width:calc(100vw - 32px)}
 
+/* theme picker */
+.themedot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:7px;vertical-align:-1px;background:linear-gradient(135deg,var(--a1),var(--a2))}
+@media (max-width:520px){#themeBtn .tlabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}#themeBtn .themedot{margin-right:0}}
+html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
+.themelist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.themelist button{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);background:transparent;border-radius:14px;padding:10px 12px;min-height:56px}
+.themelist button[aria-pressed=true]{border-color:var(--accent);background:var(--raise)}
+.themelist i{width:26px;height:26px;border-radius:50%;flex:none}
+.themelist span{display:grid;gap:1px;font-size:14px;font-weight:500}
+.themelist small{font-size:12px;font-weight:400;color:var(--muted)}
+@media (max-width:520px){.themelist{grid-template-columns:minmax(0,1fr)}}
 /* home */
+.addbtns{gap:12px}
+.addbtn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;border-radius:16px;border:1px solid var(--line);background:transparent;font-size:16px;font-weight:500}
+.addbtn:hover,.addbtn.on{background:var(--raise)}
+.addbtn.on{border-color:var(--accent)}
+.addbox{display:flex;flex-direction:column;gap:12px}
+.addbox .qa-row{background:var(--field)}
+.push{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;font-size:12px;padding:3px 10px;white-space:nowrap}
+.push:hover{color:var(--fg);border-color:var(--accent)}
+.stathalf{display:flex;flex-direction:column;gap:6px;padding:4px 0}
+.stathalf .big{font-weight:300;font-size:38px}
+#homeStats .hbar{height:8px;border-radius:4px;background:var(--track)}
+#homeStats .hbar i{border-radius:4px}
 .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .pair>.panel{display:flex;flex-direction:column;gap:8px}
 .pair .panel-head{margin-bottom:0}
@@ -304,7 +361,7 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .mmore{font-size:11.5px;color:var(--muted);padding-left:3px}
 .mlegend{font-size:13px;color:var(--muted);margin:10px 0 0}
 @media (max-width:520px){.mnav .navlabel{width:7.5em !important;font-size:16px}}
-@media (max-width:520px){.cds{grid-template-columns:repeat(2,minmax(0,1fr))}.cds .cd:last-child:nth-child(odd){grid-column:1/-1}}
+@media (max-width:700px){.cds{grid-template-columns:repeat(2,minmax(0,1fr))}.cds .cd:last-child:nth-child(odd){grid-column:1/-1}}
 @media (max-width:700px){.mcal{gap:3px}.mc{min-height:62px;padding:4px 4px 5px}.mn{font-size:13px}.mlist{display:flex;flex-wrap:wrap;gap:3px}.ce{width:7px;height:7px;padding:0;border:0;border-radius:50%;font-size:0;background:var(--c)}.mmore{font-size:10px;padding:0}.mpay{top:4px;right:5px;font-size:11px}}
 
 /* fitness placeholders */
@@ -398,14 +455,15 @@ dialog.sheet form{padding:0}
 </style>
 </head>
 <body>
+<div class="fx" id="fx" aria-hidden="true"></div>
 <div class="wrap">
   <header>
     <div class="lockup">
       <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
         <defs>
           <radialGradient id="eyeRim" cx="50%" cy="38%" r="62%"><stop offset="0" stop-color="#c9dbe6"/><stop offset=".5" stop-color="#4b6574"/><stop offset="1" stop-color="#0b1720"/></radialGradient>
-          <radialGradient id="eyeCore"><stop offset="0" stop-color="#fff"/><stop offset=".1" stop-color="#c8f6ff"/><stop offset=".26" stop-color="#4fd8ff"/><stop offset=".62" stop-color="#08476a"/><stop offset="1" stop-color="#02070b"/></radialGradient>
-          <radialGradient id="eyeHalo"><stop offset=".55" stop-color="#4fd8ff" stop-opacity=".55"/><stop offset="1" stop-color="#4fd8ff" stop-opacity="0"/></radialGradient>
+          <radialGradient id="eyeCore"><stop offset="0" stop-color="#fff"/><stop offset=".1" style="stop-color:var(--eye-hi)"/><stop offset=".26" style="stop-color:var(--a1)"/><stop offset=".62" style="stop-color:var(--a2)"/><stop offset="1" stop-color="#02070b"/></radialGradient>
+          <radialGradient id="eyeHalo"><stop offset=".55" style="stop-color:var(--a1)" stop-opacity=".55"/><stop offset="1" style="stop-color:var(--a1)" stop-opacity="0"/></radialGradient>
         </defs>
         <circle class="halo" cx="50" cy="50" r="49" fill="url(#eyeHalo)"/>
         <circle cx="50" cy="50" r="44" fill="url(#eyeRim)"/>
@@ -417,6 +475,7 @@ dialog.sheet form{padding:0}
     </div>
     <div class="status" id="status" data-state="loading"><span class="dot"></span><span id="statusText">Starting…</span>
       <button class="btn" id="refreshBtn" type="button">Refresh</button>
+      <button class="btn btn-ghost" id="themeBtn" type="button" aria-haspopup="dialog"><span class="themedot" aria-hidden="true"></span><span class="tlabel">Theme</span></button>
       <button class="btn btn-ghost" id="settingsBtn" type="button" aria-label="Settings">Settings</button>
     </div>
   </header>
@@ -434,23 +493,21 @@ dialog.sheet form{padding:0}
   </div>
 
   <section id="v-home" class="home">
-    <div class="cds" id="chips"></div>
-    <div class="pair"><div class="panel" id="homeNews"></div><div class="panel" id="homeWx"></div></div>
-    <div class="pair"><div class="panel" id="homeSteps"></div><div class="panel" id="homePages"></div></div>
-    <div class="pair">
-      <form class="panel qa" id="qaHome" data-qa autocomplete="off">
-        <div class="panel-head"><h2>Add anything</h2><span class="sub">Goes on the planner</span></div>
-        <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="qhText" aria-label="Add anything" placeholder="dinner IV fri 7pm"><button class="btn btn-primary" type="submit">Add</button></div>
-        <div class="qa-prev" aria-live="polite"></div>
-      </form>
-      <form class="panel qa" id="noteHome" data-nq autocomplete="off">
-        <div class="panel-head"><h2>Add to notes</h2><span class="sub">Goes on the Notes tab</span></div>
-        <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="nhText" aria-label="Add to notes" placeholder="Jot something, or Topic: your note"><button class="btn btn-primary" type="submit">Add</button></div>
+    <div class="panel" id="homeToday"></div>
+    <div class="panel addbox" id="addBox">
+      <div class="pair addbtns">
+        <button type="button" class="addbtn" data-addmode="date" aria-expanded="false" aria-controls="addHome"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to planner</button>
+        <button type="button" class="addbtn" data-addmode="note" aria-expanded="false" aria-controls="addHome"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5h9l4 4v13H6z"/><path d="M15 3.5v4h4M9 12h7M9 16h5"/></svg>Add note</button>
+      </div>
+      <form class="qa" id="addHome" data-qa autocomplete="off" hidden>
+        <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="ahText" aria-label="Add to the planner" placeholder="dinner IV fri 7pm"><button class="btn btn-primary" type="submit">Add</button></div>
         <div class="qa-prev" aria-live="polite"></div>
       </form>
     </div>
-    <div class="panel" id="homeToday"></div>
     <div class="panel" id="homeNext"><div class="panel-head"><h2>Next 6 days</h2><button class="btn btn-primary" id="planBtn" type="button">Plan my week</button></div><div id="nextBody"></div></div>
+    <div class="cds" id="chips"></div>
+    <div class="pair"><div class="panel" id="homeNews"></div><div class="panel" id="homeWx"></div></div>
+    <div class="panel" id="homeStats"></div>
   </section>
 
   <section id="v-upcoming" class="home" hidden>
@@ -516,6 +573,13 @@ dialog.sheet form{padding:0}
 <dialog id="moreDlg" class="sheet"><div class="sheet-in"><div class="grab"></div>
   <div class="more"><button class="btn" type="button" data-go="paper">Paper</button><button class="btn" type="button" data-go="people">Family &amp; Friends</button><button class="btn" type="button" data-go="notes">Notes</button><button class="btn" type="button" data-go="setup">Setup</button><button class="btn" type="button" data-go="settings">Settings</button></div>
   <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
+
+<dialog id="themeDlg"><form method="dialog" class="themeform">
+  <h2>Theme</h2>
+  <p class="muted" style="margin:0;font-size:13px">Auto moves to the next dark theme each month. Pick one to keep it. Stone is the light theme. Saved for every device.</p>
+  <div class="themelist" id="themeList"></div>
+  <div class="dlg-acts"><span></span><button class="btn" type="button" data-close>Close</button></div>
+</form></dialog>
 
 <dialog id="itemDlg"><form method="dialog" id="itemForm">
   <h2 id="itemDlgTitle">Item</h2>
@@ -869,8 +933,7 @@ function formKey(f) {
   if (f && f.id === 'itemForm') return state.itemKey || null;
   if (!f || f.closest('dialog')) return null;
   if (f.id === 'logForm') return 'log@' + (state.logDate || todayIso());
-  if (f.id === 'qaHome') return 'qh';
-  if (f.id === 'noteHome') return 'nh';
+  if (f.id === 'addHome') return 'ah';
   if (f.id === 'personQuick' || f.id === 'sApp') return f.id;
   if (f.dataset.list) return 'list@' + f.dataset.list;
   if (f.dataset.nxform) return 'nx@' + f.dataset.nxform;
@@ -893,6 +956,7 @@ function applyDrafts() {
     if ('__mood' in d) f.querySelectorAll('.mood').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === d.__mood)));
     const flag = f.querySelector('[data-draftflag]'); if (flag) flag.hidden = false;
   });
+  if ($('ahText').value && $('addHome').hidden) { let m = 'date'; try { m = sessionStorage.getItem('brain-addmode') || 'date'; } catch (e) {} setAddMode(m); }
   if (lastFocus && (document.activeElement === document.body || !document.activeElement)) {
     const f = [...document.querySelectorAll('form')].find(x => formKey(x) === lastFocus.fk);
     const el = f && [...f.elements].find(x => fieldKey(x, f) === lastFocus.k);
@@ -1004,8 +1068,7 @@ function alertMsg(m) { const el = $('personMsg'); el.textContent = m; }
 let toastT; function toast(m) { const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
 
 function renderChips() {
-  const t = todayIso(), pay = paydayInfo(), out = [];
-  out.push(`<div class="cd pay"><b>${daysWord(dayDiff(t, pay.next))}</b><span>Payday</span></div>`);
+  const t = todayIso(), out = [];
   const fut = (state.data.Plan || []).filter(p => p.date >= t);
   const ticked = fut.filter(p => p.cd);
   const defs = fut.filter(p => !p.cd && COUNTDOWN_TYPES.includes(plainType(p.type))).map(p => ({ date: p.date, title: p.title }));
@@ -1013,8 +1076,10 @@ function renderChips() {
   defs.sort((a, b) => a.date.localeCompare(b.date));
   const pick = ticked.map(p => ({ date: p.date, title: p.title })).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   for (const d of defs) { if (pick.length >= 4) break; if (!pick.some(x => x.title === d.title && x.date === d.date)) pick.push(d); }
-  pick.sort((a, b) => a.date.localeCompare(b.date)).forEach(p => out.push(`<div class="cd" title="${esc(fmt(p.date, { weekday: 'short', day: 'numeric', month: 'short' }))}"><b>${daysWord(dayDiff(t, p.date))}</b><span>${esc(p.title)}</span></div>`));
-  $('chips').innerHTML = out.join('');
+  pick.sort((a, b) => a.date.localeCompare(b.date)).forEach(p => { const n = dayDiff(t, p.date);
+    out.push(`<div class="cd"><b>${n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n + '<small>days</small>'}</b><span>${esc(p.title)}</span><span class="cdd">${esc(fmt(p.date, { weekday: 'short', day: 'numeric', month: 'short' }))}</span></div>`); });
+  $('chips').style.setProperty('--n', Math.max(1, pick.length));
+  $('chips').innerHTML = out.join('') || '<p class="empty">No countdowns. Tick "Countdown on Home" on an item to add one.</p>';
 }
 function renderLinks() {
   const pins = (state.data.Links || []).filter(l => l.pin && l.url).sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
@@ -1028,10 +1093,11 @@ function dayOf(i, d) {
   return { n: dayDiff(i.date, d) + 1, total: dayDiff(i.date, i.end) + 1 };
 }
 const dayTag = (i, d) => { const x = dayOf(i, d); return x ? `Day ${x.n} of ${x.total}` : ''; };
-function itemHtml(i, d) {
-  const ev = calEvent(i), auto = ev && !hasStar(i.type);
+function itemHtml(i, d, push) {
+  const ev = calEvent(i), auto = ev && !hasStar(i.type), canPush = push && !i.done && i.date === d && !isMulti(i);
   return `<li class="item" data-done="${i.done}"><input type="checkbox" ${i.done ? 'checked' : ''} data-tick="${esc(i.id)}" aria-label="Done: ${esc(i.title)}">
     <span class="tm">${esc(i.time || '')}</span><span class="t" data-edit="${esc(i.id)}" title="${esc(i.notes || i.title)}">${esc(i.title)}${dayOf(i, d) ? ` <span class="dayn">${dayTag(i, d)}</span> <span class="ty">${esc(fmt(i.date, { day: 'numeric', month: 'short' }))} – ${esc(fmt(i.end, { day: 'numeric', month: 'short' }))}</span>` : ''}</span>
+    ${canPush ? `<button type="button" class="push" data-push="${esc(i.id)}" title="Move to tomorrow" aria-label="Push to tomorrow: ${esc(i.title)}">Tomorrow →</button>` : ''}
     <button type="button" class="star" data-star="${esc(i.id)}" aria-pressed="${ev}" ${auto ? 'data-auto' : ''} title="${auto ? 'Multi-day items always show on the calendar' : ev ? 'Event: shows on the calendar. Click to remove.' : 'Mark as an event so it shows on the calendar'}" aria-label="${ev ? 'Event' : 'Mark as an event'}: ${esc(i.title)}">★</button>
     <span class="ty">${esc(plainType(i.type))}</span></li>`;
 }
@@ -1059,6 +1125,63 @@ function renderLog() {
         <span data-draftflag hidden class="muted" style="font-size:13px">Unsaved changes · <button type="button" class="linkish" data-draftdiscard style="border:0;background:transparent;color:var(--accent);padding:0;font:inherit;cursor:pointer">Discard</button></span></div>
     </form>`;
 }
+/* ---------- themes: five dark ones take turns by month (or one is kept); Stone is the light one ---------- */
+const THEMES = { nebula: ['Nebula', 'beat', '#07061a', 'A slow heartbeat pulse'], ember: ['Ember', 'ripple', '#12050b', 'Rings that spread out'], solar: ['Solar', 'swirl', '#120803', 'A slow turning glow'],
+  citrine: ['Citrine', 'zoom', '#110f04', 'A field of dots drawing in'], verdant: ['Verdant', 'flow', '#03110e', 'Two currents drifting'], stone: ['Stone', 'drift', '#e9e7e3', 'Light: soft shapes, barely moving'] };
+const ROTATION = ['nebula', 'ember', 'solar', 'citrine', 'verdant'];
+const FX = { beat: '<span class="orb"></span>', ripple: '<span class="glow"></span><span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span>', swirl: '<span class="sw"></span>',
+  zoom: '<span class="glow g2"></span><span class="zm"></span><span class="zm z2"></span>', flow: '<span class="fa"></span><span class="fb"></span>', drift: '<span class="dr"></span><span class="dr d2"></span>' };
+const monthTheme = (d = new Date()) => ROTATION[d.getMonth() % ROTATION.length];
+function themeChoice() {
+  let c = ''; try { c = localStorage.getItem('brain-theme') || ''; } catch (e) {}
+  const saved = state.live ? setting('theme', '') : '';
+  if (saved && saved !== c) try { localStorage.setItem('brain-theme', saved); } catch (e) {}
+  return saved || c || 'auto';
+}
+function applyTheme(choice) {
+  const key = THEMES[choice] ? choice : monthTheme(), root = document.documentElement;
+  if (root.dataset.theme === key) return;
+  root.dataset.theme = key; root.dataset.mode = key === 'stone' ? 'light' : 'dark';
+  document.querySelector('meta[name=theme-color]').content = THEMES[key][2];
+  $('fx').innerHTML = FX[THEMES[key][1]] + '<span class="veil"></span>';
+}
+function drawThemes() {
+  const cur = themeChoice(), now = monthTheme(), sw = k => k === 'stone' ? 'linear-gradient(135deg,#e9e7e3,#56657a)' : `linear-gradient(135deg,${({ nebula: '#7c5cff,#2f5bff', ember: '#ff3d5e,#b0127a', solar: '#ff8a2a,#d4410c', citrine: '#ffd447,#d18b00', verdant: '#1fd38a,#0f8f9a' })[k]})`;
+  $('themeList').innerHTML = [['auto', 'Auto', 'Changes each month · now ' + THEMES[now][0], sw(now)]].concat(Object.entries(THEMES).map(([k, v]) => [k, v[0], v[3], sw(k)]))
+    .map(([k, n, d, g]) => `<button type="button" data-theme-pick="${k}" aria-pressed="${cur === k}"><i style="background:${g}"></i><span>${esc(n)}<small>${esc(d)}</small></span></button>`).join('');
+}
+async function saveTheme(v) {
+  try { localStorage.setItem('brain-theme', v); } catch (e) {}
+  applyTheme(v); drawThemes();
+  const r = (state.data.Settings || []).find(x => x.key === 'theme');
+  if (!state.live || (r && r.value === v)) return;
+  await withBusy('Saving…', () => r ? updateRow('Settings', { ...r, value: v }) : addRows('Settings', [{ key: 'theme', value: v, notes: '' }]));
+}
+$('themeBtn').addEventListener('click', () => { drawThemes(); $('themeDlg').showModal(); });
+$('themeDlg').addEventListener('click', e => { const b = e.target.closest('[data-theme-pick]'); if (b) saveTheme(b.dataset.themePick); });
+applyTheme(themeChoice());
+
+/* ---------- Home: one Add box. Hover (or tap) "Add to planner" or "Add note" and the typing space opens for that one. ---------- */
+let addMode = '';
+function setAddMode(m) {
+  const f = $('addHome'), inp = $('ahText'); addMode = m;
+  document.querySelectorAll('[data-addmode]').forEach(b => { const on = b.dataset.addmode === m; b.setAttribute('aria-expanded', String(on)); b.classList.toggle('on', on); });
+  if (!m) { f.hidden = true; return; }
+  f.toggleAttribute('data-qa', m === 'date'); f.toggleAttribute('data-nq', m === 'note');
+  inp.placeholder = m === 'note' ? 'Jot something, or Topic: your note' : 'dinner IV fri 7pm';
+  inp.setAttribute('aria-label', m === 'note' ? 'Add a note' : 'Add to the planner');
+  f.hidden = false; quickPreview(f);
+  try { sessionStorage.setItem('brain-addmode', m); } catch (e) {}
+}
+document.addEventListener('pointerover', e => { const b = e.target.closest('[data-addmode]');
+  if (b && e.pointerType === 'mouse' && addMode !== b.dataset.addmode && !$('ahText').value) setAddMode(b.dataset.addmode); });
+$('addBox').addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !$('ahText').value && document.activeElement !== $('ahText')) setAddMode(''); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-addmode]'); if (!b) return;
+  const m = b.dataset.addmode; setAddMode(addMode === m && !$('ahText').value && !b.matches(':hover') ? '' : m); if (addMode) $('ahText').focus(); });
+/* Today's items can be pushed to tomorrow in one click. */
+document.addEventListener('click', async e => { const b = e.target.closest('[data-push]'); if (!b) return; const p = findPlan(b.dataset.push); if (!p) return;
+  if (await withBusy('Moving…', () => updateRow('Plan', { ...p, date: addDays(p.date, 1) }))) toast(p.title + ' moved to tomorrow'); });
+
 /* ---------- the event star ----------
    An item is an "event" (a day block-out that shows on the Upcoming calendar) when its Type ends in a ★.
    Multi-day items always count. Everything goes through these helpers, so a real column can replace the ★ later. */
@@ -1105,15 +1228,14 @@ function metricMonth(k, t) {
   const h = Math.max(0, Math.min(5, dim - fromDay + 1));
   return { total, n, avg: n ? total / n : null, goal, h, need: goal && n && h ? Math.ceil((goal * (n + h) - total) / h) : null };
 }
-function metricCard(k, title, t) {
-  const m = metricMonth(k, t);
-  const line = m.need == null ? (m.goal ? '&nbsp;' : 'No goal set this month') : m.need > m.goal ? `Catch up: <b style="color:var(--fg)">${nf0(m.need)}</b> a day, ${m.h === 1 ? 'tomorrow' : 'next ' + m.h + ' days'}` : 'On goal';
-  return `<div class="panel-head"><h2>${title}</h2><span class="sub">${esc(fmt(t, { month: 'long' }))}</span></div>
-    <div class="big">${m.avg == null ? '–' : nf0(m.avg)}<small>a day</small></div>
-    <div class="hbar"><i style="width:${m.goal && m.avg ? Math.min(100, Math.round(m.avg / m.goal * 100)) : 0}%"></i></div>
-    <div class="sub">${m.n} day${m.n === 1 ? '' : 's'} logged${m.goal ? ' · goal ' + nf0(m.goal) : ''}</div>
-    <div class="sub">${line}</div>
-    <button type="button" class="go" data-go="fitness">Open Fitness →</button>`;
+/* One half of the steps-and-reading box: green bar when the month's average is at or over goal, yellow when under. */
+function statHalf(k, label, t) {
+  const m = metricMonth(k, t), has = m.goal && m.avg != null, up = has && m.avg >= m.goal, col = !has ? 'var(--accent)' : up ? 'var(--ok)' : 'var(--under)';
+  const word = !m.goal ? 'No goal set' : m.avg == null ? 'Nothing logged yet' : up ? 'Above goal' : 'Under goal';
+  const extra = m.need != null && m.need > m.goal ? `catch up ${nf0(m.need)} a day, ${m.h === 1 ? 'tomorrow' : 'next ' + m.h + ' days'}` : `${m.n} day${m.n === 1 ? '' : 's'} logged`;
+  return `<div class="stathalf" data-stat="${k}"><span class="sub">${label}</span><div class="big">${m.avg == null ? '–' : nf0(m.avg)}<small>a day</small></div>
+    <div class="hbar"><i style="width:${has ? Math.min(100, Math.round(m.avg / m.goal * 100)) : 0}%;background:${col}"></i></div>
+    <div class="sub"><b style="color:${col};font-weight:500">${word}</b>${m.goal ? ' · goal ' + nf0(m.goal) : ''} · ${extra}</div></div>`;
 }
 function renderHomeNews() {
   const rows = state.news === undefined ? [] : state.news;
@@ -1135,13 +1257,14 @@ function renderHome() {
   const timed = its.filter(i => i.time).sort((a, b) => a.time.localeCompare(b.time)), rest = its.filter(i => !i.time);
   const bds = (state.data.People || []).filter(p => { const b = nextBday(p, t); return b && b.days === 0; });
   renderHomeNews(); renderHomeWx(t);
-  $('homeSteps').innerHTML = metricCard('steps', 'Average steps', t);
-  $('homePages').innerHTML = metricCard('pages', 'Average pages read', t);
+  $('homeStats').innerHTML = `<div class="panel-head"><h2>Steps and reading</h2><span class="sub">${esc(fmt(t, { month: 'long' }))} · daily averages</span></div>
+    <div class="halves">${statHalf('steps', 'Average steps', t)}${statHalf('pages', 'Average pages read', t)}</div>
+    <button type="button" class="go" data-go="fitness">Open Fitness →</button>`;
   $('homeToday').innerHTML = `<div class="dayhead"><div><div class="eyebrow">Today</div><h2>${esc(fmt(t, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
       <div>${pay.is(t) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(p => `<span class="tag">🎂 ${esc(p.name)}'s birthday</span>`).join(' ')}</div></div>
     <div class="halves">
-      <div><div class="cat-h">Schedule · ${timed.length}</div><ul class="items">${timed.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing booked.</li>'}</ul></div>
-      <div><div class="cat-h">To do · ${rest.filter(i => !i.done).length} left</div><ul class="items">${rest.map(i => itemHtml(i, t)).join('') || '<li class="empty">Nothing else today.</li>'}</ul></div>
+      <div><div class="cat-h">Schedule · ${timed.length}</div><ul class="items">${timed.map(i => itemHtml(i, t, true)).join('') || '<li class="empty">Nothing booked.</li>'}</ul></div>
+      <div><div class="cat-h">To do · ${rest.filter(i => !i.done).length} left</div><ul class="items">${rest.map(i => itemHtml(i, t, true)).join('') || '<li class="empty">Nothing else today.</li>'}</ul></div>
     </div>`;
   renderHomeNext();
 }
@@ -1474,7 +1597,7 @@ function renderPaper() {
 }
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
-  renderChips(); renderLinks();
+  applyTheme(themeChoice()); renderChips(); renderLinks();
   ({ home: renderHome, upcoming: renderUpcoming, paper: renderPaper, fitness: () => { renderMonth(); renderLog(); renderStats(); }, people: renderPeople, notes: () => { renderNotes(); renderLists(); }, setup: renderSetup })[state.tab]();
   previewAll();
 }
@@ -1487,7 +1610,7 @@ const SF = {
   Goals: [['year', 'Year', 'num'], ['month', 'Month', 'mon', MON_OPTS], ['steps', 'Steps', 'num'], ['km', 'KM', 'num'], ['act', 'Active mins', 'num'], ['pages', 'Pages', 'num']],
   Links: [['name', 'Name', 'text', 0, 1], ['cat', 'Category', 'list'], ['url', 'URL', 'url', 0, 1], ['pin', 'Pin', 'chk'], ['order', 'Order', 'num'], ['notes', 'Notes', 'text', 0, 1]]
 };
-const SETUP_KEYS = [['payday_anchor', 'A recent payday', 'date'], ['payday_every', 'Days between paydays', 'number'], ['birthday_window', 'Show birthdays this many days ahead', 'number'], ['weather_place', 'Weather place name', 'text'], ['weather_lat', 'Weather latitude', 'number'], ['weather_lon', 'Weather longitude', 'number'], ['bom_link', 'BOM forecast link', 'url'], ['paper_url', 'Paper link', 'url']];
+const SETUP_KEYS = [['theme', 'Theme (auto, nebula, ember, solar, citrine, verdant or stone)', 'text'], ['payday_anchor', 'A recent payday', 'date'], ['payday_every', 'Days between paydays', 'number'], ['birthday_window', 'Show birthdays this many days ahead', 'number'], ['weather_place', 'Weather place name', 'text'], ['weather_lat', 'Weather latitude', 'number'], ['weather_lon', 'Weather longitude', 'number'], ['bom_link', 'BOM forecast link', 'url'], ['paper_url', 'Paper link', 'url']];
 function sInput([c, l, t, opt, wide], v) {
   const a = `name="${c}" aria-label="${l}"`;
   if (t === 'chk') return `<label class="c"><span class="lt">${l}</span><input type="checkbox" ${a} ${v ? 'checked' : ''}></label>`;
