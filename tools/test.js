@@ -29,7 +29,7 @@ const db = {
   Goals: [['Year', 'Month', 'Steps', 'KM', 'Active', 'Pages'], [today.getFullYear(), today.getMonth() + 1, 11000, 8, 90, 100]],
   People: [['ID', 'Name', 'Birthday', 'Last seen', 'To see', 'Every', 'Notes', 'Groups', 'Links', 'Next', 'Time', 'Plan', 'PlanID'], ['p1', 'Sam', serial(`1990-${pad(new Date(add(5)).getMonth() + 1)}-${pad(new Date(add(5)).getDate())}`), '', true, '', 'Ask about the new job', 'IV', '', '', '', '', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP, IV', 'p3:Parent of', '', '', '', ''], ['p3', 'Jo', '', '', false, '', '', 'HFP', '', '', '', '', ''], ['', '', '', '', false, '', '', '', '', '', '', '', '']],
   Lists: [['ID', 'List', 'Item', 'Status', 'Added', 'Notes'], ['l1', 'Reading', 'A Book', 'Current', serial(T), ''], ['l2', 'To book', 'Dentist', 'Open', serial(add(-10)), '']],
-  Notes: [['ID', 'Date', 'Topic', 'Note'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two']],
+  Notes: [['ID', 'Date', 'Topic', 'Note', 'Links', 'Color', 'Pos'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two', '', '', '']],
   Links: [['Name', 'Category', 'URL', 'Pin', 'Order', 'Notes'], ['Books', 'Entertainment', 'https://example.com/books', true, 1, ''], ['NRL', 'Sport', 'https://example.com/nrl', true, 2, ''], ['Other', 'Sport', '', false, '', '']],
   Settings: [['Key', 'Value', 'Notes'], ['payday_anchor', serial('2026-01-09'), ''], ['payday_every', 14, ''], ['birthday_window', 60, '']]
 };
@@ -394,6 +394,41 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('quick note: no topic goes under Quick note', db.Notes.some(r => r[2] === 'Quick note' && r[3] === 'Remember the bins'));
   await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(100);
   check('quick notes show on the Notes tab', (await page.locator('#notes').innerText()).includes('a book for Sam'));
+  // notes: ideas map
+  await page.waitForSelector('#ideaMap .inode');
+  const nrow = id => db.Notes.find(r => r[0] === id), gid = nt[0], saved = async () => { await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(250); };
+  check('ideas map: opens as the Map view with a hub per topic', (await page.locator('#ideaMap .inode.t').count()) === 3 && (await page.locator('[data-iview=map]').getAttribute('aria-pressed')) === 'true');
+  check('ideas map: a node per note', (await page.locator('#ideaMap .inode.n').count()) === db.Notes.length - 1);
+  check('ideas map: edges drawn, svg hidden from screen readers', (await page.locator('#ideaMap svg[aria-hidden=true] .ie').count()) === 3 && (await page.locator('#ideaMap .ispark').count()) === 3);
+  await page.screenshot({ path: path.join(OUT, 'shot-ideas.png'), fullPage: true });
+  await page.click('[data-ik="n:n1"]');
+  check('ideas map: selecting a note shows its text in the side panel', (await page.locator('#ideaSide').innerText()).includes('Line two') && (await page.locator('[data-ik="n:n1"]').getAttribute('aria-pressed')) === 'true');
+  await page.click('[aria-label="Colour: Teal"]'); await saved();
+  check('ideas map: choosing a colour saves color', nrow('n1')[5] === 'teal' && (await page.locator('[aria-label="Colour: Teal"]').getAttribute('aria-pressed')) === 'true', nrow('n1'));
+  const edges0 = await page.locator('#ideaMap .ie').count();
+  await page.selectOption('#ideaLink', 'n:' + gid); await saved();
+  check('ideas map: Link to… saves n:<id> and draws an extra edge', nrow('n1')[4] === 'n:' + gid && (await page.locator('#ideaMap .ie').count()) === edges0 + 1, nrow('n1'));
+  await page.click('[data-ik="n:' + gid + '"]');
+  check('ideas map: the link shows from the other end', (await page.locator('#ideaSide .ichip').allInnerTexts()).join('').includes('Line one'));
+  await page.click('[data-ik="n:n1"]'); await page.click(`[data-iunlink="n:${gid}"]`); await saved();
+  check('ideas map: removing the link clears it and the edge', !nrow('n1')[4] && (await page.locator('#ideaMap .ie').count()) === edges0);
+  await page.click('[data-ik="n:' + gid + '"]');
+  check('ideas map: a plain click does not save pos', !nrow(gid)[6]);
+  const bb = await page.locator('[data-ik="n:n1"]').boundingBox(), cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2;
+  await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx - 30, cy + 20, { steps: 4 }); await page.mouse.move(cx - 80, cy + 50, { steps: 4 }); await page.mouse.up(); await saved();
+  const bb2 = await page.locator('[data-ik="n:n1"]').boundingBox();
+  check('ideas map: dragging a note saves pos', /^\d+,\d+$/.test(nrow('n1')[6] || '') && Math.abs(bb.x - bb2.x - 80) < 8, [nrow('n1')[6], bb2.x - bb.x]);
+  await page.click('[data-icf="teal"]'); await page.waitForTimeout(450);
+  const ops = await page.locator('#ideaMap .inode.n').evaluateAll(els => els.map(e => [e.dataset.ik, Number(getComputedStyle(e).opacity)]));
+  check('ideas map: colour filter dims non-matching notes and keeps matching ones', ops.find(o => o[0] === 'n:n1')[1] === 1 && ops.some(o => o[1] < 0.5), ops);
+  await page.click('[data-icf=""]');
+  await page.click('[data-iview=list]');
+  check('ideas map: List view still shows the notes with the map hidden', (await page.locator('#notes').isVisible()) && (await page.locator('#notes').innerText()).includes('a book for Sam') && !(await page.locator('#ideaMap').isVisible()) && (await page.locator('#notes .note .isw').count()) === 3);
+  await page.click('[data-iview=map]');
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(250);
+  check('ideas map: no sideways page scroll at 390px', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth) && (await page.evaluate(() => { const w = document.querySelector('.imapwrap'); return w.scrollWidth > w.clientWidth; })));
+  await page.screenshot({ path: path.join(OUT, 'shot-ideas-390.png'), fullPage: true });
+  await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(200);
   await page.click('.tab[data-tab=home]');
 
   // phone: bottom tab bar, add sheet (planner and notes), More sheet

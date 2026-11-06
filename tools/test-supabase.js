@@ -35,7 +35,7 @@ function sheetsDb() {
     Goals: [['Year', 'Month', 'Steps', 'KM', 'Active', 'Pages'], [today.getFullYear(), today.getMonth() + 1, 11000, 8, 90, 100]],
     People: [['ID', 'Name', 'Birthday', 'Last seen', 'To see', 'Every', 'Notes', 'Groups', 'Links', 'Next', 'Time', 'Plan', 'PlanID'], ['p1', 'Sam', serial('1990-03-04'), '', true, '', 'Ask about the new job', 'IV', '', '', '', '', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP, IV', 'p3:Parent of', '', '', '', ''], ['p3', 'Jo', '', '', false, '', '', 'HFP', '', '', '', '', '']],
     Lists: [['ID', 'List', 'Item', 'Status', 'Added', 'Notes'], ['l1', 'Reading', 'A Book', 'Current', serial(T), ''], ['l2', 'To book', 'Dentist', 'Open', serial(add(-10)), '']],
-    Notes: [['ID', 'Date', 'Topic', 'Note'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two']],
+    Notes: [['ID', 'Date', 'Topic', 'Note', 'Links', 'Color', 'Pos'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two', '', '', '']],
     Links: [['Name', 'Category', 'URL', 'Pin', 'Order', 'Notes'], ['Books', 'Entertainment', 'https://example.com/books', true, 1, ''], ['NRL', 'Sport', 'https://example.com/nrl', true, 2, ''], ['Other', 'Sport', '', false, '', '']],
     Settings: [['Key', 'Value', 'Notes'], ['payday_anchor', serial('2026-01-09'), ''], ['payday_every', 14, ''], ['birthday_window', 60, '']]
   };
@@ -96,6 +96,7 @@ const seedSbBasic = w => {
   w.insert('plan', { id: 'e3', date: add(1), end_date: null, time: '15:00', title: 'Finance Coaching', category: 'Work', type: 'Work', done: false, countdown: false, notes: '' });
   w.insert('lists', { id: 'l1', list: 'Reading', item: 'A Book', status: 'Current', added: T, notes: '' });
   w.insert('lists', { id: 'l2', list: 'To book', item: 'Dentist', status: 'Open', added: add(-10), notes: '' });
+  w.insert('notes', { id: 'n1', date: add(-5), topic: 'Ideas', note: 'Line one\nLine two', links: null, color: null, pos: null });
   w.insert('settings', { key: 'birthday_window', value: '60', notes: '' });
 };
 
@@ -185,6 +186,11 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     await page.waitForFunction(() => !document.getElementById('lists').innerText.includes('Dentist'));
     const d = w.sbCalls.slice(b3).filter(c => c.method === 'DELETE');
     check('sbmode: remove list item -> DELETE row_id=eq.N', d.length === 1 && d[0].table === 'lists' && d[0].query === `?row_id=eq.${dentist.row_id}`, d.map(x => x.query));
+    const b4 = w.sbCalls.length;
+    await page.click('[data-ik="n:n1"]'); await page.click('[aria-label="Colour: Teal"]');
+    await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live'); await page.waitForTimeout(300);
+    const pc = w.sbCalls.slice(b4).filter(c => c.method === 'PATCH');
+    check('sbmode: note colour -> exactly one PATCH with only `color`', pc.length === 1 && pc[0].table === 'notes' && JSON.stringify(pc[0].body) === '{"color":"teal"}', pc.map(x => [x.query, x.body]));
     check('sbmode: zero calls to sheets.googleapis.com', w.sheetCalls.length === 0, w.sheetCalls);
   } });
 
