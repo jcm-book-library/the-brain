@@ -286,6 +286,24 @@ dialog form{padding:18px;display:flex;flex-direction:column;gap:12px}
 .later b{color:var(--fg);font-weight:500}
 @media (max-width:760px){.pair{grid-template-columns:minmax(0,1fr)}.acc-h{grid-template-columns:minmax(0,1fr) auto 22px;gap:8px}.acc-t,.acc-w{display:none}}
 
+/* fitness: trend chart */
+#trendPanel .panel-head{margin-bottom:10px}
+.tr-ctl{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-bottom:6px}
+.tr-grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tr-grp>.lab{font-size:12px;color:var(--muted);margin-right:2px}
+.tr-sub{display:inline-flex;gap:3px;margin-left:2px}
+.tr-sub .chip-t{padding:2px 9px}
+#trendPanel .legend i.ln{width:18px;height:3px;border-radius:2px}
+#trendPanel .legend i.gl{width:18px;height:0;border-top:2px dashed var(--muted);border-radius:0}
+.tr-chart{margin-top:6px}
+.tr-chart svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.tr-chart text{font-family:inherit}
+.tr-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0 10px}
+.tr-tiles .tile .num{font-size:22px;overflow-wrap:anywhere}
+.tr-tiles .tile .up{color:var(--ok)} .tr-tiles .tile .down{color:var(--m-P)}
+.tr-tbl td,.tr-tbl th{white-space:nowrap}
+@media (max-width:700px){.tr-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 /* upcoming: month calendar */
 .mnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .mcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
@@ -467,6 +485,7 @@ dialog.sheet form{padding:0}
   </section>
 
   <section id="v-fitness" class="home" hidden>
+    <div class="panel" id="trendPanel"></div>
     <div class="panel" id="monthPanel"></div>
     <div class="panel" id="logPanel"></div>
     <div class="panel">
@@ -1384,6 +1403,122 @@ function renderStats() {
   $('statTable').innerHTML = h + '</tbody>';
 }
 
+/* ---------- render: fitness trend chart ---------- */
+const TR_STATS = [['steps', 'Steps'], ['km', 'KM'], ['act', 'Active mins'], ['pages', 'Pages']];
+const TR_COL = { this: 'var(--s1, #3987e5)', last: 'var(--s2, #d95926)', m3: 'var(--s3, #199e70)', m12: 'var(--s4, #c98500)' };
+let trCache = null;
+function trState() {
+  const s = state.trend || (state.trend = {});
+  s.stat = s.stat || 'steps'; s.view = s.view || 'run'; if (s.hover === undefined) s.hover = null;
+  s.cmp = s.cmp || { last: true, m3: false, m12: false }; s.mode = s.mode || { m3: 'avg', m12: 'avg' };
+  return s;
+}
+/* One value per day 1..31: running mean, the day's value, or the running sum. */
+function trCurve(v, dim, view, upTo) {
+  const o = Array(32).fill(null); let sum = 0, n = 0;
+  for (let d = 1; d <= Math.min(dim, upTo); d++) { const x = v[d]; if (x != null) { sum += x; n++; } o[d] = view === 'daily' ? x : view === 'total' ? sum : n ? sum / n : null; }
+  return o;
+}
+const trMean = arrs => Array.from({ length: 32 }, (_, d) => { const xs = arrs.map(a => a[d]).filter(x => x != null); return d && xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; });
+function trNice(mx) {
+  const raw = (mx || 1) / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p, st = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  return [st, Math.max(2, Math.ceil(mx / st - 1e-9))];
+}
+function trHoverSvg(d) {
+  const c = trCache; if (!c || !d) return '';
+  const x = c.X(d), rows = c.rows.map(r => [r, r.arr[d]]), n = rows.length + 1 + (c.goalAt ? 1 : 0), w = 200, h = 14 + 18 * n, tx = d > 20 ? x - 12 - w : x + 12, ty = 24;
+  let s = `<line x1="${x}" x2="${x}" y1="20" y2="340" stroke="var(--muted)" stroke-width="1"/>`;
+  rows.forEach(([r, v]) => { if (v != null) s += `<circle cx="${x}" cy="${c.Y(v).toFixed(1)}" r="4.5" fill="${r.col}" stroke="var(--bg)" stroke-width="1.5"/>`; });
+  s += `<rect x="${tx}" y="${ty}" width="${w}" height="${h}" rx="8" fill="var(--raise)" stroke="var(--line)"/><text x="${tx + 12}" y="${ty + 22}" font-size="14" font-weight="700" fill="var(--fg)">Day ${d}</text>`;
+  const row = (i, col, name, val) => { const y = ty + 22 + 18 * i; return `${col ? `<rect x="${tx + 12}" y="${y - 8}" width="10" height="4" rx="2" fill="${col}"/>` : `<rect x="${tx + 12}" y="${y - 8}" width="10" height="0" fill="none" stroke="var(--muted)" stroke-dasharray="3 2"/><line x1="${tx + 12}" x2="${tx + 22}" y1="${y - 6}" y2="${y - 6}" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 2"/>`}<text x="${tx + 28}" y="${y}" font-size="13" fill="var(--muted)">${esc(name)}</text><text x="${tx + w - 12}" y="${y}" font-size="13" font-weight="700" text-anchor="end" fill="var(--fg)">${esc(val)}</text>`; };
+  rows.forEach(([r, v], i) => { s += row(i + 1, r.col, r.name, c.nf(v)); });
+  if (c.goalAt) s += row(rows.length + 1, null, 'Goal', c.nf(c.goalAt(d)));
+  return s;
+}
+function renderTrend() {
+  const el = $('trendPanel'); if (!el) return;
+  const s = trState(), k = s.stat, view = s.view, t = todayIso(), [cy, cm] = t.split('-').map(Number), today = Number(t.slice(8, 10)), log = state.data.Log || [];
+  const dp = k === 'km' ? 1 : 0, nf = x => x == null ? '–' : x.toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  const label = TR_STATS.find(x => x[0] === k)[1];
+  const by = {}; log.forEach(r => { if (r.date && r[k] != null) (by[r.date.slice(0, 7)] = by[r.date.slice(0, 7)] || Array(32).fill(null))[Number(r.date.slice(8, 10))] = r[k]; });
+  const mo = off => { const d = new Date(cy, cm - 1 - off, 1), y = d.getFullYear(), m = d.getMonth() + 1, key = `${y}-${pad(m)}`; return { y, m, dim: new Date(y, m, 0).getDate(), v: by[key] || null, goal: ((state.data.Goals || []).find(g => g.year === y && g.month === m) || {})[k] || null }; };
+  const viewName = { run: 'Running average', daily: 'Daily', total: 'Total' }[view];
+  const seg = (attr, items, cur) => items.map(([v, l]) => `<button type="button" class="chip-t" ${attr}="${v}" aria-pressed="${cur === v}">${l}</button>`).join('');
+  const head = `<div class="panel-head"><h2>${esc(label)}: this month against earlier months</h2><div class="seg" role="group" aria-label="Stat">${seg('data-trend-stat', TR_STATS, k)}</div></div>`;
+  if (!log.length) { el.innerHTML = head + '<p class="muted">Nothing logged yet.</p>'; return; }
+  // series
+  const cv = (m, upTo = 31) => trCurve(m.v, m.dim, view, upTo), groups = [];
+  const m0 = mo(0), g0 = { id: 'this', name: 'This month', lines: m0.v ? [{ arr: cv(m0, today), w: 3, op: 1, single: true, name: 'This month' }] : [] };
+  groups.push(g0);
+  if (s.cmp.last) { const m = mo(1); groups.push({ id: 'last', name: 'Last month', lines: m.v ? [{ arr: cv(m), w: 2, op: 1, single: true, name: 'Last month' }] : [] }); }
+  [['m3', 3, 'Last 3 months', '3-month avg', [1, .7, .45], 2, .85], ['m12', 12, 'Last 12 months', '12-month avg', null, 1.5, .35]].forEach(([id, n, name, avgName, ops, w, op]) => {
+    if (!s.cmp[id]) return;
+    const ms = Array.from({ length: n }, (_, i) => mo(i + 1)).filter(m => m.v), each = s.mode[id] === 'each';
+    const lines = !ms.length ? [] : each ? ms.map((m, i) => ({ arr: cv(m), w, op: ops ? ops[i] : op, single: id === 'm3', name: MONTHS[m.m - 1] })) : [{ arr: trMean(ms.map(m => cv(m))), w: 2, op: 1, single: true, name: avgName }];
+    groups.push({ id, name: name + (each ? '' : ', average'), short: id === 'm3' ? '3 months' : '12 months', lines });
+  });
+  const goal = m0.goal, goalAt = goal ? (view === 'total' ? d => goal * d : () => goal) : null;
+  let mx = goal ? (view === 'total' ? goal * m0.dim : goal) : 0;
+  groups.forEach(g => g.lines.forEach(l => l.arr.forEach(v => { if (v != null && v > mx) mx = v; })));
+  const [st, nt] = trNice(mx), max = st * nt, X = d => 56 + (d - 1) * 1008 / 30, Y = v => 340 - v / max * 320;
+  const path = a => { let p = '', up = true; for (let d = 1; d <= 31; d++) { const v = a[d]; if (v == null) { up = true; continue; } p += `${up ? `M${X(d).toFixed(1)} ${Y(v).toFixed(1)}h.01L` : 'L'}${X(d).toFixed(1)} ${Y(v).toFixed(1)}`; up = false; } return p; };
+  const tick = v => v.toLocaleString('en-AU', { maximumFractionDigits: st < 1 ? 2 : st % 1 ? 1 : 0 });
+  let svg = '';
+  for (let i = 0; i <= nt; i++) { const y = Y(i * st).toFixed(1); svg += `<line x1="56" x2="1064" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1" ${i ? 'opacity=".7"' : ''}/><text x="48" y="${+y + 5}" font-size="14" text-anchor="end" fill="var(--muted)">${tick(i * st)}</text>`; }
+  [1, 5, 10, 15, 20, 25, 31].forEach(d => { svg += `<text x="${X(d)}" y="364" font-size="14" text-anchor="middle" fill="var(--muted)">${d}</text>`; });
+  if (goalAt) svg += `<line x1="${X(1)}" y1="${Y(goalAt(1)).toFixed(1)}" x2="${X(view === 'total' ? m0.dim : 31)}" y2="${Y(goalAt(view === 'total' ? m0.dim : 31)).toFixed(1)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="6 5"/>`;
+  const col = id => TR_COL[id];
+  [...groups].reverse().forEach(g => g.lines.slice().reverse().forEach(l => { svg += `<path d="${path(l.arr)}" fill="none" stroke="${col(g.id)}" stroke-width="${l.w}" stroke-opacity="${l.op}" stroke-linejoin="round" stroke-linecap="round"/>`; }));
+  // direct labels at each line end, at least 16px apart
+  const labs = groups.filter(g => g.lines.length).map(g => { const a = g.lines[0].arr; let e = 31; while (e > 1 && a[e] == null) e--; const right = X(e) > 860; return { g, x: right ? X(e) - 2 : X(e) + 8, y: right ? Y(a[e]) - 9 : Y(a[e]) + 5, right, v: a[e] }; }).sort((a, b) => a.y - b.y);
+  labs.forEach((l, i) => { l.y = Math.max(l.y, 16); if (i && l.y - labs[i - 1].y < 16) l.y = labs[i - 1].y + 16; });
+  for (let i = labs.length - 1; i >= 0; i--) { if (labs[i].y > 372) labs[i].y = 372; if (i < labs.length - 1 && labs[i + 1].y - labs[i].y < 16) labs[i].y = labs[i + 1].y - 16; }
+  labs.forEach(l => { svg += `<text x="${l.x.toFixed(1)}" y="${l.y.toFixed(1)}" font-size="14" font-weight="700" text-anchor="${l.right ? 'end' : 'start'}" fill="var(--fg)" style="paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round">${esc(l.g.short || l.g.name)} ${esc(nf(l.v))}</text>`; });
+  trCache = { X, Y, nf, goalAt, rows: groups.flatMap(g => g.lines.filter(l => l.single).map(l => ({ arr: l.arr, col: col(g.id), name: l.name }))) };
+  const sum = groups.filter(g => g.lines.length).map(g => `${g.name} ends at ${nf(g.lines[0].arr.filter(v => v != null).pop())}`).join('; ');
+  const aria = `${label}, ${viewName.toLowerCase()} by day of the month. ${sum}.${goal ? ' Goal ' + nf(goal) + (view === 'total' ? ' a day, as a diagonal pace line.' : ' a day.') : ' No goal set this month.'}`;
+  const legend = groups.map(g => `<span><i class="ln" style="background:${col(g.id)};opacity:${g.lines[0] ? g.lines[0].op : 1}"></i>${esc(g.name)}${g.lines.length ? '' : ' (no data)'}</span>`).join('') + `<span><i class="gl"></i>${view === 'total' ? 'Goal pace' : 'Goal'}</span>`;
+  const sub = id => s.cmp[id] ? `<span class="tr-sub" role="group" aria-label="${id === 'm3' ? '3' : '12'} months">${seg('data-trend-mode', [[id + ':each', 'Each'], [id + ':avg', 'Average']], id + ':' + s.mode[id])}</span>` : '';
+  const ctl = `<div class="tr-ctl"><div class="tr-grp"><span class="lab">Compare with</span>
+      <button type="button" class="chip-t" data-trend-cmp="last" aria-pressed="${!!s.cmp.last}">Last month</button>
+      <button type="button" class="chip-t" data-trend-cmp="m3" aria-pressed="${!!s.cmp.m3}">Last 3 months</button>${sub('m3')}
+      <button type="button" class="chip-t" data-trend-cmp="m12" aria-pressed="${!!s.cmp.m12}">Last 12 months</button>${sub('m12')}</div>
+    <div class="tr-grp"><span class="lab">View</span><div class="seg" role="group" aria-label="View">${seg('data-trend-view', [['run', 'Running average'], ['daily', 'Daily'], ['total', 'Total']], view)}</div></div></div>`;
+  // tiles
+  const one = m => { if (!m.v) return null; if (view === 'total') { let x = 0; for (let d = 1; d <= today; d++) x += m.v[d] || 0; return x; } const xs = m.v.filter(x => x != null); return xs.reduce((a, b) => a + b, 0) / xs.length; };
+  const many = n => { const xs = Array.from({ length: n }, (_, i) => one(mo(i + 1))).filter(x => x != null); return { v: xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null, n: xs.length }; };
+  const a0 = one(m0), a1 = one(mo(1)), r3 = many(3), r12 = many(12), tot = view === 'total', by_ = `by day ${today}`;
+  const days0 = m0.v ? m0.v.filter(x => x != null).length : 0, pct = a0 != null && a1 ? (a0 - a1) / a1 * 100 : null;
+  const tile = (eb, v, l1, l2, cls) => `<div class="tile"><span class="eyebrow">${eb}</span><span class="num">${nf(v)}</span><span class="sub">${l1}</span>${l2 ? `<span class="sub ${cls || ''}">${l2}</span>` : '<span class="sub">&nbsp;</span>'}</div>`;
+  const tiles = `<div class="tr-tiles">${tile('This month so far', a0, tot ? by_ : `average a day`, tot ? '' : `${days0} day${days0 === 1 ? '' : 's'} logged`)}
+    ${tile('Last month', a1, tot ? by_ : 'average a day', pct == null ? '' : `This month is ${pct >= 0 ? '+' : '−'}${Math.abs(pct).toLocaleString('en-AU', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`, pct >= 0 ? 'up' : 'down')}
+    ${tile('3-month average', r3.v, tot ? by_ : 'average a day', r3.n ? `${r3.n} month${r3.n === 1 ? '' : 's'} with data` : 'No data')}
+    ${tile('12-month average', r12.v, tot ? by_ : 'average a day', r12.n ? `${r12.n} month${r12.n === 1 ? '' : 's'} with data` : 'No data')}</div>`;
+  // table
+  let tbl = '';
+  if (s.table) {
+    const sgn = x => (x >= 0 ? '+' : '−') + Math.abs(x).toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+    const rows = Array.from({ length: 13 }, (_, i) => { const m = mo(i), xs = m.v ? m.v.filter(x => x != null) : [], total = xs.reduce((a, b) => a + b, 0), avg = xs.length ? total / xs.length : null;
+      return `<tr><td>${MONTHS[m.m - 1]} ${m.y}</td><td>${xs.length || '–'}</td><td>${nf(avg)}</td><td>${xs.length ? nf(total) : '–'}</td><td>${m.goal ? nf(m.goal) : '–'}</td>${avg != null && m.goal ? `<td class="${avg >= m.goal ? 'up' : 'down'}">${sgn(avg - m.goal)} a day</td>` : '<td>–</td>'}</tr>`; });
+    tbl = `<div class="table-wrap" id="trendTable"><table class="tr-tbl"><thead><tr><th>Month</th><th>Days logged</th><th>Average</th><th>Total</th><th>Goal</th><th>Against goal</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  }
+  el.innerHTML = `${head}${ctl}<div class="legend">${legend}</div>
+    <div class="tr-chart"><svg id="trendSvg" viewBox="0 0 1100 380" role="img" aria-label="${esc(aria)}">${svg}<g id="trHover" role="status">${trHoverSvg(s.hover)}</g></svg></div>
+    ${tiles}<button type="button" class="btn" data-trend-table aria-expanded="${!!s.table}" aria-controls="trendTable">${s.table ? 'Hide the table' : 'Show as a table'}</button>${tbl}`;
+  const sv = $('trendSvg'), at = ev => { const r = sv.getBoundingClientRect(); return Math.max(1, Math.min(31, Math.round(((ev.clientX - r.left) / r.width * 1100 - 56) / (1008 / 30)) + 1)); };
+  const move = ev => { s.hover = at(ev); $('trHover').innerHTML = trHoverSvg(s.hover); };
+  sv.addEventListener('pointermove', move); sv.addEventListener('pointerdown', move);
+  sv.addEventListener('pointerleave', () => { s.hover = null; $('trHover').innerHTML = ''; });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-trend-stat],[data-trend-cmp],[data-trend-mode],[data-trend-view],[data-trend-table]'); if (!b) return;
+  const s = trState(), d = b.dataset;
+  if (d.trendStat) s.stat = d.trendStat; else if (d.trendCmp) s.cmp[d.trendCmp] = !s.cmp[d.trendCmp];
+  else if (d.trendMode) { const [g, v] = d.trendMode.split(':'); s.mode[g] = v; } else if (d.trendView) s.view = d.trendView; else s.table = !s.table;
+  s.hover = null; renderTrend();
+  const key = Object.keys(d).find(x => x.startsWith('trend')), f = $('trendPanel').querySelector(`[data-${key.replace(/[A-Z]/g, c => '-' + c.toLowerCase())}${d[key] ? `="${d[key]}"` : ''}]`); if (f) f.focus();
+});
+
 /* ---------- render: people, lists, notes, links ---------- */
 const splitGroups = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean);
 const parseLinks = s => String(s || '').split(';').map(x => x.trim()).filter(Boolean).map(x => { const i = x.indexOf(':'); return i < 0 ? { id: x, rel: 'Family' } : { id: x.slice(0, i).trim(), rel: x.slice(i + 1).trim() || 'Family' }; });
@@ -1475,7 +1610,7 @@ function renderPaper() {
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
   renderChips(); renderLinks();
-  ({ home: renderHome, upcoming: renderUpcoming, paper: renderPaper, fitness: () => { renderMonth(); renderLog(); renderStats(); }, people: renderPeople, notes: () => { renderNotes(); renderLists(); }, setup: renderSetup })[state.tab]();
+  ({ home: renderHome, upcoming: renderUpcoming, paper: renderPaper, fitness: () => { renderTrend(); renderMonth(); renderLog(); renderStats(); }, people: renderPeople, notes: () => { renderNotes(); renderLists(); }, setup: renderSetup })[state.tab]();
   previewAll();
 }
 
