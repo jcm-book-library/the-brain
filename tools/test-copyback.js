@@ -66,6 +66,8 @@ function world(edit, extraTabs = []) {
   return w;
 }
 async function install(page, w) {
+  // stub Supabase Realtime (live sync is covered in test-supabase.js): accept the join, ignore the rest
+  await page.routeWebSocket(/\/realtime\/v1\/websocket/, ws => ws.onMessage(m => { const o = JSON.parse(m); if (o.event === 'phx_join') ws.send(JSON.stringify({ topic: o.topic, event: 'phx_reply', payload: { status: 'ok', response: {} }, ref: o.ref })); }));
   await page.route('https://brain.test/**', r => r.fulfill({ contentType: 'text/html', body: HTML }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ body: '' }));
   await page.route(/accounts\.google\.com/, r => r.fulfill({ contentType: 'text/javascript', body: '' }));

@@ -477,6 +477,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(250);
   check('ideas map: no sideways page scroll at 390px', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth) && (await page.evaluate(() => { const w = document.querySelector('.imapwrap'); return w.scrollWidth > w.clientWidth; })));
   await page.screenshot({ path: path.join(OUT, 'shot-ideas-390.png'), fullPage: true });
+  check('ideas map: phones open Notes as a list until Map is picked', await page.evaluate(() => { state.notesView = null; renderNotes(); const r = document.getElementById('notes').offsetParent !== null && document.querySelector('[data-iview=list]').getAttribute('aria-pressed') === 'true'; state.notesView = 'map'; renderNotes(); return r; }));
   await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(200);
   await page.click('.tab[data-tab=home]');
 
