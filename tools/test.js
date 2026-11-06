@@ -29,7 +29,7 @@ const db = {
   Goals: [['Year', 'Month', 'Steps', 'KM', 'Active', 'Pages'], [today.getFullYear(), today.getMonth() + 1, 11000, 8, 90, 100]],
   People: [['ID', 'Name', 'Birthday', 'Last seen', 'To see', 'Every', 'Notes', 'Groups', 'Links', 'Next', 'Time', 'Plan', 'PlanID'], ['p1', 'Sam', serial(`1990-${pad(new Date(add(5)).getMonth() + 1)}-${pad(new Date(add(5)).getDate())}`), '', true, '', 'Ask about the new job', 'IV', '', '', '', '', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP, IV', 'p3:Parent of', '', '', '', ''], ['p3', 'Jo', '', '', false, '', '', 'HFP', '', '', '', '', ''], ['', '', '', '', false, '', '', '', '', '', '', '', '']],
   Lists: [['ID', 'List', 'Item', 'Status', 'Added', 'Notes'], ['l1', 'Reading', 'A Book', 'Current', serial(T), ''], ['l2', 'To book', 'Dentist', 'Open', serial(add(-10)), '']],
-  Notes: [['ID', 'Date', 'Topic', 'Note'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two']],
+  Notes: [['ID', 'Date', 'Topic', 'Note', 'Links', 'Color', 'Pos'], ['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two', '', '', '']],
   Links: [['Name', 'Category', 'URL', 'Pin', 'Order', 'Notes'], ['Books', 'Entertainment', 'https://example.com/books', true, 1, ''], ['NRL', 'Sport', 'https://example.com/nrl', true, 2, ''], ['Other', 'Sport', '', false, '', '']],
   Settings: [['Key', 'Value', 'Notes'], ['payday_anchor', serial('2026-01-09'), ''], ['payday_every', 14, ''], ['birthday_window', 60, '']]
 };
@@ -87,15 +87,18 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('home is the default tab', await page.isVisible('#v-home') && !(await page.isVisible('#v-upcoming')));
   check('tabs in the agreed order', JSON.stringify(await page.locator('.tabs .tab').allInnerTexts()) === JSON.stringify(['Home', 'Upcoming', 'Paper', 'Fitness', 'Family & Friends', 'Notes', 'Setup']));
   const box = id => page.evaluate(i => { const r = document.getElementById(i).getBoundingClientRect(); return { x: r.x, y: r.y + scrollY, w: r.width, h: r.height }; }, id);
-  { const ys = []; for (const id of ['chips', 'homeNews', 'homeSteps', 'qaHome', 'homeToday', 'homeNext']) ys.push((await box(id)).y);
-    check('home rows run: countdowns, headlines/weather, steps/pages, add/notes, today, next 6 days', ys.every((y, i) => i === 0 || y > ys[i - 1]), ys); }
-  for (const [a, b] of [['homeNews', 'homeWx'], ['homeSteps', 'homePages'], ['qaHome', 'noteHome']]) { const A = await box(a), B = await box(b);
-    check(`home: ${a} and ${b} are a matched pair (same width, height and row)`, Math.abs(A.w - B.w) < 1 && Math.abs(A.h - B.h) < 1 && Math.abs(A.y - B.y) < 1 && B.x > A.x, [A, B]); }
-  { const w = await page.evaluate(() => ['chips', 'homeToday', 'homeNext'].map(i => document.getElementById(i).getBoundingClientRect().width));
-    check('home: countdowns, today and next 6 days run the full width', w.every(x => Math.abs(x - w[0]) < 1), w);
+  { const ys = []; for (const id of ['homeToday', 'addBox', 'homeNext', 'chips', 'homeNews', 'homeStats']) ys.push((await box(id)).y);
+    check('home rows run: today, add, next 6 days, countdowns, headlines/weather, steps and reading', ys.every((y, i) => i === 0 || y > ys[i - 1]), ys); }
+  { const A = await box('homeNews'), B = await box('homeWx');
+    check('home: headlines and weather are a matched pair (same width, height and row)', Math.abs(A.w - B.w) < 1 && Math.abs(A.h - B.h) < 1 && Math.abs(A.y - B.y) < 1 && B.x > A.x, [A, B]); }
+  { const r = await page.evaluate(() => [...document.querySelectorAll('[data-addmode]')].map(b => { const q = b.getBoundingClientRect(); return [q.width, q.height, q.y]; }));
+    check('home: the two add buttons match', r.length === 2 && Math.abs(r[0][0] - r[1][0]) < 1 && Math.abs(r[0][1] - r[1][1]) < 1 && Math.abs(r[0][2] - r[1][2]) < 1, r);
+    check('home: the add box starts closed', await page.locator('#addHome').isHidden()); }
+  { const w = await page.evaluate(() => ['chips', 'homeToday', 'addBox', 'homeNext', 'homeStats'].map(i => document.getElementById(i).getBoundingClientRect().width));
+    check('home: today, add, next 6 days, countdowns and stats run the full width', w.every(x => Math.abs(x - w[0]) < 1), w);
     const cw = await page.evaluate(() => [...document.querySelectorAll('#chips .cd')].map(c => Math.round(c.getBoundingClientRect().width)));
     check('home: countdown cells are all the same width', cw.length >= 2 && new Set(cw).size === 1, cw); }
-  check('chips include payday', await page.locator('.cd.pay').count() === 1); { const pd = await page.locator('.cd.pay b').innerText(); const exp = (()=>{const a=Date.UTC(2026,0,9);const n=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());const d=Math.round((n-a)/864e5);const r=((14-(d%14))%14);return r===0?'Today':r===1?'Tomorrow':r+' days';})(); check('payday countdown correct ('+pd+')', pd===exp); }
+  check('countdowns: no payday, at most four', await page.locator('.cd.pay').count() === 0 && !/Payday/.test(await page.locator('#chips').innerText()) && await page.locator('#chips .cd').count() <= 4);
   check('ticked countdown shown', (await page.locator('#chips').innerText()).includes('Dinner with friends'));
   check('pinned links', await page.locator('#links a').count() === 2);
   { const rows = await page.locator('#homeNews .news li a').evaluateAll(a => a.map(x => [x.querySelector('.hl').textContent, x.getAttribute('href') || '']));
@@ -104,7 +107,8 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('home: weather shows today and the next three days', /°/.test(await page.locator('#homeWx .wxbig').innerText()) && await page.locator('#homeWx .wx3 > div').count() === 3);
   { const ym = T.slice(0, 7), rows = db.Log.slice(1).filter(r => r[0] && (() => { const d = new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}` === ym; })());
     const avg = k => { const v = rows.map(r => r[k]).filter(x => x != null && x !== ''); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length).toLocaleString('en-AU') : '–'; };
-    check('home: average steps (' + avg(1) + ') and average pages (' + avg(4) + ')', (await page.locator('#homeSteps .big').innerText()).startsWith(avg(1)) && (await page.locator('#homePages .big').innerText()).startsWith(avg(4)) && /Average steps/.test(await page.locator('#homeSteps').innerText()) && /Average pages read/.test(await page.locator('#homePages').innerText())); }
+    check('home: average steps (' + avg(1) + ') and average pages (' + avg(4) + ')', (await page.locator('#homeStats [data-stat=steps] .big').innerText()).startsWith(avg(1)) && (await page.locator('#homeStats [data-stat=pages] .big').innerText()).startsWith(avg(4)));
+    check('home: steps and reading share one box, each bar says above or under goal', await page.locator('#homeStats .stathalf').count() === 2 && /(Above|Under) goal|Nothing logged|No goal/.test(await page.locator('#homeStats').innerText())); }
   check('home: today shows schedule and to-do', /Strength & Conditioning/.test(await page.locator('#homeToday').innerText()) && /Office/.test(await page.locator('#homeToday').innerText()));
   // next 6 days: accordion, one open at a time
   check('home: six day rows, all closed to start', await page.locator('#nextBody .acc').count() === 6 && await page.locator('#nextBody .acc[data-open=true]').count() === 0);
@@ -122,7 +126,8 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('tick saved to sheet', db.Plan[1][7] === true);
 
   // quick add
-  await page.fill('#qhText', 'Call Mum #social 7:30pm'); await page.click('#qaHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('[data-addmode=date]'); check('add to planner opens the box', await page.isVisible('#addHome') && (await page.getAttribute('[data-addmode=date]', 'aria-expanded')) === 'true');
+  await page.fill('#ahText', 'Call Mum #social 7:30pm'); await page.click('#addHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   const added = db.Plan.find(r => r[4] === 'Call Mum');
   check('quick add wrote row after last item (row 10)', db.Plan.indexOf(added) === 9 && added[3] === '19:30' && added[5] === 'Social' && added[1] === serial(T));
 
@@ -231,6 +236,48 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('month nav goes back', !(await page.locator('#monthPanel h2').innerText()).startsWith(new Date().toLocaleDateString('en-AU', { month: 'long' })));
   await page.click('[data-month="1"]'); if (early) await page.click('[data-month="1"]');
   await page.screenshot({ path: path.join(OUT, 'shot-month.png'), fullPage: true });
+
+  // fitness: this month against earlier months
+  { const tp = '#trendPanel', nLines = async () => page.locator(tp + ' svg path[stroke-width]').count();
+    const click = async sel => { await page.click(tp + ' ' + sel); await page.waitForTimeout(60); };
+    const ymT = T.slice(0, 7), dayNow = today.getDate(), sumSteps = db.Log.slice(1).filter(r => r[0] && r[1] != null && r[1] !== '' && new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5).toISOString().startsWith(ymT)).reduce((a, r) => a + r[1], 0);
+    const savedLog = await page.evaluate(() => { const old = state.data.Log; state.data.Log = old.concat(Array.from({ length: 12 }, (_, i) => { const d = new Date(new Date().getFullYear(), new Date().getMonth() - 1 - i, 1), ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); return [10, 11, 12].map(n => ({ date: ym + '-' + String(n).padStart(2, '0'), steps: 6000 + i * 300 + n * 100, km: 4 + i / 4, act: 30 + i, pages: 20 + n, tmax: null, tmin: null, mood: '', note: '' })); }).flat()); renderTrend(); return old; });
+    check('trend: first panel in Fitness', await page.evaluate(() => document.querySelector('#v-fitness .panel').id === 'trendPanel'));
+    check('trend: title names the stat', /^Steps: this month against earlier months/.test(await page.locator(tp + ' h2').innerText()));
+    check('trend: default is this month and last month', (await page.locator(tp + ' .legend span').count()) === 3 && (await nLines()) === 2 && (await page.getAttribute(tp + ' [data-trend-cmp=last]', 'aria-pressed')) === 'true' && (await page.getAttribute(tp + ' [data-trend-view=run]', 'aria-pressed')) === 'true');
+    check('trend: svg has a label', /Steps/.test(await page.getAttribute(tp + ' svg', 'aria-label') || ''));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend.png'), fullPage: true });
+    await click('[data-trend-cmp=m3]');
+    check('trend: last 3 months average adds one line', (await nLines()) === 3 && (await page.locator(tp + ' [data-trend-mode="m3:avg"]').getAttribute('aria-pressed')) === 'true');
+    await click('[data-trend-mode="m3:each"]');
+    check('trend: last 3 months each adds three lines', (await nLines()) === 5);
+    await click('[data-trend-cmp=m3]'); await click('[data-trend-cmp=m12]'); await click('[data-trend-mode="m12:each"]');
+    check('trend: last 12 months each adds twelve lines', (await nLines()) === 2 + 12);
+    await click('[data-trend-view=daily]'); await page.screenshot({ path: path.join(OUT, 'shot-trend-daily.png') });
+    await click('[data-trend-cmp=m12]'); await click('[data-trend-cmp=m3]'); await click('[data-trend-view=total]');
+    const endVal = await page.evaluate(() => { const l = [...document.querySelectorAll('#trendPanel svg text')].find(x => x.textContent.startsWith('This month')); return l ? l.textContent : ''; });
+    check('trend: total view ends at the month total (' + sumSteps + ')', sumSteps ? endVal.includes(sumSteps.toLocaleString('en-AU')) : /no data/.test(await page.locator(tp + ' .legend').innerText()), endVal);
+    check('trend: total tiles read "by day N"', (await page.locator(tp + ' .tr-tiles').innerText()).includes('by day ' + dayNow));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend-total.png') });
+    await click('[data-trend-view=run]');
+    { const r = await page.locator(tp + ' svg').boundingBox(); await page.mouse.move(r.x + r.width * 0.3, r.y + r.height * 0.5); await page.waitForTimeout(80); }
+    check('trend: hover shows a tooltip with the day', /Day \d+/.test(await page.locator(tp + ' [role=status]').textContent()));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend-hover.png') });
+    await page.mouse.move(5, 5); await page.waitForTimeout(80);
+    check('trend: tooltip hides on leave', (await page.locator(tp + ' [role=status]').textContent()).trim() === '');
+    check('trend: table hidden at first', (await page.locator(tp + ' tbody tr').count()) === 0);
+    await click('[data-trend-table]');
+    check('trend: table shows 13 months', (await page.locator(tp + ' tbody tr').count()) === 13 && (await page.getAttribute(tp + ' [data-trend-table]', 'aria-expanded')) === 'true' && /Hide the table/.test(await page.locator(tp + ' [data-trend-table]').innerText()));
+    await click('[data-trend-table]');
+    await click('[data-trend-stat=pages]');
+    check('trend: Pages changes the title', /^Pages: /.test(await page.locator(tp + ' h2').innerText()));
+    await click('[data-trend-stat=steps]');
+    await page.setViewportSize({ width: 390, height: 800 }); await page.waitForTimeout(150);
+    check('trend: no sideways scroll at 390px', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth) && await page.evaluate(() => { const r = document.getElementById('trendPanel').getBoundingClientRect(); return r.right <= innerWidth + 0.5; }));
+    await page.screenshot({ path: path.join(OUT, 'shot-trend-narrow.png'), fullPage: true });
+    await page.setViewportSize({ width: 1360, height: 900 }); await page.waitForTimeout(100);
+    await page.evaluate(l => { state.data.Log = l; renderTrend(); }, savedLog);
+  }
 
   // people: birthday without a year
   await page.click('.tab[data-tab=people]'); await page.click('[data-new-person]');
@@ -352,18 +399,18 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('unsaved note shows while typing', await page.isVisible('[data-draftflag]'));
   await backToTab();
   check('log typing survives coming back to the tab', (await page.inputValue('#lSteps')) === '7777' && (await page.inputValue('#lNote')) === 'half typed' && (await page.getAttribute('.mood[data-m=P]', 'aria-pressed')) === 'true');
-  await page.click('.tab[data-tab=home]'); await page.fill('#qhText', 'Buy milk 5pm'); await page.fill('#nhText', 'Ideas: half a thought');
+  await page.click('.tab[data-tab=home]'); await page.click('[data-addmode=date]'); await page.fill('#ahText', 'Buy milk 5pm');
   await backToTab();
-  check('quick add and quick note typing survive coming back to the tab', (await page.inputValue('#qhText')) === 'Buy milk 5pm' && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
+  check('add box typing survives coming back to the tab', (await page.inputValue('#ahText')) === 'Buy milk 5pm' && await page.isVisible('#addHome'));
   if (!(await page.isVisible(`#acc-${add(1)}`))) await page.click(`[data-acc="${add(1)}"]`);
   await page.locator(`#acc-${add(1)} [data-add]`).click(); await page.fill('#fTitle', 'Half-written plan'); await page.fill('#fNotes', 'details');
   await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
   check('add-item pop-up comes back after a reload', await page.isVisible('#itemDlg[open]') && (await page.inputValue('#fTitle')) === 'Half-written plan');
   await page.click('#itemDlg [data-close]');
   check('cancel throws the pop-up draft away', !(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('brain-drafts') || '{}')).some(k => k.startsWith('item@')))));
-  check('quick add typing survives a reload (and the preview comes back with it)', (await page.inputValue('#qhText')) === 'Buy milk 5pm' && /Buy milk/.test(await page.locator('#qaHome .qa-prev').innerText()) && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
-  await page.click('#qaHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
-  check('saving clears the quick add draft', db.Plan.some(r => r[4] === 'Buy milk' && r[3] === '17:00') && (await page.inputValue('#qhText')) === '' && (await page.inputValue('#nhText')) === 'Ideas: half a thought');
+  check('add box typing survives a reload (box reopens with the preview)', (await page.inputValue('#ahText')) === 'Buy milk 5pm' && await page.isVisible('#addHome') && /Buy milk/.test(await page.locator('#addHome .qa-prev').innerText()));
+  await page.click('#addHome button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
+  check('saving clears the add box draft', db.Plan.some(r => r[4] === 'Buy milk' && r[3] === '17:00') && (await page.inputValue('#ahText')) === '');
   await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(150);
   check('log typing survives a reload', (await page.inputValue('#lSteps')) === '7777');
   await page.click('[data-draftdiscard]'); await page.waitForTimeout(100);
@@ -374,33 +421,96 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   // home quick add: one line, read for date, time and category; quick note
   await page.click('.tab[data-tab=home]'); await page.waitForTimeout(150);
   const fri = (() => { const d = new Date(today); let n = (5 - d.getDay() + 7) % 7; if (n === 0) n = 7; return add(n); })();
-  await page.fill('#qhText', 'Dinner IV fri 7pm');
-  check('quick add preview reads the line', /Dinner IV/.test(await page.locator('#qaHome .qa-prev').innerText()) && /19:00/.test(await page.locator('#qaHome .qa-prev').innerText()) && /Social/.test(await page.locator('#qaHome .qa-prev').innerText()));
-  await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  if (!(await page.isVisible('#addHome')) || (await page.getAttribute('[data-addmode=date]', 'aria-expanded')) !== 'true') await page.click('[data-addmode=date]');
+  await page.fill('#ahText', 'Dinner IV fri 7pm');
+  check('quick add preview reads the line', /Dinner IV/.test(await page.locator('#addHome .qa-prev').innerText()) && /19:00/.test(await page.locator('#addHome .qa-prev').innerText()) && /Social/.test(await page.locator('#addHome .qa-prev').innerText()));
+  await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const qa1 = db.Plan.find(r => r[4] === 'Dinner IV');
-  check('quick add: friday 7pm social', !!qa1 && qa1[1] === serial(fri) && qa1[3] === '19:00' && qa1[5] === 'Social' && (await page.inputValue('#qhText')) === '', qa1);
-  await page.fill('#qhText', 'gym tomorrow at 6:30am'); await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  check('quick add: friday 7pm social', !!qa1 && qa1[1] === serial(fri) && qa1[3] === '19:00' && qa1[5] === 'Social' && (await page.inputValue('#ahText')) === '', qa1);
+  await page.fill('#ahText', 'gym tomorrow at 6:30am'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const qa2 = db.Plan.find(r => r[4] === 'Gym');
   check('quick add: tomorrow 06:30 fitness', !!qa2 && qa2[1] === serial(add(1)) && qa2[3] === '06:30' && qa2[5] === 'Fitness', qa2);
-  await page.fill('#qhText', 'Sort winter clothes'); await page.press('#qhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  await page.fill('#ahText', 'Sort winter clothes'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const qa3 = db.Plan.find(r => r[4] === 'Sort winter clothes');
   check('quick add: no date means today', !!qa3 && qa3[1] === serial(T) && qa3[3] === '', qa3);
   check('quick add: shows on home straight away', (await page.locator('#homeToday').innerText()).includes('Sort winter clothes'));
-  await page.fill('#nhText', 'Gift ideas: a book for Sam'); check('quick note preview shows the topic', /Gift ideas/.test(await page.locator('#noteHome .qa-prev').innerText()));
-  await page.press('#nhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('[data-addmode=note]'); check('add note switches the box to notes', await page.isVisible('#addHome') && (await page.getAttribute('[data-addmode=note]', 'aria-expanded')) === 'true' && (await page.getAttribute('[data-addmode=date]', 'aria-expanded')) === 'false');
+  await page.fill('#ahText', 'Gift ideas: a book for Sam'); check('quick note preview shows the topic', /Gift ideas/.test(await page.locator('#addHome .qa-prev').innerText()));
+  await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   const nt = db.Notes.find(r => r[2] === 'Gift ideas');
-  check('quick note: topic and text saved with today\'s date', !!nt && nt[3] === 'a book for Sam' && nt[1] === serial(T) && (await page.inputValue('#nhText')) === '', nt);
-  await page.fill('#nhText', 'Remember the bins'); await page.press('#nhText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
+  check('quick note: topic and text saved with today\'s date', !!nt && nt[3] === 'a book for Sam' && nt[1] === serial(T) && (await page.inputValue('#ahText')) === '', nt);
+  await page.fill('#ahText', 'Remember the bins'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   check('quick note: no topic goes under Quick note', db.Notes.some(r => r[2] === 'Quick note' && r[3] === 'Remember the bins'));
   await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(100);
   check('quick notes show on the Notes tab', (await page.locator('#notes').innerText()).includes('a book for Sam'));
+  // notes: ideas map
+  await page.waitForSelector('#ideaMap .inode');
+  const nrow = id => db.Notes.find(r => r[0] === id), gid = nt[0], saved = async () => { await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(250); };
+  check('ideas map: opens as the Map view with a hub per topic', (await page.locator('#ideaMap .inode.t').count()) === 3 && (await page.locator('[data-iview=map]').getAttribute('aria-pressed')) === 'true');
+  check('ideas map: a node per note', (await page.locator('#ideaMap .inode.n').count()) === db.Notes.length - 1);
+  check('ideas map: edges drawn, svg hidden from screen readers', (await page.locator('#ideaMap svg[aria-hidden=true] .ie').count()) === 3 && (await page.locator('#ideaMap .ispark').count()) === 3);
+  await page.screenshot({ path: path.join(OUT, 'shot-ideas.png'), fullPage: true });
+  await page.click('[data-ik="n:n1"]');
+  check('ideas map: selecting a note shows its text in the side panel', (await page.locator('#ideaSide').innerText()).includes('Line two') && (await page.locator('[data-ik="n:n1"]').getAttribute('aria-pressed')) === 'true');
+  await page.click('[aria-label="Colour: Teal"]'); await saved();
+  check('ideas map: choosing a colour saves color', nrow('n1')[5] === 'teal' && (await page.locator('[aria-label="Colour: Teal"]').getAttribute('aria-pressed')) === 'true', nrow('n1'));
+  const edges0 = await page.locator('#ideaMap .ie').count();
+  await page.selectOption('#ideaLink', 'n:' + gid); await saved();
+  check('ideas map: Link to… saves n:<id> and draws an extra edge', nrow('n1')[4] === 'n:' + gid && (await page.locator('#ideaMap .ie').count()) === edges0 + 1, nrow('n1'));
+  await page.click('[data-ik="n:' + gid + '"]');
+  check('ideas map: the link shows from the other end', (await page.locator('#ideaSide .ichip').allInnerTexts()).join('').includes('Line one'));
+  await page.click('[data-ik="n:n1"]'); await page.click(`[data-iunlink="n:${gid}"]`); await saved();
+  check('ideas map: removing the link clears it and the edge', !nrow('n1')[4] && (await page.locator('#ideaMap .ie').count()) === edges0);
+  await page.click('[data-ik="n:' + gid + '"]');
+  check('ideas map: a plain click does not save pos', !nrow(gid)[6]);
+  const bb = await page.locator('[data-ik="n:n1"]').boundingBox(), cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2;
+  await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx - 30, cy + 20, { steps: 4 }); await page.mouse.move(cx - 80, cy + 50, { steps: 4 }); await page.mouse.up(); await saved();
+  const bb2 = await page.locator('[data-ik="n:n1"]').boundingBox();
+  check('ideas map: dragging a note saves pos', /^\d+,\d+$/.test(nrow('n1')[6] || '') && Math.abs(bb.x - bb2.x - 80) < 8, [nrow('n1')[6], bb2.x - bb.x]);
+  await page.click('[data-icf="teal"]'); await page.waitForTimeout(450);
+  const ops = await page.locator('#ideaMap .inode.n').evaluateAll(els => els.map(e => [e.dataset.ik, Number(getComputedStyle(e).opacity)]));
+  check('ideas map: colour filter dims non-matching notes and keeps matching ones', ops.find(o => o[0] === 'n:n1')[1] === 1 && ops.some(o => o[1] < 0.5), ops);
+  await page.click('[data-icf=""]');
+  await page.click('[data-iview=list]');
+  check('ideas map: List view still shows the notes with the map hidden', (await page.locator('#notes').isVisible()) && (await page.locator('#notes').innerText()).includes('a book for Sam') && !(await page.locator('#ideaMap').isVisible()) && (await page.locator('#notes .note .isw').count()) === 3);
+  await page.click('[data-iview=map]');
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(250);
+  check('ideas map: no sideways page scroll at 390px', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth) && (await page.evaluate(() => { const w = document.querySelector('.imapwrap'); return w.scrollWidth > w.clientWidth; })));
+  await page.screenshot({ path: path.join(OUT, 'shot-ideas-390.png'), fullPage: true });
+  check('ideas map: phones open Notes as a list until Map is picked', await page.evaluate(() => { state.notesView = null; renderNotes(); const r = document.getElementById('notes').offsetParent !== null && document.querySelector('[data-iview=list]').getAttribute('aria-pressed') === 'true'; state.notesView = 'map'; renderNotes(); return r; }));
+  await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(200);
   await page.click('.tab[data-tab=home]');
+
+  // push to tomorrow: today's open items get a button; done or other days don't
+  check('push: shown on today\'s open items only', await page.locator('#homeToday [data-push]').count() > 0 && await page.locator('#homeToday [data-push="e1"]').count() === 0 && await page.locator('#nextBody [data-push]').count() === 0);
+  await page.click('#homeToday [aria-label="Push to tomorrow: Sort winter clothes"]'); await page.waitForSelector('#status[data-state=live]');
+  { const r = db.Plan.find(x => x[4] === 'Sort winter clothes');
+    check('push: moves the item to tomorrow in the sheet and off today', !!r && r[1] === serial(add(1)) && !(await page.locator('#homeToday').innerText()).includes('Sort winter clothes'), r); }
+
+  // themes: monthly rotation by default, picker saves to Settings
+  { const th = await page.evaluate(() => [document.documentElement.dataset.theme, document.documentElement.dataset.mode]);
+    const exp = ['nebula', 'ember', 'solar', 'citrine', 'verdant'][today.getMonth() % 5];
+    check('theme: this month\'s theme applied by default (' + th + ')', th[0] === exp && th[1] === 'dark', th);
+    check('theme: animated backdrop drawn', await page.locator('#fx > *').count() > 0); }
+  await page.click('#themeBtn'); await page.waitForSelector('#themeDlg[open]');
+  check('theme: picker lists auto, five dark themes and Stone', await page.locator('#themeList [data-theme-pick]').count() === 7);
+  await page.click('#themeList [data-theme-pick=stone]'); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(100);
+  check('theme: Stone is light and saved to Settings', await page.evaluate(() => document.documentElement.dataset.theme === 'stone' && document.documentElement.dataset.mode === 'light') && db.Settings.some(r => r[0] === 'theme' && r[1] === 'stone'), db.Settings);
+  if (await page.isVisible('#themeDlg')) await page.keyboard.press('Escape');
+  await page.screenshot({ path: path.join(OUT, 'shot-home-stone.png'), fullPage: true });
+  await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(200);
+  check('theme: choice survives a reload', await page.evaluate(() => document.documentElement.dataset.theme) === 'stone');
+  await page.click('#themeBtn'); await page.waitForSelector('#themeDlg[open]'); await page.click('#themeList [data-theme-pick=ember]'); await page.waitForSelector('#status[data-state=live]');
+  check('theme: switching again updates the same Settings row', db.Settings.filter(r => r[0] === 'theme').length === 1 && db.Settings.find(r => r[0] === 'theme')[1] === 'ember' && await page.evaluate(() => document.documentElement.dataset.mode) === 'dark');
+  if (await page.isVisible('#themeDlg')) await page.keyboard.press('Escape');
+  await page.screenshot({ path: path.join(OUT, 'shot-home-ember.png'), fullPage: true });
 
   // phone: bottom tab bar, add sheet (planner and notes), More sheet
   await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
   check('phone: bottom bar replaces the top tabs', await page.isVisible('.bbar') && !(await page.isVisible('.tabs')));
   check('phone: bottom bar has five equal slots', await page.evaluate(() => document.querySelectorAll('.bbar > *').length === 5));
   check('phone: home pairs stack, nothing scrolls sideways', await page.evaluate(() => { const a = document.getElementById('homeNews').getBoundingClientRect(), b = document.getElementById('homeWx').getBoundingClientRect(); return b.top > a.bottom - 1 && Math.abs(a.width - b.width) < 1 && document.documentElement.scrollWidth <= innerWidth; }));
+  check('phone: header buttons stay on one row', await page.evaluate(() => { const ys = ['themeBtn', 'refreshBtn', 'settingsBtn'].map(i => document.getElementById(i)).filter(Boolean).map(b => Math.round(b.getBoundingClientRect().top)); return ys.length >= 2 && new Set(ys).size === 1; }));
   await page.screenshot({ path: path.join(OUT, 'shot-home-390.png'), fullPage: true });
   await page.click('.bbar [data-qaopen]'); await page.waitForSelector('#qaDlg[open]');
   await page.fill('#qsText', 'Call the bank thu'); await page.screenshot({ path: path.join(OUT, 'shot-sheet-390.png') }); await page.press('#qsText', 'Enter'); await page.waitForSelector('#status[data-state=live]');

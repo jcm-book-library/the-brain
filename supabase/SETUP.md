@@ -132,3 +132,14 @@ Tip while you're in Google: add a backup way to verify (myaccount.google.com →
 
 - Free projects pause after about a week with no use. Opening The Brain in Supabase mode counts as use. See **First: is the project paused?** at the top for how to restore one.
 - Switch-over (later, when you say): the page would default to Supabase, the copy button goes away, and the Sheet tabs get a "Moved to Supabase on <date>" note. Not done yet.
+
+## Live sync between devices (Supabase, 1 minute)
+
+With this on, a save on your phone shows on the laptop within a second or two, without pressing Refresh (and the other way round).
+
+1. In the **jcm-apps** project, open **SQL Editor** and click **+ New query**.
+2. Copy [`04-realtime.sql`](04-realtime.sql) (the **Copy raw file** button on GitHub), paste it in and click **Run**.
+3. The result should list nine tables: goals, links, lists, log, notes, people, plan, routine, settings.
+4. Reload The Brain. When live sync is on, the green dot next to "Supabase ·" gets a soft ring; hover it to see "Live sync on".
+
+Before you run it, the app works exactly as it does now, just without the ring. It also reloads by itself when you come back to the tab after a minute or more away.

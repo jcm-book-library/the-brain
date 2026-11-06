@@ -25,7 +25,7 @@ const COLS = {
   Goals: ['year', 'month', 'steps', 'km', 'active_mins', 'pages'],
   People: ['id', 'name', 'birthday', 'last_seen', 'to_see', 'see_every_days', 'notes', 'groups', 'links', 'next_catchup', 'next_time', 'catchup_plan', 'plan_id'],
   Lists: ['id', 'list', 'item', 'status', 'added', 'notes'],
-  Notes: ['id', 'date', 'topic', 'note'],
+  Notes: ['id', 'date', 'topic', 'note', 'links', 'color', 'pos'],
   Links: ['name', 'category', 'url', 'pin', 'sort_order', 'notes'],
   Settings: ['key', 'value', 'notes']
 };
@@ -41,7 +41,7 @@ function sheetRows() {
     Goals: [[today.getFullYear(), today.getMonth() + 1, 11000, 8, 90, 100]],
     People: [['p1', 'Sam', serial('1904-03-04'), '', true, '', 'Ask about job', 'IV', '', '', '', '', ''], ['p2', 'Alex', '', serial(add(-100)), false, 60, '', 'HFP', 'p1:Friend', '', '', '', '']],
     Lists: [['l1', 'Reading', 'A Book', 'Current', serial(T), '']],
-    Notes: [['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two']],
+    Notes: [['n1', serial(add(-5)), 'Ideas', 'Line one\nLine two', '', '', '']],
     Links: [['Books', 'Entertainment', 'https://example.com/books', true, 1, ''], ['NRL', 'Sport', 'https://example.com/nrl', true, 2, '']],
     Settings: [['payday_anchor', serial('2026-01-09'), ''], ['payday_every', 14, ''], ['birthday_window', 60, '']]
   };
@@ -66,6 +66,8 @@ function world(edit, extraTabs = []) {
   return w;
 }
 async function install(page, w) {
+  // stub Supabase Realtime (live sync is covered in test-supabase.js): accept the join, ignore the rest
+  await page.routeWebSocket(/\/realtime\/v1\/websocket/, ws => ws.onMessage(m => { const o = JSON.parse(m); if (o.event === 'phx_join') ws.send(JSON.stringify({ topic: o.topic, event: 'phx_reply', payload: { status: 'ok', response: {} }, ref: o.ref })); }));
   await page.route('https://brain.test/**', r => r.fulfill({ contentType: 'text/html', body: HTML }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ body: '' }));
   await page.route(/accounts\.google\.com/, r => r.fulfill({ contentType: 'text/javascript', body: '' }));
