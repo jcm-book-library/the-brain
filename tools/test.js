@@ -80,7 +80,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.waitForSelector('#status[data-state=live]', { timeout: 8000 });
   await page.waitForTimeout(400);
   const log = [];
-  const check = (name, ok) => log.push((ok ? 'PASS ' : 'FAIL ') + name);
+  const check = (name, ok, d) => log.push((ok ? 'PASS ' : 'FAIL ') + name + (!ok && d !== undefined ? ' ' + JSON.stringify(d) : ''));
 
   // home: the default tab, rows in the agreed order
   await page.screenshot({ path: path.join(OUT, 'shot-home.png'), fullPage: true });
@@ -504,6 +504,76 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('theme: switching again updates the same Settings row', db.Settings.filter(r => r[0] === 'theme').length === 1 && db.Settings.find(r => r[0] === 'theme')[1] === 'ember' && await page.evaluate(() => document.documentElement.dataset.mode) === 'dark');
   if (await page.isVisible('#themeDlg')) await page.keyboard.press('Escape');
   await page.screenshot({ path: path.join(OUT, 'shot-home-ember.png'), fullPage: true });
+
+  // search everything: palette (Ctrl/Cmd+K, "/", header button)
+  {
+    await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(100);
+    const sOpen = () => page.evaluate(() => document.getElementById('searchDlg').open);
+    const sTexts = sel => page.locator('#searchResults ' + sel).allInnerTexts();
+    const sOpts = () => page.locator('#searchResults [role=option]').count();
+    await page.keyboard.press('Control+k'); await page.waitForTimeout(80);
+    check('search: Ctrl+K opens the dialog with the input focused', await sOpen() && await page.evaluate(() => document.activeElement.id) === 'searchInput');
+    check('search: empty state shows Coming up and the hint', (await sTexts('.sgh')).some(h => /^coming up$/i.test(h)) && (await page.innerText('#searchResults')).includes('Type to search everything.') && await sOpts() > 0 && await sOpts() <= 5);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(80);
+    check('search: Esc closes it', !(await sOpen()));
+    await page.keyboard.press('/'); await page.waitForTimeout(80);
+    check('search: "/" opens it', await sOpen());
+    check('search: "/" typed in the box is not swallowed', (await (async () => { await page.keyboard.type('a/b'); return page.inputValue('#searchInput'); })()) === 'a/b');
+    await page.keyboard.press('Escape');
+    await page.click('#searchBtn'); await page.waitForTimeout(80);
+    check('search: header button opens it, clearing the old query', await sOpen() && await page.inputValue('#searchInput') === '');
+    await page.fill('#searchInput', 'work');
+    const w1 = await sOpts(), w1t = await sTexts('.s1'); await page.fill('#searchInput', 'work ' + w1t[0].split(' ')[0]); const w2 = await sOpts();
+    check('search: a one-word query finds Plan items and a second word narrows (AND)', w1 >= 2 && w2 >= 1 && w2 < w1, [w1, w2, w1t]);
+    await page.fill('#searchInput', 'dinner');
+    check('search: matches are marked', (await sTexts('mark')).length > 0 && (await sTexts('mark')).every(m => m.toLowerCase() === 'dinner'));
+    await page.screenshot({ path: path.join(OUT, 'shot-search.png') });
+    await page.fill('#searchInput', 'a');
+    const heads = await sTexts('.sgh');
+    check('search: results are grouped under the right headings', heads.includes('PLANS') || heads.includes('Plans') ? ['Plans', 'People', 'Lists', 'Links'].every(h => heads.map(x => x.toLowerCase()).includes(h.toLowerCase())) : false, heads);
+    check('search: the first option is active and aria-activedescendant follows', await page.evaluate(() => { const o = document.querySelector('#searchResults [role=option]'); return o.getAttribute('aria-selected') === 'true' && document.getElementById('searchInput').getAttribute('aria-activedescendant') === o.id; }));
+    await page.fill('#searchInput', 'dinner'); await page.keyboard.press('ArrowDown'); const pick = await page.locator('#searchResults [aria-selected=true] .s1').innerText(); await page.keyboard.press('Enter'); await page.waitForTimeout(150);
+    check('search: Enter on a Plan result opens the item editor', !(await sOpen()) && await page.isVisible('#itemDlg') && await page.inputValue('#fTitle') === pick, [pick, await sOpen(), await page.isVisible('#itemDlg'), await page.inputValue('#fTitle')]);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(80);
+    await page.keyboard.press('Control+k'); await page.fill('#searchInput', 'ideas'); await page.locator('#searchResults [role=option]').first().click(); await page.waitForTimeout(150);
+    check('search: a note result opens the note dialog', await page.isVisible('#noteDlg') && await page.inputValue('#nTopic') === 'Ideas');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(80);
+    await page.click('#searchBtn'); await page.fill('#searchInput', 'alex'); await page.keyboard.press('Enter'); await page.waitForTimeout(150);
+    check('search: a person result opens the person dialog', await page.isVisible('#personDlg') && await page.inputValue('#pName') === 'Alex');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(80);
+    await page.click('#searchBtn'); await page.fill('#searchInput', 'dentist'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    check('search: a list result jumps to Notes and highlights the panel', await page.evaluate(() => state.tab === 'notes' && !!document.querySelector('.search-flash')));
+    await page.click('#searchBtn'); await page.fill('#searchInput', 'rain'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    check('search: a log result opens that day in Fitness', await page.evaluate(() => state.tab === 'fitness' && document.getElementById('logDate').value === state.logDate && !!state.logDate));
+    await page.evaluate(() => showTab('home')); await page.waitForTimeout(100);
+    await page.click('#searchBtn'); await page.fill('#searchInput', 'zzzqq');
+    check('search: no-match text', (await page.innerText('#searchResults')).includes('Nothing matches “zzzqq”.'));
+    await page.evaluate(() => { state.data.Notes.push({ id: 'nx', date: todayIso(), topic: 'Café', note: 'Flat white', links: '', color: '', pos: '' }); });
+    await page.fill('#searchInput', 'cafe');
+    check('search: diacritic-insensitive matching (cafe finds Café)', (await sTexts('.s1')).some(t => t === 'Café') && (await sTexts('mark')).includes('Café'));
+    await page.fill('#searchInput', 'CAFÉ'); check('search: and the other way round', (await sTexts('.s1')).some(t => t === 'Café'));
+    await page.evaluate(() => { state.data.Notes = state.data.Notes.filter(n => n.id !== 'nx'); });
+    await page.fill('#searchInput', '<img src=x onerror=1>');
+    check('search: markup in the query is not injected', await page.locator('#searchResults img').count() === 0 && (await page.innerText('#searchResults')).includes('<img src=x onerror=1>'));
+    await page.keyboard.press('Escape');
+    // stone theme
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'stone'; document.documentElement.dataset.mode = 'light'; });
+    await page.click('#searchBtn'); await page.fill('#searchInput', 'dinner'); await page.waitForTimeout(80);
+    check('search: works in the Stone theme', await sOpts() >= 1 && (await sTexts('mark')).length >= 1);
+    await page.screenshot({ path: path.join(OUT, 'shot-search-stone.png') });
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'ember'; document.documentElement.dataset.mode = 'dark'; });
+    // phone
+    await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(150);
+    check('phone: search button sits on the same header row as the others', await page.evaluate(() => { const ys = ['searchBtn', 'themeBtn', 'refreshBtn', 'settingsBtn'].map(i => Math.round(document.getElementById(i).getBoundingClientRect().top)); return new Set(ys).size === 1; }), await page.evaluate(() => ['searchBtn', 'themeBtn', 'refreshBtn', 'settingsBtn'].map(i => Math.round(document.getElementById(i).getBoundingClientRect().top))));
+    check('phone: the Search label is visually hidden', await page.evaluate(() => document.querySelector('#searchBtn .slabel').getBoundingClientRect().width <= 1));
+    await page.click('#searchBtn'); await page.fill('#searchInput', 'dinner'); await page.waitForTimeout(80);
+    check('phone: search dialog fits with a 16px gutter and no sideways scroll', await page.evaluate(() => { const r = document.getElementById('searchDlg').getBoundingClientRect(); return Math.abs(r.left - 16) <= 1 && Math.abs(innerWidth - r.right - 16) <= 1 && document.documentElement.scrollWidth <= innerWidth; }), await page.evaluate(() => { const r = document.getElementById('searchDlg').getBoundingClientRect(); return [r.left, r.right, innerWidth, document.documentElement.scrollWidth]; }));
+    await page.screenshot({ path: path.join(OUT, 'shot-search-390.png') });
+    await page.keyboard.press('Escape');
+    await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(150);
+    check('search: left the page as it found it (closed, home tab)', !(await sOpen()) && await page.evaluate(() => state.tab) === 'home');
+  }
 
   // phone: bottom tab bar, add sheet (planner and notes), More sheet
   await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
