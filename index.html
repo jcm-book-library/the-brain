@@ -362,6 +362,33 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 .tr-tbl td,.tr-tbl th{white-space:nowrap}
 @media (max-width:700px){.tr-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* search everything */
+#searchBtn{display:inline-flex;align-items:center}
+#searchBtn::before{content:"\200b";width:0}
+#searchBtn svg{width:16px;height:16px;flex:none;margin-right:6px}
+#searchBtn kbd{margin-left:8px}
+#searchBtn kbd{display:none;font:inherit;font-size:11px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 5px;line-height:17px}
+@media (min-width:900px){#searchBtn kbd{display:inline-block}}
+@media (max-width:520px){#searchBtn .slabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}#searchBtn svg{margin-right:0}.status{gap:6px}.status .btn{padding:7px 9px}}
+#searchDlg{width:min(640px,calc(100vw - 32px));max-width:none;margin:min(12vh,96px) auto auto;overflow:hidden}
+#searchDlg[open]{display:flex;flex-direction:column;max-height:min(560px,calc(100vh - 2 * min(12vh,96px)))}
+#searchDlg .sbox{display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);flex:none}
+#searchDlg .sbox svg{width:16px;height:16px;flex:none;color:var(--muted)}
+#searchInput{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:15px 0;outline:0;box-shadow:none;-webkit-appearance:none;appearance:none}
+#searchInput::-webkit-search-cancel-button{-webkit-appearance:none}
+#searchResults{overflow-y:auto;padding:6px 8px 8px;min-height:0}
+#searchResults .sgh{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 8px 4px}
+#searchResults .sopt{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;padding:8px 10px;color:var(--fg);font:inherit;cursor:pointer}
+#searchResults .sopt[aria-selected=true]{background:var(--raise);box-shadow:inset 0 0 0 1px var(--accent)}
+#searchResults .s1{display:block;font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#searchResults .s2{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+#searchResults mark{background:color-mix(in srgb,var(--accent) 28%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+#searchResults .smore,#searchResults .shint,#searchResults .snone{font-size:12px;color:var(--muted);padding:6px 10px}
+#searchResults .snone{font-size:14px;padding:18px 10px;text-align:center}
+@keyframes sflash{from{outline-color:var(--accent)}to{outline-color:transparent}}
+.search-flash{outline:2px solid var(--accent);outline-offset:2px;border-radius:14px;animation:sflash 1.5s ease-out forwards}
+@media (prefers-reduced-motion:reduce){.search-flash{animation-duration:1.5s}}
+
 /* upcoming: month calendar */
 .mnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .mcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
@@ -595,6 +622,7 @@ dialog.sheet form{padding:0}
       <div><div class="eyebrow" id="todayLabel"></div><h1>The Brain</h1></div>
     </div>
     <div class="status" id="status" data-state="loading"><span class="dot"></span><span id="statusText">Starting…</span>
+      <button class="btn btn-ghost" id="searchBtn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span class="slabel">Search</span><kbd aria-hidden="true">Ctrl K</kbd></button>
       <button class="btn" id="refreshBtn" type="button">Refresh</button>
       <button class="btn btn-ghost" id="themeBtn" type="button" aria-haspopup="dialog"><span class="themedot" aria-hidden="true"></span><span class="tlabel">Theme</span></button>
       <button class="btn btn-ghost" id="settingsBtn" type="button" aria-label="Settings">Settings</button>
@@ -700,6 +728,7 @@ dialog.sheet form{padding:0}
   <div class="more"><button class="btn" type="button" data-go="paper">Paper</button><button class="btn" type="button" data-go="people">Family &amp; Friends</button><button class="btn" type="button" data-go="notes">Notes</button><button class="btn" type="button" data-go="setup">Setup</button><button class="btn" type="button" data-go="settings">Settings</button><button class="btn" type="button" data-review-open>Weekly review</button></div>
   <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
 
+<dialog id="searchDlg" aria-label="Search everything"><div class="sbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="searchInput" type="search" placeholder="Search plans, notes, people, lists, links…" aria-label="Search" aria-controls="searchResults" aria-activedescendant="" autocomplete="off" spellcheck="false"></div><div id="searchResults" role="listbox" aria-label="Results"></div></dialog>
 <dialog id="themeDlg"><form method="dialog" class="themeform">
   <h2>Theme</h2>
   <p class="muted" style="margin:0;font-size:13px">Auto moves to the next dark theme each month. Pick one to keep it. Stone is the light theme. Saved for every device.</p>
@@ -1358,6 +1387,108 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-addm
 /* Today's items can be pushed to tomorrow in one click. */
 document.addEventListener('click', async e => { const b = e.target.closest('[data-push]'); if (!b) return; const p = findPlan(b.dataset.push); if (!p) return;
   if (await withBusy('Moving…', () => updateRow('Plan', { ...p, date: addDays(p.date, 1) }))) toast(p.title + ' moved to tomorrow'); });
+
+/* ---------- search everything (Ctrl/⌘K) ---------- */
+const searchNorm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const searchDate = d => d ? fmt(d, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '') : '';
+const searchIsMac = /Mac|iPhone|iPad/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
+const SEARCH_GROUPS = ['Plans', 'Notes', 'People', 'Lists', 'Links', 'Log'], SEARCH_CAP = 8;
+let searchActive = 0, searchRows = [];
+
+function searchScore(primary, text, words, q) {
+  const p = searchNorm(primary), t = searchNorm(text);
+  if (!words.every(w => t.includes(w))) return 0;
+  if (p.startsWith(q)) return 3;
+  if (words.every(w => new RegExp('(^|[^a-z0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(t))) return 2;
+  return 1;
+}
+function searchMark(text, words) {
+  text = String(text ?? ''); let norm = '', map = [];
+  for (let i = 0; i < text.length; i++) { const c = searchNorm(text[i]); for (const ch of c) { norm += ch; map.push(i); } }
+  const hit = new Array(text.length).fill(false);
+  words.forEach(w => { if (!w) return; for (let at = norm.indexOf(w); at >= 0; at = norm.indexOf(w, at + 1)) for (let k = at; k < at + w.length; k++) hit[map[k]] = true; });
+  let out = '', i = 0;
+  while (i < text.length) { let j = i; while (j < text.length && hit[j] === hit[i]) j++; const seg = esc(text.slice(i, j)); out += hit[i] ? '<mark>' + seg + '</mark>' : seg; i = j; }
+  return out;
+}
+function searchHost(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u || ''; } }
+function searchPlanSort(a, b) {
+  const t = todayIso(), ua = (a.p.end || a.p.date) >= t, ub = (b.p.end || b.p.date) >= t;
+  if (ua !== ub) return ua ? -1 : 1;
+  return ua ? (a.p.date < b.p.date ? -1 : a.p.date > b.p.date ? 1 : 0) : (a.p.date < b.p.date ? 1 : a.p.date > b.p.date ? -1 : 0);
+}
+function planSub(p) { return [searchDate(p.date), p.time, p.cat, hasStar(p.type) ? '★' : '', p.done ? '✓' : ''].filter(Boolean).join(' · '); }
+function searchCompute(q) {
+  const words = searchNorm(q).split(/\s+/).filter(Boolean), nq = words.join(' '), d = state.data, g = {};
+  const add = (grp, score, rec) => { if (score) (g[grp] = g[grp] || []).push({ ...rec, score }); };
+  (d.Plan || []).forEach(p => add('Plans', searchScore(p.title, [p.title, p.notes, plainType(p.type), p.cat, searchDate(p.date)].join(' '), words, nq), { p, kind: 'plan', title: p.title, sub: planSub(p) }));
+  (d.Notes || []).forEach(n => add('Notes', searchScore(n.topic, [n.topic, n.note].join(' '), words, nq), { n, kind: 'note', title: n.topic || (n.note || '').split('\n')[0], sub: [n.topic ? (n.note || '').split('\n')[0] : '', searchDate(n.date)].filter(Boolean).join(' · ') }));
+  (d.People || []).forEach(p => { const b = nextBday(p, todayIso()); add('People', searchScore(p.name, [p.name, p.notes, p.groups].join(' '), words, nq), { p, kind: 'person', title: p.name, sub: p.groups || (b ? 'Birthday ' + searchDate(b.date) : '') }); });
+  (d.Lists || []).forEach(l => add('Lists', searchScore(l.item, [l.item, l.list, l.notes].join(' '), words, nq), { l, kind: 'list', title: l.item, sub: [l.list, l.status].filter(Boolean).join(' · ') }));
+  (d.Links || []).forEach(l => add('Links', searchScore(l.name, [l.name, l.url, l.cat].join(' '), words, nq), { l, kind: 'link', title: l.name, sub: searchHost(l.url) }));
+  (d.Log || []).forEach(r => { if (r.note) add('Log', searchScore(r.note, r.note, words, nq), { r, kind: 'log', title: r.note, sub: [searchDate(r.date), r.steps != null && r.steps !== '' ? Number(r.steps).toLocaleString('en-AU') + ' steps' : ''].filter(Boolean).join(' · ') }); });
+  Object.values(g).forEach(a => a.sort((x, y) => y.score - x.score || (x.kind === 'plan' ? searchPlanSort(x, y) : 0)));
+  return { words, groups: SEARCH_GROUPS.filter(k => g[k]).map(k => ({ name: k, items: g[k], best: g[k][0].score })).sort((a, b) => b.best - a.best || SEARCH_GROUPS.indexOf(a.name) - SEARCH_GROUPS.indexOf(b.name)) };
+}
+function searchRender() {
+  const q = $('searchInput').value.trim(), box = $('searchResults'); let html = '', n = 0; searchRows = [];
+  const row = (r, words) => { const id = 'sr-opt-' + n++; searchRows.push(r); return `<button type="button" class="sopt" role="option" id="${id}" aria-selected="false" tabindex="-1" data-i="${searchRows.length - 1}"><span class="s1">${searchMark(r.title, words)}</span>${r.sub ? `<span class="s2">${esc(r.sub)}</span>` : ''}</button>`; };
+  if (!q) {
+    const t = todayIso(), up = (state.data.Plan || []).filter(p => p.title && (p.end || p.date) >= t).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time || '') < (b.time || '') ? -1 : 1).slice(0, 5);
+    if (up.length) html += `<div role="group" aria-labelledby="sg-up"><div class="sgh" id="sg-up">Coming up</div>${up.map(p => row({ kind: 'plan', p, title: p.title, sub: planSub(p) }, [])).join('')}</div>`;
+    html += '<div class="shint">Type to search everything. ↑ ↓ to move, Enter to open, Esc to close.</div>';
+  } else {
+    const res = searchCompute(q);
+    if (!res.groups.length) html = `<div class="snone">Nothing matches “${esc(q)}”.</div>`;
+    res.groups.forEach(g => { html += `<div role="group" aria-labelledby="sg-${g.name}"><div class="sgh" id="sg-${g.name}">${g.name}</div>${g.items.slice(0, SEARCH_CAP).map(r => row(r, res.words)).join('')}${g.items.length > SEARCH_CAP ? `<div class="smore">and ${g.items.length - SEARCH_CAP} more</div>` : ''}</div>`; });
+  }
+  box.innerHTML = html; searchSetActive(0, false);
+}
+function searchSetActive(i, scroll) {
+  const opts = $('searchResults').querySelectorAll('[role=option]'), inp = $('searchInput');
+  if (!opts.length) { searchActive = 0; inp.removeAttribute('aria-activedescendant'); return; }
+  searchActive = (i + opts.length) % opts.length;
+  opts.forEach((o, k) => o.setAttribute('aria-selected', String(k === searchActive)));
+  inp.setAttribute('aria-activedescendant', opts[searchActive].id);
+  if (scroll) opts[searchActive].scrollIntoView({ block: 'nearest' });
+}
+function searchOpen() {
+  const dlg = $('searchDlg'); if (!dlg.open) dlg.showModal();
+  $('searchInput').value = ''; searchRender(); $('searchInput').focus(); $('searchInput').select();
+}
+function searchGo(r) {
+  if (!r) return; $('searchDlg').close();
+  if (r.kind === 'plan') openItem(r.p);
+  else if (r.kind === 'note') { showTab('notes'); openNote(r.n); }
+  else if (r.kind === 'person') openPerson(r.p);
+  else if (r.kind === 'list') {
+    showTab('notes');
+    const f = [...document.querySelectorAll('form[data-list]')].find(x => x.dataset.list === r.l.list), panel = f && f.parentElement;
+    if (panel) { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); panel.classList.remove('search-flash'); void panel.offsetWidth; panel.classList.add('search-flash'); setTimeout(() => panel.classList.remove('search-flash'), 1600); }
+  } else if (r.kind === 'link') { if (/^https?:\/\//i.test(r.l.url || '')) window.open(r.l.url, '_blank', 'noopener'); else toast('That link has no web address.'); }
+  else if (r.kind === 'log') { showTab('fitness'); const el = $('logDate'); if (el) { el.value = r.r.date; el.dispatchEvent(new Event('change', { bubbles: true })); } }
+}
+$('searchBtn').addEventListener('click', searchOpen);
+$('searchBtn').querySelector('kbd').textContent = searchIsMac ? '⌘K' : 'Ctrl K';
+$('searchInput').addEventListener('input', searchRender);
+$('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') { e.preventDefault(); searchSetActive(searchActive + 1, true); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); searchSetActive(searchActive - 1, true); }
+  else if (e.key === 'Enter') { e.preventDefault(); searchGo(searchRows[searchActive]); }
+  else if (e.key === 'Escape') { e.preventDefault(); $('searchDlg').close(); } // a search box would otherwise clear itself first
+});
+$('searchResults').addEventListener('mousedown', e => e.preventDefault());
+$('searchResults').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) searchGo(searchRows[Number(b.dataset.i)]); });
+$('searchResults').addEventListener('mousemove', e => { const b = e.target.closest('[role=option]'); if (b) { const k = [...$('searchResults').querySelectorAll('[role=option]')].indexOf(b); if (k !== searchActive) searchSetActive(k, false); } });
+$('searchDlg').addEventListener('click', e => { if (e.target === $('searchDlg')) $('searchDlg').close(); });
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); searchOpen(); return; }
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const a = document.activeElement, tag = a && a.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (a && a.isContentEditable)) return;
+    e.preventDefault(); searchOpen();
+  }
+});
 
 /* ---------- the event star ----------
    An item is an "event" (a day block-out that shows on the Upcoming calendar) when its Type ends in a ★.
