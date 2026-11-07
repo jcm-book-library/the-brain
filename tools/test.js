@@ -383,6 +383,147 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.fill('#sApp [data-k=payday_anchor]', '2026-01-23'); await page.click('#sApp button[type=submit]'); await live();
   check('setup: payday date saved as a date serial, like the Sheet', Number(db.Settings[1][1]) === serial('2026-01-23'), db.Settings[1]);
   check('setup: payday date reads back', (await page.inputValue('#sApp [data-k=payday_anchor]')) === '2026-01-23');
+  // weekly review: date logic, banner, dialog, actions, phone and Stone
+  {
+    const ad = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const toI = v => v === '' || v == null ? '' : new Date(Date.UTC(1899, 11, 30) + v * 864e5).toISOString().slice(0, 10);
+    const dowOf = s => (new Date(s + 'T00:00:00Z').getUTCDay() + 6) % 7;
+    const sync = async () => { await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await page.waitForTimeout(250); await page.waitForSelector('#status[data-state=live]'); };
+    const put = (tab, row) => { const i = db[tab].findIndex((r, ix) => ix > 0 && (r[0] === '' || r[0] == null)); if (i > 0) db[tab][i] = row; else db[tab].push(row); };
+    const dates = await page.evaluate(() => {
+      const w = (t, rl) => { const S = state.data.Settings; const keep = S.slice(); if (rl) S.push({ key: 'review_last', value: rl, notes: '' }); const out = { w: reviewWeek(t), due: reviewDue(t) }; state.data.Settings = keep; return out; };
+      return { sun: w('2026-11-08'), mon: w('2026-11-09'), monDone: w('2026-11-09', '2026-11-08'), monSerial: w('2026-11-09', 46334), wed: w('2026-11-11'), sat: w('2026-11-07'), sunDone: w('2026-11-08', '2026-11-08') };
+    });
+    check('review: Sunday reviews the week ending that day, and is due', dates.sun.w.start === '2026-11-02' && dates.sun.w.end === '2026-11-08' && dates.sun.due === true, dates.sun);
+    check('review: Monday with no review looks back at last week, and is due', dates.mon.w.start === '2026-11-02' && dates.mon.due === true, dates.mon);
+    check('review: Monday after a review shows the new week, and is not due (even when the date comes back as a sheet serial)', dates.monDone.w.start === '2026-11-09' && dates.monDone.due === false && dates.monSerial.due === (serial('2026-11-08') !== 46334), dates.monDone);
+    check('review: Wednesday is the week containing it and is not due', dates.wed.w.start === '2026-11-09' && dates.wed.w.end === '2026-11-15' && dates.wed.due === false && dates.sat.due === false, dates.wed);
+    check('review: a reviewed Sunday is not due again', dates.sunDone.due === false);
+    const bn = await page.evaluate(() => {
+      const R = Date, out = {}, B = () => document.getElementById('reviewBanner'), stub = (y, m, d) => { window.Date = class extends R { constructor(...a) { if (a.length) super(...a); else super(y, m, d, 12); } }; };
+      try { sessionStorage.removeItem('brain-review-skip'); } catch (e) {}
+      stub(2026, 10, 8); renderReviewBanner(); out.sunHidden = B().hidden; out.text = B().innerText; out.btns = [...B().querySelectorAll('button')].map(b => [b.textContent, b.className, b.hasAttribute('data-review-open'), b.hasAttribute('data-review-skip')]);
+      B().querySelector('[data-review-skip]').click(); out.skipHidden = B().hidden; out.skipVal = sessionStorage.getItem('brain-review-skip');
+      stub(2026, 10, 11); renderReviewBanner(); out.wedHidden = B().hidden;
+      stub(2026, 10, 8); const S = state.data.Settings, keep = S.slice(); S.push({ key: 'review_last', value: '2026-11-08', notes: '' }); sessionStorage.removeItem('brain-review-skip'); renderReviewBanner(); out.doneHidden = B().hidden; state.data.Settings = keep;
+      window.Date = R; sessionStorage.removeItem('brain-review-skip'); renderReviewBanner(); out.first = B() === document.querySelector('#v-home').firstElementChild && B().nextElementSibling.id === 'homeToday';
+      return out;
+    });
+    check('review banner: on a Sunday it shows the title, the line and both buttons', bn.sunHidden === false && /Sunday review/.test(bn.text) && /Look back at this week and set up the next\./.test(bn.text) && bn.btns.length === 2 && bn.btns[0][0] === 'Start review' && bn.btns[0][1].includes('btn-primary') && bn.btns[0][2] && bn.btns[1][0] === 'Not now' && bn.btns[1][1].includes('btn-ghost') && bn.btns[1][3], bn);
+    check('review banner: Not now hides it for this session and remembers that Sunday', bn.skipHidden === true && bn.skipVal === '2026-11-08');
+    check('review banner: hidden midweek and once the week is reviewed; sits first on Home', bn.wedHidden === true && bn.doneHidden === true && bn.first === true, bn);
+
+    // data for the week on screen
+    const ws = await page.evaluate(() => reviewWeek(todayIso()).start), we = ad(ws, 6);
+    const used = new Set(db.Log.slice(1).map(r => toI(r[0]))), free = Array.from({ length: 7 }, (_, i) => ad(ws, i)).filter(d => !used.has(d));
+    put('Plan', ['rv1', serial(ad(ws, 1)), '', '09:00', 'RV open one', 'Work', '', false, false, '']);
+    put('Plan', ['rv2', serial(ad(ws, 1)), '', '08:00', 'RV done two', 'Social', 'Event ★', true, false, '']);
+    put('Plan', ['rv3', serial(ad(ws, 3)), '', '', 'RV open three', 'Social', '', false, false, '']);
+    put('Plan', ['rv4', serial(ad(ws, 2)), serial(ad(ws, 4)), '', 'RV trip', 'Home', 'Travel', false, false, '']);
+    put('Plan', ['rv5', serial(ad(ws, 9)), '', '', 'RV next event', 'Social', 'Event ★', false, false, '']);
+    put('Plan', ['rv6', serial(ad(ws, 5)), '', '10:00', 'RV remove me', 'Other', '', false, false, '']);
+    put('Log', [serial(free[0]), 12000, 8, 60, 50, 18, 9, 'G', '']);
+    put('Log', [serial(free[1]), 8000, 5, 40, 150, 17, 8, 'F', '']);
+    await sync();
+
+    // expectations worked out from the fake sheet itself
+    const P = db.Plan.slice(1).filter(r => r[0] && r[1]).map(r => ({ id: r[0], date: toI(r[1]), end: toI(r[2]), type: String(r[6] || ''), cat: r[5], done: r[7] === true, title: r[4] }));
+    const inWk = p => p.date <= we && ((p.end && p.end > p.date) ? p.end : p.date) >= ws;
+    const W = P.filter(inWk), X = W.filter(p => p.done).length, Y = W.length;
+    const L = db.Log.slice(1).filter(r => r[0]).map(r => ({ date: toI(r[0]), steps: r[1], pages: r[4], mood: r[7], any: [1, 2, 3, 4].some(i => r[i] !== '' && r[i] != null) || !!r[7] })).filter(r => r.date >= ws && r.date <= we);
+    const avg = k => { const v = L.map(r => r[k]).filter(x => x !== '' && x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+    const mid = ad(ws, 3), gr = db.Goals.slice(1).find(r => r[0] === Number(mid.slice(0, 4)) && r[1] === Number(mid.slice(5, 7)));
+    const word = (k, gi) => { const a = avg(k), gl = gr && gr[gi] ? gr[gi] : null; return a == null ? 'Nothing logged' : !gl ? 'No goal set' : a >= gl ? 'Above goal' : 'Under goal'; };
+
+    await page.evaluate(() => document.getElementById('moreDlg').showModal());
+    await page.click('#moreDlg [data-review-open]'); await page.waitForTimeout(200);
+    check('review: opens from the More sheet button and closes the sheet', await page.isVisible('#reviewDlg') && !(await page.isVisible('#moreDlg')));
+    check('review: the title shows the week (en dash, en-AU)', /^Week of \d{1,2}(?: [A-Z][a-z]{2,4})?–\d{1,2} [A-Z][a-z]{2,4}$/.test(await page.innerText('#reviewTitle')) && (await page.innerText('#reviewTitle')).startsWith('Week of ' + Number(ws.slice(8)) ) && /WEEKLY REVIEW/i.test(await page.innerText('#reviewDlg .rv-head .eyebrow')), await page.innerText('#reviewTitle'));
+    const bx = sel => page.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; }, sel);
+    { const A = await bx('#rvPlans'), B = await bx('#rvFit'), C = await bx('#rvPeople'), D = await bx('#rvAhead'), O = await bx('#rvOpen'), N = await bx('#rvNext');
+      check('review: Plans and Fitness tiles are a matched pair (same row, width and height)', Math.abs(A.w - B.w) < 1 && Math.abs(A.h - B.h) < 1 && Math.abs(A.y - B.y) < 1 && B.x > A.x, [A, B]);
+      check('review: People and Coming up are a matched pair', Math.abs(C.w - D.w) < 1 && Math.abs(C.h - D.h) < 1 && Math.abs(C.y - D.y) < 1 && D.x > C.x, [C, D]);
+      check('review: Still open and Next week run the full width', Math.abs(O.w - N.w) < 1 && Math.abs(O.w - (A.w + B.w + 16)) < 2 && O.y > A.y && C.y > O.y && N.y > C.y, [O, N, A, B]); }
+    check('review: Plans tile says X of Y done (' + X + ' of ' + Y + ')', (await page.innerText('#rvPlans .rv-big')) === `${X} of ${Y} done`);
+    { const st = await page.getAttribute('#rvPlans .rv-bar i', 'style');
+      check('review: the bar is green at 80% or more, yellow under', st.includes(X / Y >= 0.8 ? 'var(--ok)' : 'var(--under)') && st.includes('width:' + Math.round(X / Y * 100) + '%'), st); }
+    { const ev = W.filter(p => p.type.endsWith('★')).length, so = W.filter(p => p.cat === 'Social').length;
+      check('review: events and social counts', (await page.innerText('#rvPlans .rv-meta')) === `${ev} event${ev === 1 ? '' : 's'} · ${so} social`, await page.innerText('#rvPlans .rv-meta')); }
+    { const sa = await page.innerText('#rvFit [data-rv-stat=steps]'), pa = await page.innerText('#rvFit [data-rv-stat=pages]');
+      check('review: Fitness shows the weekly average steps and pages with the goal verdict', sa.includes(Math.round(avg('steps')).toLocaleString('en-AU')) && sa.includes(word('steps', 2)) && pa.includes(Math.round(avg('pages')).toLocaleString('en-AU')) && pa.includes(word('pages', 5)), [sa, pa]);
+      const meta = await page.innerText('#rvFit .rv-meta'), g = L.filter(r => r.mood === 'G').length, f = L.filter(r => r.mood === 'F').length;
+      check('review: days logged and mood chips', meta.includes(`Days logged ${L.filter(r => r.any).length} of 7`) && meta.includes('Good ' + g) && meta.includes('Fair ' + f) && !meta.includes('Poor'), meta); }
+    { const txt = await page.innerText('#rvOpen'), open = W.filter(p => !p.done && !(p.end && p.end > p.date));
+      check('review: Still open lists the open single-day items in date order, not done or multi-day ones', txt.includes('RV open one') && txt.includes('RV open three') && !txt.includes('RV done two') && !txt.includes('RV trip') && txt.indexOf('RV open one') < txt.indexOf('RV open three') && (await page.locator('#rvOpen .rv-row').count()) === open.length, txt);
+      check('review: each open row has Done, Move and Remove', (await page.locator('[data-rv-row=rv1] .rv-acts button').allInnerTexts()).join('|').match(/^Done\|Move to (today|\w{3} \d{1,2} \w{3,4})\|Remove$/) !== null, await page.locator('[data-rv-row=rv1] .rv-acts button').allInnerTexts()); }
+    check('review: next-week lines show the upcoming event and seven day rows', (await page.innerText('#rvAhead')).includes('RV next event') && (await page.locator('#rvNext .rv-day').count()) === 7 && (await page.innerText('#rvNext')).includes('★ RV next event'));
+    await page.screenshot({ path: path.join(OUT, 'shot-review-1000.png') });
+    await page.setViewportSize({ width: 1360, height: 1500 }); await page.waitForTimeout(150);
+    await page.screenshot({ path: path.join(OUT, 'shot-review.png') });
+    await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(100);
+    await page.click('[data-rv-edit=rv1]'); await page.waitForTimeout(150);
+    check('review: the title button opens the item', await page.isVisible('#itemDlg') && (await page.inputValue('#fTitle')) === 'RV open one');
+    await page.click('#itemDlg [data-close]'); await page.waitForTimeout(150);
+    check('review: stays open after the item closes', await page.isVisible('#reviewDlg') && !(await page.isVisible('#itemDlg')));
+    await page.click('[data-rv-done=rv1]'); await live(); await page.waitForTimeout(250);
+    check('review: Done ticks the item in the sheet and drops it from the list', db.Plan.find(r => r[0] === 'rv1')[7] === true && !(await page.innerText('#rvOpen')).includes('RV open one') && await page.isVisible('#reviewDlg'));
+    const mvLbl = await page.innerText('[data-rv-move=rv3]'), tgt = (() => { const n = ad(we, 1); return n < T ? T : n; })();
+    await page.click('[data-rv-move=rv3]'); await live(); await page.waitForTimeout(250);
+    check('review: Move sends it to the Monday after the week (or today if that has passed)', toI(db.Plan.find(r => r[0] === 'rv3')[1]) === tgt && (tgt === T ? mvLbl === 'Move to today' : mvLbl.startsWith('Move to ')) && !(await page.innerText('#rvOpen')).includes('RV open three'), [mvLbl, tgt]);
+    { const rm = page.locator('[data-rv-del=rv6]'), n0 = db.Plan.length;
+      await rm.click(); await page.waitForTimeout(200);
+      check('review: Remove first asks "Remove?" and deletes nothing', (await rm.innerText()) === 'Remove?' && db.Plan.some(r => r[0] === 'rv6') && db.Plan.length === n0);
+      await rm.click(); await live(); await page.waitForTimeout(250);
+      check('review: second press deletes the row', !db.Plan.some(r => r[0] === 'rv6') && !(await page.innerText('#rvOpen')).includes('RV remove me')); }
+    check('review: Still open says so when empty', await page.evaluate(() => { const keep = state.data.Plan; state.data.Plan = keep.filter(p => !(p.date >= state.rvStart && p.date <= addDays(state.rvStart, 6))); renderReview(); const t = document.getElementById('rvOpen').innerText; state.data.Plan = keep; renderReview(); return t.includes('Nothing left open. Nice week.'); }));
+    // stepping weeks
+    const cur = ad(T, -dowOf(T)), shown0 = await page.evaluate(() => state.rvStart), title0 = await page.innerText('#reviewTitle');
+    await page.click('[data-review-nav="-1"]'); await page.waitForTimeout(100);
+    check('review: the previous-week button goes back one week', (await page.evaluate(() => state.rvStart)) === ad(shown0, -7) && (await page.innerText('#reviewTitle')) !== title0 && (await page.innerText('#reviewTitle')).startsWith('Week of ' + Number(ad(shown0, -7).slice(8))));
+    await page.click('[data-review-nav="1"]'); await page.waitForTimeout(100);
+    check('review: the next-week button returns, and cannot pass the current week', (await page.evaluate(() => state.rvStart)) === shown0 && (shown0 === cur) === (await page.isDisabled('[data-review-nav="1"]')) && await page.evaluate(c => { const b = document.querySelector('[data-review-nav="1"]'); for (let i = 0; i < 3; i++) { if (!b.disabled) b.click(); } return state.rvStart <= c; }, cur));
+    await page.evaluate(() => { state.rvStart = reviewWeek(todayIso()).start; renderReview(); });
+    check('review: footer says Not reviewed yet before any review', (await page.innerText('#reviewLast')) === 'Not reviewed yet');
+    // mark reviewed
+    const nS = db.Settings.length, shown = await page.evaluate(() => state.rvStart);
+    await page.click('[data-review-done]'); await live(); await page.waitForTimeout(300);
+    { const rows = db.Settings.filter(r => r[0] === 'review_last');
+      check('review: Mark week reviewed saves review_last as the Sunday ending the week, closes and toasts', rows.length === 1 && rows[0][1] === serial(ad(shown, 6)) && db.Settings.length === nS + 1 && !(await page.isVisible('#reviewDlg')) && (await page.locator('#toast').innerText()) === 'Week reviewed', rows); }
+    check('review: the banner is hidden once reviewed', await page.isHidden('#reviewBanner'));
+    await page.evaluate(() => document.getElementById('moreDlg').showModal()); await page.click('#moreDlg [data-review-open]'); await page.waitForTimeout(200);
+    check('review: footer shows the last reviewed date', /^Last reviewed: \w{3} \d{1,2} \w{3,4}$/.test(await page.innerText('#reviewLast')), await page.innerText('#reviewLast'));
+    await page.click('[data-review-nav="-1"]'); await page.click('[data-review-done]'); await live(); await page.waitForTimeout(300);
+    { const rows = db.Settings.filter(r => r[0] === 'review_last');
+      check('review: a second save updates the same row (no duplicate)', rows.length === 1 && rows[0][1] === serial(ad(shown, -1)) && db.Settings.length === nS + 1, rows); }
+
+    // phone
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => document.getElementById('moreDlg').showModal()); await page.click('#moreDlg [data-review-open]'); await page.waitForTimeout(250);
+    { const d = await bx('#reviewDlg'), rad = await page.evaluate(() => getComputedStyle(document.getElementById('reviewDlg')).borderTopLeftRadius), A = await bx('#rvPlans'), B = await bx('#rvFit'), C = await bx('#rvPeople'), D = await bx('#rvAhead');
+      check('review phone: the dialog is full screen with square corners', Math.abs(d.x) < 1 && Math.abs(d.y) < 1 && Math.abs(d.w - 390) < 1 && Math.abs(d.h - 844) < 1 && rad === '0px', [d, rad]);
+      check('review phone: no sideways scroll', await page.evaluate(() => { const b = document.getElementById('reviewBody'); return document.documentElement.scrollWidth <= innerWidth && b.scrollWidth <= b.clientWidth; }));
+      check('review phone: pairs stack at the same width', Math.abs(A.w - B.w) < 1 && Math.abs(A.x - B.x) < 1 && B.y > A.y && Math.abs(C.w - D.w) < 1 && D.y > C.y, [A, B, C, D]);
+      check('review phone: header and footer stay in view', await page.evaluate(() => { const h = document.querySelector('.rv-head').getBoundingClientRect(), f = document.querySelector('.rv-foot').getBoundingClientRect(); document.getElementById('reviewBody').scrollTop = 99999; const f2 = document.querySelector('.rv-foot').getBoundingClientRect(); document.getElementById('reviewBody').scrollTop = 0; return h.top >= 0 && Math.abs(f.bottom - innerHeight) < 1 && Math.abs(f2.bottom - innerHeight) < 1; })); }
+    await page.screenshot({ path: path.join(OUT, 'shot-review-390.png') });
+    await page.evaluate(() => { document.getElementById('reviewBody').scrollTop = 700; }); await page.screenshot({ path: path.join(OUT, 'shot-review-390b.png') });
+    await page.setViewportSize({ width: 1360, height: 1500 }); await page.waitForTimeout(100);
+    // Stone (light)
+    const prev = await page.evaluate(() => { const r = document.documentElement, o = [r.dataset.theme, r.dataset.mode]; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; return o; });
+    await page.waitForTimeout(150); await page.screenshot({ path: path.join(OUT, 'shot-review-stone.png') });
+    { const lum = c => { const m = c.match(/[\d.]+/g).map(Number); const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(m[0]) + .7152 * f(m[1]) + .0722 * f(m[2]); };
+      const cols = await page.evaluate(() => { const q = (s, p = 'color') => getComputedStyle(document.querySelector(s))[p]; return { big: q('#rvPlans .rv-big'), muted: q('#rvPlans .rv-meta'), title: q('#reviewTitle'), bg: q('#reviewDlg', 'backgroundColor'), card: q('#rvPlans', 'backgroundColor'), ok: q('#rvFit [data-rv-stat] b') }; });
+      const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+      check('review Stone: headline, muted and verdict text are readable on the light card', ratio(cols.big, cols.card) >= 4.5 && ratio(cols.muted, cols.card) >= 3.5 && ratio(cols.title, cols.card) >= 4.5 && (!cols.ok || ratio(cols.ok, cols.card) >= 3), cols); }
+    await page.evaluate(p => { const r = document.documentElement; r.dataset.theme = p[0]; if (p[1] == null) delete r.dataset.mode; else r.dataset.mode = p[1]; if (p[0] == null) delete r.dataset.theme; }, prev);
+    await page.setViewportSize({ width: 1360, height: 1000 }); await page.click('[data-review-close]'); await page.waitForTimeout(100);
+    check('review: Close closes it', !(await page.isVisible('#reviewDlg')));
+    // clean up the rows this block added
+    for (const id of ['rv1', 'rv2', 'rv3', 'rv4', 'rv5', 'rv6']) { const i = db.Plan.findIndex(r => r[0] === id); if (i > 0) db.Plan.splice(i, 1); }
+    for (const d of free.slice(0, 2)) { const i = db.Log.findIndex((r, ix) => ix > 0 && toI(r[0]) === d); if (i > 0) db.Log.splice(i, 1); }
+    { const i = db.Settings.findIndex(r => r[0] === 'review_last'); if (i > 0) db.Settings.splice(i, 1); }
+    await sync();
+    check('review: Plan my week closes the review and opens the planner', await (async () => { await page.evaluate(() => document.getElementById('moreDlg').showModal()); await page.click('#moreDlg [data-review-open]'); await page.waitForTimeout(150); await page.click('[data-review-plan]'); await page.waitForTimeout(200); const ok = await page.isVisible('#planDlg') && !(await page.isVisible('#reviewDlg')); await page.evaluate(() => document.getElementById('planDlg').close()); return ok; })());
+  }
   await page.fill('#sApp [data-k=weather_place]', 'Perth'); await page.click('#sApp button[type=submit]'); await live();
   check('setup: new setting row added', db.Settings.some(r => r[0] === 'weather_place' && r[1] === 'Perth'));
   await page.screenshot({ path: path.join(OUT, 'shot-setup-1280b.png'), fullPage: true });
@@ -518,7 +659,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.click('.bbar [data-qaopen]'); await page.waitForSelector('#qaDlg[open]'); await page.fill('#nsText', 'Phone note'); await page.press('#nsText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
   check('phone: + sheet adds a note too', db.Notes.some(r => r[3] === 'Phone note'));
   await page.click('.bbar [data-more]'); await page.waitForSelector('#moreDlg[open]');
-  check('phone: More lists the rest of the tabs', JSON.stringify(await page.locator('#moreDlg .more button').allInnerTexts()) === JSON.stringify(['Paper', 'Family & Friends', 'Notes', 'Setup', 'Settings']));
+  check('phone: More lists the rest of the tabs', JSON.stringify(await page.locator('#moreDlg .more button').allInnerTexts()) === JSON.stringify(['Paper', 'Family & Friends', 'Notes', 'Setup', 'Settings', 'Weekly review']));
   await page.click('#moreDlg [data-go=people]'); await page.waitForTimeout(150);
   check('phone: More opens other sections', await page.isVisible('#v-people') && !(await page.isVisible('#moreDlg')) && (await page.getAttribute('.bbar [data-more]', 'aria-current')) === 'page');
   await page.click('.bbar [data-go=upcoming]'); await page.waitForTimeout(150);

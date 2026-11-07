@@ -429,6 +429,62 @@ html[data-mode=light] #v-notes{--ic-violet:#7c5cd6;--ic-cobalt:#2f5fd0;--ic-teal
 .ichip button+button{padding:3px 8px 3px 4px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.inode .if{animation:none}.ispark{animation:none;display:none}.ie,.inode,.idot{transition:none}}
 
+/* Sunday weekly review */
+.reviewbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;padding:10px 16px;border-radius:14px}
+.reviewbar b{font:600 14px/1.4 var(--display)}
+.reviewbar .rv-txt{flex:1 1 220px;min-width:0;color:var(--muted);font-size:13px}
+.reviewbar .rv-acts{display:flex;gap:8px}
+dialog.review{width:min(1000px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 32px);overflow:hidden}
+dialog.review[open]{display:flex;flex-direction:column}
+.rv-head,.rv-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--surface);position:sticky;z-index:1}
+.rv-head{top:0;border-bottom:1px solid var(--line)}
+.rv-foot{bottom:0;border-top:1px solid var(--line);padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.rv-head h2{font-size:22px;font-weight:500;white-space:nowrap}
+.rv-title{min-width:0}
+.rv-nav{display:flex;align-items:center;gap:6px}
+.rv-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:16px 20px;display:grid;gap:16px;align-content:start}
+.rv-card{background:var(--raise);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.rv-card h3{font:500 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.rv-card .rv-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rv-big{font:500 30px/1.1 var(--display)}
+.rv-big small{font:400 14px/1 var(--body);color:var(--muted);margin-left:4px}
+.rv-bar{height:8px;border-radius:4px;background:var(--track);overflow:hidden}
+.rv-bar i{display:block;height:100%;border-radius:4px}
+.rv-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rv-stat{display:flex;flex-direction:column;gap:3px;min-width:0}
+.rv-stat .rv-big{font-size:26px}
+.rv-meta{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;color:var(--muted)}
+.rv-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--fg)}
+.rv-chip i{width:8px;height:8px;border-radius:50%}
+.rv-list{list-style:none;margin:0;padding:0;display:grid}
+.rv-row{display:grid;grid-template-columns:4.6em 3.6em minmax(0,1fr) 5em auto;gap:4px 10px;align-items:center;padding:8px 2px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:14px}
+.rv-row:first-child{border-top:0}
+.rv-row .rv-m{color:var(--muted);font-size:12px}
+.rv-row .rv-t{border:0;background:none;color:var(--fg);font:inherit;text-align:left;padding:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.rv-row .rv-t:hover{color:var(--accent);text-decoration:underline}
+.rv-acts{display:flex;gap:6px}
+.rv-acts .btn{padding:5px 10px;font-size:12px}
+.rv-line{display:grid;grid-template-columns:6.4em minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:6px 2px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);font-size:14px}
+.rv-line:first-child{border-top:0}
+.rv-line .rv-m{color:var(--muted);font-size:12px}
+.rv-line .rv-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-line button.rv-t{border:0;background:none;color:var(--fg);font:inherit;text-align:left;padding:0}
+.rv-line button.rv-t:hover{color:var(--accent);text-decoration:underline}
+.rv-day{grid-template-columns:6.4em 5.5em minmax(0,1fr)}
+.rv-foot .rv-last{color:var(--muted);font-size:13px}
+@media (max-width:600px){
+  dialog.review{width:100%;height:100%;max-width:100%;max-height:100%;border-radius:0;border:0;margin:0}
+  .rv-head{padding:12px 14px}.rv-foot{padding-left:14px;padding-right:14px}.rv-body{padding:14px}
+  .rv-head h2{font-size:18px;white-space:normal}
+  .rv-two{gap:8px}
+  .rv-row{grid-template-columns:3.6em 3.2em minmax(0,1fr)}
+  .rv-row .rv-c{display:none}
+  .rv-row .rv-acts{grid-column:1/-1}.rv-row .rv-acts .btn{flex:1 1 0;min-width:0;white-space:normal}
+  .rv-line{grid-template-columns:5.6em minmax(0,1fr)}.rv-line .rv-tag{display:none}
+  .rv-day{grid-template-columns:5.6em 4.6em minmax(0,1fr)}
+}
+@media (max-width:760px){.rv-row .rv-c{white-space:nowrap}}
+
 /* fitness placeholders */
 .later-card{border-style:dashed;background:transparent;display:grid;gap:4px;align-content:start}
 .later-card p{margin:0;color:var(--muted);font-size:14px}
@@ -558,6 +614,7 @@ dialog.sheet form{padding:0}
   </div>
 
   <section id="v-home" class="home">
+    <div class="panel reviewbar" id="reviewBanner" hidden></div>
     <div class="panel" id="homeToday"></div>
     <div class="panel addbox" id="addBox">
       <div class="pair addbtns">
@@ -640,7 +697,7 @@ dialog.sheet form{padding:0}
   </form>
   <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
 <dialog id="moreDlg" class="sheet"><div class="sheet-in"><div class="grab"></div>
-  <div class="more"><button class="btn" type="button" data-go="paper">Paper</button><button class="btn" type="button" data-go="people">Family &amp; Friends</button><button class="btn" type="button" data-go="notes">Notes</button><button class="btn" type="button" data-go="setup">Setup</button><button class="btn" type="button" data-go="settings">Settings</button></div>
+  <div class="more"><button class="btn" type="button" data-go="paper">Paper</button><button class="btn" type="button" data-go="people">Family &amp; Friends</button><button class="btn" type="button" data-go="notes">Notes</button><button class="btn" type="button" data-go="setup">Setup</button><button class="btn" type="button" data-go="settings">Settings</button><button class="btn" type="button" data-review-open>Weekly review</button></div>
   <button class="btn" type="button" data-sheetclose>Close</button></div></dialog>
 
 <dialog id="themeDlg"><form method="dialog" class="themeform">
@@ -664,6 +721,13 @@ dialog.sheet form{padding:0}
   <div class="checks"><label><input type="checkbox" id="fDone"> Done</label><label><input type="checkbox" id="fCd"> Countdown on Home</label><label title="Events show on the Upcoming calendar. Multi-day items always do."><input type="checkbox" id="fEvent"> ★ Event (shows on the calendar)</label></div>
   <div class="dlg-acts"><button class="btn btn-danger" type="button" id="itemDel">Delete</button><div><button class="btn" type="button" data-close>Cancel</button><button class="btn btn-primary" type="submit">Save</button></div></div>
 </form></dialog>
+
+<dialog id="reviewDlg" class="review" aria-labelledby="reviewTitle">
+  <div class="rv-head"><div class="rv-title"><div class="eyebrow">Weekly review</div><h2 id="reviewTitle">Week of</h2></div>
+    <div class="rv-nav"><button class="btn" type="button" data-review-nav="-1" aria-label="Previous week">‹</button><button class="btn" type="button" data-review-nav="1" aria-label="Next week">›</button><button class="btn" type="button" data-review-close>Close</button></div></div>
+  <div class="rv-body" id="reviewBody"></div>
+  <div class="rv-foot"><span class="rv-last" id="reviewLast"></span><button class="btn btn-primary" type="button" data-review-done>Mark week reviewed</button></div>
+</dialog>
 
 <dialog id="personDlg"><form method="dialog" id="personForm">
   <h2>Person</h2>
@@ -1366,6 +1430,7 @@ function renderHomeWx(t) {
     <a class="go" href="${esc(setting('bom_link', '#'))}" target="_blank" rel="noopener">Full forecast ↗</a>`;
 }
 function renderHome() {
+  renderReviewBanner();
   const t = todayIso(), pay = paydayInfo(), its = itemsOn(t);
   const timed = its.filter(i => i.time).sort((a, b) => a.time.localeCompare(b.time)), rest = its.filter(i => !i.time);
   const bds = (state.data.People || []).filter(p => { const b = nextBday(p, t); return b && b.days === 0; });
@@ -1619,6 +1684,120 @@ function renderStats() {
   h += log.length ? rowFor(`<b>${y}</b>`, log, null) : '<tr><td colspan="14" class="muted" style="text-align:left">Nothing logged for this year yet.</td></tr>';
   $('statTable').innerHTML = h + '</tbody>';
 }
+
+/* ---------- Sunday weekly review ---------- */
+const rvDay = d => `${fmt(d, { weekday: 'short' })} ${fmt(d, { day: 'numeric', month: 'short' })}`;
+const reviewLast = () => toIso(setting('review_last', '')) || '';
+/* The Sunday that closes the week a review on day t is about; '' on any other weekday. */
+const reviewEnd = t => { const k = fromIso(t).getDay(); return k === 0 ? t : k === 1 ? addDays(t, -1) : ''; };
+function reviewWeek(t) {
+  let s = mondayOf(t);
+  if (t === s && reviewLast() !== addDays(t, -1)) s = addDays(s, -7);
+  return { start: s, end: addDays(s, 6) };
+}
+function reviewDue(t) { const e = reviewEnd(t); return !!e && reviewLast() !== e; }
+function renderReviewBanner() {
+  const b = $('reviewBanner'); if (!b) return;
+  const t = todayIso(); let skip = ''; try { skip = sessionStorage.getItem('brain-review-skip') || ''; } catch (e) {}
+  if (!reviewDue(t) || skip === reviewEnd(t)) { b.hidden = true; b.innerHTML = ''; return; }
+  b.innerHTML = `<b>Sunday review</b><span class="rv-txt">Look back at this week and set up the next.</span>
+    <span class="rv-acts"><button class="btn btn-primary" type="button" data-review-open>Start review</button><button class="btn btn-ghost" type="button" data-review-skip>Not now</button></span>`;
+  b.hidden = false;
+}
+/* People who are due a catch-up and have none planned: the same rule as the Family & Friends tab. */
+function peopleDueUnplanned(t) {
+  const since = p => p.seen ? dayDiff(p.seen, t) : null;
+  const isDue = p => p.tosee || (p.every && (since(p) == null || since(p) >= p.every));
+  const planned = p => p.ndate && p.ndate >= t;
+  return (state.data.People || []).filter(p => isDue(p) && !planned(p)).sort((a, b) => (since(b) ?? 1e9) - (since(a) ?? 1e9) || a.name.localeCompare(b.name));
+}
+const rvInWeek = (p, s, e) => !!p.date && p.date <= e && (isMulti(p) ? p.end : p.date) >= s;
+const rvMoveTarget = end => { const n = addDays(end, 1), t = todayIso(); return n < t ? t : n; };
+function rvTitle(s, e) {
+  const a = fromIso(s), b = fromIso(e), mo = d => fmt(iso(d), { month: 'short' });
+  return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${mo(b)}` : `${a.getDate()} ${mo(a)}–${b.getDate()} ${mo(b)}`;
+}
+function renderReview() {
+  const s = state.rvStart || reviewWeek(todayIso()).start, e = addDays(s, 6), t = todayIso(), n1 = addDays(s, 7), n2 = addDays(s, 13);
+  const plan = state.data.Plan || [], wk = plan.filter(p => rvInWeek(p, s, e)), done = wk.filter(p => p.done).length;
+  const pct = wk.length ? done / wk.length : 0, pcol = pct >= 0.8 ? 'var(--ok)' : 'var(--under)';
+  const events = wk.filter(p => hasStar(p.type)).length, social = wk.filter(p => p.cat === 'Social').length;
+  const log = (state.data.Log || []).filter(r => r.date >= s && r.date <= e);
+  const mid = addDays(s, 3), plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const stat = (k, label) => {
+    const v = log.filter(r => r[k] != null), avg = v.length ? v.reduce((a, r) => a + r[k], 0) / v.length : null, goal = metricMonth(k, mid).goal;
+    const has = avg != null && goal, up = has && avg >= goal, col = up ? 'var(--ok)' : 'var(--under)';
+    const word = avg == null ? 'Nothing logged' : !goal ? 'No goal set' : up ? 'Above goal' : 'Under goal';
+    return `<div class="rv-stat" data-rv-stat="${k}"><span class="sub">${label}</span><div class="rv-big">${avg == null ? '–' : nf0(avg)}<small>a day</small></div>
+      <span class="sub">${has ? `<b style="color:${col};font-weight:600">${word}</b>` : word}${goal ? ' · goal ' + nf0(goal) : ''}</span></div>`;
+  };
+  const logged = log.filter(r => r.steps != null || r.km != null || r.act != null || r.pages != null || r.mood).length;
+  const MOODS = [['G', 'Good'], ['F', 'Fair'], ['P', 'Poor'], ['B', 'Bad']];
+  const moods = MOODS.map(([k, n]) => [k, n, log.filter(r => r.mood === k).length]).filter(x => x[2]);
+  const open = wk.filter(p => !p.done && !isMulti(p)).sort((a, b) => a.date.localeCompare(b.date) || (a.time || '99').localeCompare(b.time || '99') || a.title.localeCompare(b.title));
+  const mv = rvMoveTarget(e), mvLabel = mv === t ? 'Move to today' : 'Move to ' + rvDay(mv);
+  const openHtml = open.length ? `<ul class="rv-list">${open.map(p => `<li class="rv-row" data-rv-row="${esc(p.id)}"><span class="rv-m">${esc(fmt(p.date, { weekday: 'short' }))}</span><span class="rv-m">${esc(p.time || '')}</span>
+      <button class="rv-t" type="button" data-rv-edit="${esc(p.id)}" title="${esc(p.title)}">${esc(p.title)}</button><span class="rv-m rv-c">${esc(p.cat)}</span>
+      <span class="rv-acts"><button class="btn" type="button" data-rv-done="${esc(p.id)}">Done</button><button class="btn" type="button" data-rv-move="${esc(p.id)}">${esc(mvLabel)}</button><button class="btn btn-danger" type="button" data-rv-del="${esc(p.id)}">Remove</button></span></li>`).join('')}</ul>`
+    : '<p class="empty">Nothing left open. Nice week.</p>';
+  const due = peopleDueUnplanned(t), dueHtml = due.length ? `<ul class="rv-list">${due.slice(0, 6).map(p => `<li class="rv-line" style="grid-template-columns:minmax(0,1fr) auto"><button class="rv-t" type="button" data-rv-person="${esc(p.id)}">${esc(p.name)}</button><span class="rv-m">${p.seen ? dayDiff(p.seen, t) + ' days ago' : 'not logged'}</span></li>`).join('')}</ul>${due.length > 6 ? `<span class="rv-m sub">+ ${due.length - 6} more on Family &amp; Friends</span>` : ''}` : '<p class="empty">Nobody is due a catch-up.</p>';
+  const ahead = [];
+  plan.filter(p => rvInWeek(p, n1, n2) && (hasStar(p.type) || isMulti(p))).forEach(p => ahead.push({ d: p.date < n1 ? n1 : p.date, t: p.title, tag: isMulti(p) ? 'Multi-day' : 'Event', plan: p.id }));
+  (state.data.People || []).forEach(p => { const b = nextBday(p, n1); if (b && b.date <= n2) ahead.push({ d: b.date, t: `${p.name}'s birthday${b.turning ? ', turns ' + b.turning : ''}`, tag: 'Birthday' }); });
+  const pay = paydayInfo(); for (let i = 0; i < 7; i++) { const d = addDays(n1, i); if (pay.is(d)) ahead.push({ d, t: 'Payday', tag: 'Payday' }); }
+  plan.filter(p => p.cd && rvInWeek(p, n1, n2) && !ahead.some(a => a.plan === p.id)).forEach(p => ahead.push({ d: p.date, t: p.title, tag: 'Countdown', plan: p.id }));
+  ahead.sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t));
+  const aheadHtml = ahead.length ? `<ul class="rv-list">${ahead.map(a => `<li class="rv-line"><span class="rv-m">${esc(rvDay(a.d))}</span><span class="rv-t" title="${esc(a.t)}">${esc(a.t)}</span><span class="rv-m rv-tag">${esc(a.tag)}</span></li>`).join('')}</ul>` : '<p class="empty">A quiet week ahead.</p>';
+  const days = Array.from({ length: 7 }, (_, i) => addDays(n1, i)).map(d => { const its = itemsOn(d), st = its.filter(p => hasStar(p.type));
+    return `<li class="rv-line rv-day"><span class="rv-m">${esc(rvDay(d))}</span><span class="rv-m">${its.length ? plural(its.length, 'task') : 'No tasks'}</span><span class="rv-t">${st.map(p => '★ ' + esc(p.title)).join(' · ')}</span></li>`; }).join('');
+  const last = reviewLast(), canNext = s < mondayOf(t);
+  $('reviewBody').innerHTML = `<div class="pair">
+      <div class="rv-card" id="rvPlans"><h3>Plans</h3>${wk.length ? `<div class="rv-big">${done} of ${wk.length} done</div><div class="rv-bar"><i style="width:${Math.round(pct * 100)}%;background:${pcol}"></i></div>` : '<div class="rv-big">–<small>nothing planned</small></div><div class="rv-bar"></div>'}
+        <div class="rv-meta">${plural(events, 'event')} · ${social} social</div></div>
+      <div class="rv-card" id="rvFit"><h3>Fitness</h3><div class="rv-two">${stat('steps', 'Average steps')}${stat('pages', 'Average pages')}</div>
+        <div class="rv-meta"><span>Days logged ${logged} of 7</span>${moods.map(([k, n, c]) => `<span class="rv-chip" data-mood="${k}"><i style="background:var(--m-${k})"></i>${n} ${c}</span>`).join('')}</div></div></div>
+    <div class="rv-card" id="rvOpen"><div class="rv-hd"><h3>Still open</h3><span class="sub">${open.length}</span></div>${openHtml}</div>
+    <div class="pair">
+      <div class="rv-card" id="rvPeople"><h3>People to see</h3>${dueHtml}</div>
+      <div class="rv-card" id="rvAhead"><h3>Coming up next week</h3>${aheadHtml}</div></div>
+    <div class="rv-card" id="rvNext"><div class="rv-hd"><h3>Next week</h3><button class="btn btn-primary" type="button" data-review-plan>Plan my week</button></div><ul class="rv-list">${days}</ul></div>`;
+  $('reviewTitle').textContent = 'Week of ' + rvTitle(s, e);
+  document.querySelector('[data-review-nav="1"]').disabled = !canNext;
+  $('reviewLast').textContent = last ? 'Last reviewed: ' + rvDay(last) : 'Not reviewed yet';
+}
+function openReview() { state.rvStart = reviewWeek(todayIso()).start; renderReview(); if (!$('reviewDlg').open) $('reviewDlg').showModal(); $('reviewBody').scrollTop = 0; }
+async function rvSaveReviewed() {
+  const end = addDays(state.rvStart, 6), r = (state.data.Settings || []).find(x => x.key === 'review_last');
+  $('reviewDlg').close();
+  if (!state.live) { toast('Connect to save the review'); return; }
+  if (await withBusy('Saving…', () => r ? updateRow('Settings', { ...r, value: end }) : addRows('Settings', [{ key: 'review_last', value: end, notes: '' }]))) { toast('Week reviewed'); renderReviewBanner(); }
+}
+const rvRefresh = () => { const w = () => state.busy ? setTimeout(w, 120) : $('reviewDlg').open && renderReview(); setTimeout(w, 80); };
+['itemDlg', 'personDlg'].forEach(id => $(id).addEventListener('close', () => { if ($('reviewDlg').open) rvRefresh(); }));
+$('reviewDlg').addEventListener('click', e => { if (e.target === $('reviewDlg')) $('reviewDlg').close(); });
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-review-open],[data-review-skip],[data-review-nav],[data-review-done],[data-review-close],[data-review-plan],[data-rv-done],[data-rv-move],[data-rv-del],[data-rv-edit],[data-rv-person]'); if (!el) return;
+  const sheet = el.closest('dialog.sheet'), d = el.dataset;
+  if (el.hasAttribute('data-review-open')) { if (sheet) sheet.close(); openReview(); return; }
+  if (el.hasAttribute('data-review-skip')) { try { sessionStorage.setItem('brain-review-skip', reviewEnd(todayIso())); } catch (x) {} renderReviewBanner(); return; }
+  if (el.hasAttribute('data-review-close')) { $('reviewDlg').close(); return; }
+  if (d.reviewNav) { const n = addDays(state.rvStart, 7 * Number(d.reviewNav)); if (n <= mondayOf(todayIso())) { state.rvStart = n; renderReview(); $('reviewBody').scrollTop = 0; } return; }
+  if (el.hasAttribute('data-review-done')) { await rvSaveReviewed(); return; }
+  if (el.hasAttribute('data-review-plan')) {
+    const nxt = addDays(state.rvStart, 7); $('reviewDlg').close(); $('planBtn').click();
+    if ([...$('planWeek').options].some(o => o.value === nxt)) { $('planWeek').value = nxt; buildPlan(); }
+    return;
+  }
+  if (d.rvPerson) { const p = (state.data.People || []).find(x => x.id === d.rvPerson); if (p) openPerson(p); return; }
+  const id = d.rvDone || d.rvMove || d.rvDel || d.rvEdit, p = findPlan(id); if (!p) return;
+  if (d.rvEdit) { openItem(p); return; }
+  if (d.rvDel) {
+    if (el.dataset.armed !== '1') { el.dataset.armed = '1'; el.textContent = 'Remove?'; setTimeout(() => { if (el.isConnected && el.dataset.armed === '1') { el.dataset.armed = ''; el.textContent = 'Remove'; } }, 3000); return; }
+    await withBusy('Removing…', () => deleteRow('Plan', p));
+  } else if (d.rvDone) await withBusy('Saving…', () => updateRow('Plan', { ...p, done: true }));
+  else await withBusy('Saving…', () => updateRow('Plan', { ...p, date: rvMoveTarget(addDays(state.rvStart, 6)), end: '' }));
+  if ($('reviewDlg').open) renderReview();
+});
 
 /* ---------- render: fitness trend chart ---------- */
 const TR_STATS = [['steps', 'Steps'], ['km', 'KM'], ['act', 'Active mins'], ['pages', 'Pages']];
