@@ -2166,7 +2166,7 @@ const SF = {
   Goals: [['year', 'Year', 'num'], ['month', 'Month', 'mon', MON_OPTS], ['steps', 'Steps', 'num'], ['km', 'KM', 'num'], ['act', 'Active mins', 'num'], ['pages', 'Pages', 'num']],
   Links: [['name', 'Name', 'text', 0, 1], ['cat', 'Category', 'list'], ['url', 'URL', 'url', 0, 1], ['pin', 'Pin', 'chk'], ['order', 'Order', 'num'], ['notes', 'Notes', 'text', 0, 1]]
 };
-const SETUP_KEYS = [['theme', 'Theme (auto, nebula, ember, solar, citrine, verdant or stone)', 'text'], ['payday_anchor', 'A recent payday', 'date'], ['payday_every', 'Days between paydays', 'number'], ['birthday_window', 'Show birthdays this many days ahead', 'number'], ['weather_place', 'Weather place name', 'text'], ['weather_lat', 'Weather latitude', 'number'], ['weather_lon', 'Weather longitude', 'number'], ['bom_link', 'BOM forecast link', 'url'], ['paper_url', 'Paper link', 'url']];
+const SETUP_KEYS = [['theme', 'Theme (auto, nebula, ember, solar, citrine, verdant or stone)', 'text'], ['review_last', 'Last weekly review (the Sunday it covered)', 'date'], ['payday_anchor', 'A recent payday', 'date'], ['payday_every', 'Days between paydays', 'number'], ['birthday_window', 'Show birthdays this many days ahead', 'number'], ['weather_place', 'Weather place name', 'text'], ['weather_lat', 'Weather latitude', 'number'], ['weather_lon', 'Weather longitude', 'number'], ['bom_link', 'BOM forecast link', 'url'], ['paper_url', 'Paper link', 'url']];
 function sInput([c, l, t, opt, wide], v) {
   const a = `name="${c}" aria-label="${l}"`;
   if (t === 'chk') return `<label class="c"><span class="lt">${l}</span><input type="checkbox" ${a} ${v ? 'checked' : ''}></label>`;
