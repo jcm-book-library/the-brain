@@ -370,7 +370,7 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 #searchBtn kbd{display:none;font:inherit;font-size:11px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 5px;line-height:17px}
 @media (min-width:900px){#searchBtn kbd{display:inline-block}}
 @media (max-width:520px){#searchBtn .slabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}#searchBtn svg{margin-right:0}.status{gap:6px}.status .btn{padding:7px 9px}}
-#searchDlg{width:min(640px,calc(100vw - 32px));max-width:none;margin:min(12vh,96px) auto auto;overflow:hidden}
+#searchDlg{width:min(640px,calc(100vw - 32px));max-width:none;margin:min(12vh,96px) auto auto;overflow:hidden;background:linear-gradient(var(--raise),var(--raise)),var(--bg);backdrop-filter:none}
 #searchDlg[open]{display:flex;flex-direction:column;max-height:min(560px,calc(100vh - 2 * min(12vh,96px)))}
 #searchDlg .sbox{display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);flex:none}
 #searchDlg .sbox svg{width:16px;height:16px;flex:none;color:var(--muted)}
