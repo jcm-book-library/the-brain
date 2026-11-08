@@ -113,7 +113,7 @@ async function scenario(browser, name, w, run, init = INIT) {
   page.on('pageerror', e => errors.push(name + ': ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(name + ': ' + m.text()); });
   await install(page, w);
-  await page.addInitScript(i => { if (sessionStorage.getItem('__seeded')) return; sessionStorage.setItem('__seeded', '1'); Object.entries(i).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v))); }, init);
+  await page.addInitScript(i => { if (!i.__noSheetCopy) window.__TEST_SHEET_COPY__ = true; if (sessionStorage.getItem('__seeded')) return; sessionStorage.setItem('__seeded', '1'); Object.entries(i).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v))); }, init);
   try { await page.goto('https://brain.test/'); await page.waitForSelector('#status[data-state=live]', { timeout: 8000 }); await run(page); }
   catch (e) { check(name + ' ran without throwing', false, String(e.message).slice(0, 300)); }
   await ctx.close();
@@ -200,7 +200,7 @@ const old = ['Plan backup 2026-01-01', 'Plan backup 2026-01-02', 'Plan backup 20
   await scenario(b, 'sheetmode', w4, async page => {
     await openSet(page);
     check('label follows source: Sheet mode copies to Supabase', (await page.locator('#sbCopy').innerText()).includes('Copy Sheet → Supabase'));
-  }, { ...INIT, brain_config: { clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' } });
+  }, { ...INIT, brain_config: { backend: 'sheets', clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' } });
 
   await b.close();
   log.forEach(l => console.log(l));

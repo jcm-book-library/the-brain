@@ -1,6 +1,6 @@
-# Supabase pilot: setup
+# Supabase: setup
 
-The Brain can read and write a Supabase database instead of the Google Sheet. **The Sheet stays the default** until you switch over; the Supabase copy is for trying out. The Sheet is only ever read by the copy, never changed.
+The Brain runs on Supabase (switched over 8 Nov 2026): every device uses it unless that device has picked **Google Sheet (archive)** in Settings. The Sheet is the archive, kept up to date by **Copy Supabase → Sheet** (weekly). Copy Sheet → Supabase is gone, so the archive can never overwrite live data. The steps below are kept for reference (rebuilding, or a new device).
 
 Project: `jcm-apps` (Sydney), `https://apeflgdzclpxiktaxyfk.supabase.co`. Tables live in the `brain` schema.
 
@@ -87,7 +87,7 @@ Even without this, other accounts couldn't see your data: Row Level Security onl
 
 ## 7. Try it
 
-- **Settings → Where your data lives → Supabase (pilot) → Save & connect.** The status shows "Supabase · <time>".
+- **Settings → Where your data lives → Supabase → Save & connect.** The status shows "Supabase · <time>".
 - Settings, Routine, Goals and Links are edited on the **Setup** tab (in either mode), so you don't need the Sheet or the Supabase dashboard for them.
 - Each device remembers its own choice.
 

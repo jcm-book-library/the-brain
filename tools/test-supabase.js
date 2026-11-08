@@ -126,7 +126,7 @@ async function scenario(browser, name, { init = {}, vp = { width: 1280, height: 
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(name + ': ' + m.text()); });
   const w = world(); w.page = page; w.warns = []; page.on('console', m => { if (m.type() === 'warning') w.warns.push(m.text()); }); if (setup) setup(w);
   await install(page, w);
-  await page.addInitScript(i => { if (sessionStorage.getItem('__seeded')) return; sessionStorage.setItem('__seeded', '1'); Object.entries(i).forEach(([k, v]) => localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v))); }, init);
+  await page.addInitScript(i => { if (!i.__noSheetCopy) window.__TEST_SHEET_COPY__ = true; if (sessionStorage.getItem('__seeded')) return; sessionStorage.setItem('__seeded', '1'); Object.entries(i).forEach(([k, v]) => localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v))); }, init);
   try { await page.goto(url); await run(page, w); } catch (e) { check(name + ' ran without throwing', false, String(e.message).slice(0, 300)); }
   await ctx.close();
 }
@@ -155,7 +155,7 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
   } });
 
   // 2. Copy Sheet -> Supabase
-  const copyInit = { 'jm-google-token': { t: 'x', exp: Date.now() + 3600e3 }, 'brain_config': { clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' }, ...ses() };
+  const copyInit = { 'jm-google-token': { t: 'x', exp: Date.now() + 3600e3 }, 'brain_config': { backend: 'sheets', clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' }, ...ses() };
   const pressCopy = async page => { await page.click('#settingsBtn'); await page.waitForSelector('#setDlg[open]'); await page.click('#sbCopy'); await page.click('#sbCopy');
     await page.waitForFunction(() => /^(Copied|Copy stopped)/.test(document.getElementById('sbMsg').textContent), null, { timeout: 8000 }); return page.locator('#sbMsg').innerText(); };
   await scenario(b, 'copy', { init: copyInit, setup: w => { w.insert('plan', { id: 'old', date: T, title: 'stale row' }); }, run: async (page, w) => {
@@ -496,6 +496,18 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     const pv = await page.locator('#sbMsg').innerText();
     check('copy: the preview does not list the Log tab or any feed value', !/Log/.test(pv) && !/999|500/.test(pv), pv);
     check('copy: no Sheet write carries a feed value', w.sheetCalls.every(c => c.startsWith('GET ')), w.sheetCalls.filter(c => !c.startsWith('GET')));
+  } });
+  // Switched over: no saved choice means Supabase; in Sheet mode the copy to Supabase is hidden and refuses
+  await scenario(b, 'switched-over-default', { init: { 'brain_config': { clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' }, ...ses() }, run: async (page) => {
+    await live(page);
+    check('switch-over: a device with no saved choice loads from Supabase', (await page.evaluate(() => useSb())) === true && /Supabase/.test(await page.locator('#statusText').innerText()));
+  } });
+  await scenario(b, 'switched-over-sheet-mode', { init: { ...copyInit, __noSheetCopy: 1 }, run: async (page, w) => {
+    await page.click('#settingsBtn'); await page.waitForSelector('#setDlg[open]');
+    check('switch-over: Copy Sheet → Supabase is hidden in Sheet mode', await page.locator('#sbCopy').isHidden());
+    check('switch-over: Check is still there', await page.locator('#sbCheck').isVisible());
+    await page.evaluate(() => document.getElementById('sbCopy').click()); await page.waitForTimeout(400);
+    check('switch-over: the copy refuses and writes nothing to Supabase', writes(w).length === 0 && /the Sheet is the archive/.test(await page.locator('#sbMsg').innerText()));
   } });
   await scenario(b, 'feed-phone', { init: { ...cfgSb, ...ses() }, vp: { width: 390, height: 900 }, setup: feedSetup, run: async (page) => {
     await live(page); await page.click('.tab[data-tab=fitness]').catch(() => {});

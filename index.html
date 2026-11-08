@@ -803,7 +803,7 @@ dialog.sheet form{padding:0}
   <div class="field"><label for="sSheet">Google Sheet link or ID</label><input id="sSheet" required></div>
   <div class="field"><label for="sClient">OAuth Client ID</label><input id="sClient" placeholder="….apps.googleusercontent.com"></div>
   <p class="muted" style="margin:0;font-size:13px">Both are saved in this browser only. The Client ID is the same one your book library uses. Paydays, weather location and birthday window live on the sheet's Settings tab.</p>
-  <div class="field"><label for="sSource">Where your data lives</label><select id="sSource"><option value="sheets">Google Sheet</option><option value="supabase">Supabase (pilot)</option></select></div>
+  <div class="field"><label for="sSource">Where your data lives</label><select id="sSource"><option value="supabase">Supabase</option><option value="sheets">Google Sheet (archive)</option></select></div>
   <div class="sb-box">
     <p class="muted" id="sbState" style="margin:0;font-size:13px"></p>
     <div class="sb-acts" id="sbEmailRow"><input id="sbEmail" type="email" autocomplete="username" placeholder="Your email" aria-label="Email for Supabase sign-in"><button class="btn" type="button" id="sbMail">Email me a sign-in link</button></div>
@@ -894,7 +894,7 @@ const g = {
   }
 };
 
-/* ---------- Supabase (pilot: switched on in Settings; the Sheet stays the default until switch-over) ---------- */
+/* ---------- Supabase (the default since switch-over; a device can still choose the Sheet archive in Settings) ---------- */
 // The publishable key is meant to be public: Row Level Security only lets a signed-in owner see their own rows.
 const SB = { url: 'https://apeflgdzclpxiktaxyfk.supabase.co', key: 'sb_publishable_AHVRXW-Zi3lLaHilBab1Sg_fPzPvWcg', schema: 'brain', sesKey: 'jcm-sb-session', lock: 'jcm-sb-refresh' };
 /* Sign-in is shared by every jcm-book-library app on this device (they all live on jcm-book-library.github.io): one session under
@@ -924,7 +924,10 @@ const SBT = {
 };
 /* Columns that must be unique in Supabase (checked before a copy so it can't half-fail). */
 const SB_UNIQUE = { Plan: ['id'], Log: ['date'], Goals: ['year', 'month'], People: ['id'], Lists: ['id'], Notes: ['id'], Settings: ['key'] };
-const useSb = () => g.cfg().backend === 'supabase';
+/* Switched over: Supabase is where the data lives unless this device has chosen the Sheet. The Sheet is the archive, kept up
+   to date by Copy Supabase → Sheet; copying the other way would overwrite live data, so it is hidden (tests can still reach it). */
+const useSb = () => g.cfg().backend !== 'sheets';
+const sheetCopyAllowed = () => !!window.__TEST_SHEET_COPY__;
 const withLock = fn => (typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request) ? navigator.locks.request(SB.lock, fn) : fn();
 const jwtClaims = t => { try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return {}; } };
 const sb = {
@@ -2530,16 +2533,17 @@ function drawSb() {
   const s = sb.ses();
   $('sbState').textContent = s && s.rt ? 'Supabase: signed in' + (s.email ? ' as ' + s.email : '') + '. You stay signed in on this device until you sign out.' : 'Supabase: not signed in on this device.';
   $('sbIn').hidden = $('sbEmailRow').hidden = $('sbPwRow').hidden = !!(s && s.rt); $('sbSetRow').hidden = !(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbOutNote').hidden = $('sbCopy').hidden = $('sbCheck').hidden = !(s && s.rt);
+  if (!useSb() && !sheetCopyAllowed()) $('sbCopy').hidden = true;
   $('sbCopy').dataset.armed = ''; $('sbCopy').textContent = copyLabel();
 }
 /* The copy always goes from the source in use to the other one, so it can never overwrite what you're working in. */
 const copyLabel = () => useSb() ? 'Copy Supabase → Sheet' : 'Copy Sheet → Supabase';
-function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend || 'sheets'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
+function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend === 'sheets' ? 'sheets' : 'supabase'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
 $('setForm').addEventListener('submit', e => {
   const sh = $('sSheet').value.trim(), m = sh.match(/\/d\/([\w-]{20,})/), id = m ? m[1] : sh, cl = $('sClient').value.trim();
   if (!/^[\w-]{20,}$/.test(id)) { e.preventDefault(); $('setMsg').textContent = 'That doesn\'t look like a sheet link or ID.'; return; }
   if (cl && !/\.apps\.googleusercontent\.com$/.test(cl)) { e.preventDefault(); $('setMsg').textContent = 'That doesn\'t look like a Client ID.'; return; }
-  const was = g.cfg().backend || 'sheets', src = $('sSource').value;
+  const was = useSb() ? 'supabase' : 'sheets', src = $('sSource').value;
   g.saveCfg({ sheetId: id, clientId: cl, backend: src }); g.client = null;
   if (src !== was) state.live = false;
   connect();
@@ -2596,6 +2600,7 @@ $('sbOut').addEventListener('click', async () => { await sb.signOut(); drawSb();
 let sheetPlan = null;
 $('sbCopy').addEventListener('click', async e => {
   const b = e.currentTarget, toSheet = useSb(), say = m => { $('sbMsg').textContent = m; };
+  if (!toSheet && !sheetCopyAllowed()) { say('Supabase is where your data lives now; the Sheet is the archive. Changes made in Sheet mode don\'t reach Supabase.'); return; }
   const disarm = () => { b.dataset.armed = ''; b.textContent = copyLabel(); sheetPlan = null; };
   if (!g.valid()) { say('Connect to Google first (the copy ' + (toSheet ? 'writes to' : 'reads') + ' your Sheet). A Google window will open; then press Copy again.'); googleSignIn(); return; }
   if (b.dataset.armed !== '1') {
