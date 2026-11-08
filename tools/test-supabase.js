@@ -47,7 +47,8 @@ function parseA1(r) { const [tab, rng] = r.split('!'); const [a, b] = rng.split(
 
 // A fresh world: fake Sheets + fake Supabase, each with its own call log.
 function world() {
-  const w = { sheets: sheetsDb(), sheetCalls: [], sb: {}, sbCalls: [], nextId: 1, refreshes: 0, logouts: 0, forced401: 0, authorize: [] };
+  const w = { sheets: sheetsDb(), sheetCalls: [], sb: {}, sbCalls: [], nextId: 1, refreshes: 0, logouts: 0, forced401: 0, authorize: [], sharedCalls: [], activity: [] };
+  w.feed = (date, amount, extra = {}) => w.activity.push({ date, app: 'books', item_id: 1, title: 'A Book', amount, unit: 'pages', logged_at: date + 'T10:00:00Z', source: 'tracker', note: null, ...extra });
   TABLES.forEach(t => { w.sb[t] = []; });
   w.insert = (t, o) => { w.sb[t].push({ row_id: w.nextId++, ...o }); };
   return w;
@@ -80,10 +81,20 @@ async function install(page, w) {
     if (u.pathname === '/auth/v1/token' && u.searchParams.get('grant_type') === 'password') { const b = JSON.parse(req.postData()); w.pwTries = (w.pwTries || []).concat(b);
       return b.password === 'correct horse battery staple' && b.email === 'me@example.com' ? json({ access_token: GOOD, refresh_token: 'rtP', expires_in: 3600, token_type: 'bearer' }) : json({ error_code: 'invalid_credentials', msg: 'Invalid login credentials' }, 400); }
     if (u.pathname === '/auth/v1/user' && method === 'PUT') { w.pwSet = { auth: h.authorization, apikey: h.apikey, body: JSON.parse(req.postData()) }; return json({ id: 'u1', email: 'me@example.com' }); }
-    if (u.pathname === '/auth/v1/token') { w.refreshes++; return json({ access_token: FRESH, refresh_token: 'rt2', expires_in: 3600 }); }
+    if (u.pathname === '/auth/v1/token') { w.refreshes++; if (w.onRefresh) await w.onRefresh(); if (w.refreshStatus) return json({ error: 'invalid_grant', error_description: 'Invalid Refresh Token' }, w.refreshStatus); return json({ access_token: FRESH, refresh_token: 'rt2', expires_in: 3600 }); }
     if (u.pathname === '/auth/v1/logout') { w.logouts++; return r.fulfill({ status: 204, body: '' }); }
     if (u.pathname === '/auth/v1/otp') { w.otp = (w.otp || []).concat({ url: req.url(), body: JSON.parse(req.postData()) }); return w.otpFail ? json({ msg: 'email rate limit exceeded' }, 429) : json({}); }
     if (u.pathname === '/auth/v1/authorize') { w.authorize.push(req.url()); return r.fulfill({ contentType: 'text/html', body: '<p>google</p>' }); }
+    if (u.pathname === '/rest/v1/activity') { // the Library's view in schema `shared`: read-only; every call is logged apart from the brain calls
+      w.sharedCalls.push({ method, query: u.search, headers: h, body: req.postData() });
+      if (h.authorization === 'Bearer ' + EXPIRED) { w.forced401++; return json({ message: 'JWT expired' }, 401); }
+      if (w.noView) return json({ code: 'PGRST205', message: "Could not find the table 'shared.activity' in the schema cache" }, 404);
+      if (h['accept-profile'] !== 'shared') return json({ message: 'wrong schema' }, 406);
+      if (method !== 'GET') return json({ message: 'a view cannot be written' }, 405);
+      const q = u.searchParams, app = (q.get('app') || '').replace(/^eq\./, ''), cols = (q.get('select') || '*').split(','), off = Number(q.get('offset') || 0), lim = Math.min(Number(q.get('limit') || 1000), 1000);
+      const rows = w.activity.filter(x => !app || x.app === app).sort((a, b) => a.date.localeCompare(b.date) || a.logged_at.localeCompare(b.logged_at)).map(x => cols[0] === '*' ? x : Object.fromEntries(cols.map(c => [c, x[c]])));
+      return json(rows.slice(off, off + lim));
+    }
     const m = u.pathname.match(/^\/rest\/v1\/(\w+)$/);
     if (!m || !w.sb[m[1]]) return json({ message: 'no such table' }, 404);
     const t = m[1], q = u.searchParams;
@@ -113,13 +124,13 @@ async function scenario(browser, name, { init = {}, vp = { width: 1280, height: 
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push(name + ': ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(name + ': ' + m.text()); });
-  const w = world(); if (setup) setup(w);
+  const w = world(); w.page = page; w.warns = []; page.on('console', m => { if (m.type() === 'warning') w.warns.push(m.text()); }); if (setup) setup(w);
   await install(page, w);
   await page.addInitScript(i => { if (sessionStorage.getItem('__seeded')) return; sessionStorage.setItem('__seeded', '1'); Object.entries(i).forEach(([k, v]) => localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v))); }, init);
   try { await page.goto(url); await run(page, w); } catch (e) { check(name + ' ran without throwing', false, String(e.message).slice(0, 300)); }
   await ctx.close();
 }
-const ses = (at = GOOD, exp = Date.now() + 3600e3) => ({ 'brain-sb-session': { at, rt: 'rt1', exp, email: 'me@example.com' } });
+const ses = (at = GOOD, exp = Date.now() + 3600e3) => ({ 'jcm-sb-session': { at, rt: 'rt1', exp, email: 'me@example.com' } });
 const cfgSb = { 'brain_config': { backend: 'supabase', clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' } };
 const live = page => page.waitForSelector('#status[data-state=live]', { timeout: 8000 });
 const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
@@ -130,7 +141,7 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
   // 1. Redirect return
   await scenario(b, 'redirect', { url: `https://brain.test/#access_token=${GOOD}&refresh_token=rtX&expires_in=3600&token_type=bearer`, run: async (page) => {
     await page.waitForSelector('#setDlg[open]');
-    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('brain-sb-session')));
+    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('jcm-sb-session')));
     check('redirect: session saved', s && s.at === GOOD && s.rt === 'rtX' && s.email === 'me@example.com' && s.exp > Date.now() + 3000e3, s);
     check('redirect: hash removed from URL', !(await page.evaluate(() => location.hash)) && !page.url().includes('access_token'), page.url());
     check('redirect: settings says signed in as email', (await page.locator('#setMsg').innerText()).includes('Signed in to Supabase as me@example.com'), await page.locator('#setMsg').innerText());
@@ -140,7 +151,7 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     await page.waitForSelector('#setDlg[open]');
     const m = await page.locator('#setMsg').innerText();
     check('redirect error: shows error text', m.includes('Signups not allowed'), m);
-    check('redirect error: hash removed, no session', !(await page.evaluate(() => location.hash)) && !(await page.evaluate(() => localStorage.getItem('brain-sb-session'))));
+    check('redirect error: hash removed, no session', !(await page.evaluate(() => location.hash)) && !(await page.evaluate(() => localStorage.getItem('jcm-sb-session'))));
   } });
 
   // 2. Copy Sheet -> Supabase
@@ -261,7 +272,7 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
   // 5. Token refresh
   await scenario(b, 'refresh-expired', { init: { ...cfgSb, ...ses(EXPIRED, Date.now() - 1000) }, setup: seedSbBasic, run: async (page, w) => {
     await live(page);
-    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('brain-sb-session')));
+    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('jcm-sb-session')));
     check('refresh: expired session -> exactly one refresh call', w.refreshes === 1, w.refreshes);
     check('refresh: new token stored (and refresh token rotated)', s.at === FRESH && s.rt === 'rt2' && s.exp > Date.now(), s);
     check('refresh: data loaded with new token, expired token never sent', w.forced401 === 0 && w.sbCalls.length > 0 && w.sbCalls.every(c => c.headers.authorization === 'Bearer ' + FRESH));
@@ -304,9 +315,9 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     await page.click('#sbPwIn'); check('password: asks for the email first', (await page.locator('#sbMsg').innerText()).includes('Type your email'));
     await page.fill('#sbEmail', 'me@example.com'); await page.click('#sbPwIn'); check('password: asks for the password', (await page.locator('#sbMsg').innerText()).includes('Type your password'));
     await page.fill('#sbPw', 'not the password'); await page.click('#sbPwIn'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Couldn'));
-    check('password: wrong password explained, still signed out', (await page.locator('#sbMsg').innerText()).includes('didn\'t match') && !(await page.evaluate(() => localStorage.getItem('brain-sb-session'))));
+    check('password: wrong password explained, still signed out', (await page.locator('#sbMsg').innerText()).includes('didn\'t match') && !(await page.evaluate(() => localStorage.getItem('jcm-sb-session'))));
     await page.fill('#sbPw', 'correct horse battery staple'); await page.press('#sbPw', 'Enter'); await page.waitForFunction(() => document.getElementById('sbMsg').textContent.includes('Signed in to Supabase'));
-    const t = (w.pwTries || []).slice(-1)[0], s = await page.evaluate(() => JSON.parse(localStorage.getItem('brain-sb-session')));
+    const t = (w.pwTries || []).slice(-1)[0], s = await page.evaluate(() => JSON.parse(localStorage.getItem('jcm-sb-session')));
     check('password: Enter signs in, session kept, dialog still open', t.email === 'me@example.com' && s && s.at === GOOD && s.rt === 'rtP' && s.email === 'me@example.com' && await page.isVisible('#setDlg[open]'), [t, s]);
     check('password: password box emptied and never stored', (await page.inputValue('#sbPw')) === '' && !(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).includes('correct horse'));
     check('password: sign-in rows hide, set-password and Check show', !(await page.locator('#sbPwRow').isVisible()) && await page.locator('#sbSetRow').isVisible() && await page.locator('#sbCheck').isVisible());
@@ -338,6 +349,160 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     await page.click('#sbCheck'); await page.waitForFunction(() => /differ/.test(document.getElementById('sbMsg').textContent), null, { timeout: 8000 });
     check('check: a row only in Supabase is named', /✗ Plan: .*1 only in Supabase/.test(await say()), await say());
     check('check: never writes to the Sheet', w.sheetCalls.every(c => c.startsWith('GET ') || c.startsWith('GET')), w.sheetCalls.filter(c => !c.startsWith('GET')));
+  } });
+
+  // 8. Shared sign-in: one session key for every jcm-book-library app
+  const OLD_SES = (at = GOOD, rt = 'rt1') => ({ 'brain-sb-session': { at, rt, exp: Date.now() + 3600e3, email: 'me@example.com' } });
+  await scenario(b, 'migrate-old-key', { init: { ...cfgSb, ...OLD_SES() }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page);
+    const m = await page.evaluate(() => ({ nu: JSON.parse(localStorage.getItem('jcm-sb-session')), old: localStorage.getItem('brain-sb-session') }));
+    check('migrate: an old brain-sb-session is moved to jcm-sb-session (owner stays signed in)', m.nu && m.nu.at === GOOD && m.nu.rt === 'rt1' && m.nu.email === 'me@example.com', m);
+    check('migrate: the old key is removed', m.old === null, m);
+    check('migrate: data loaded with the moved session, no sign-in asked for', w.sbCalls.length > 0 && w.sbCalls.every(c => c.headers.authorization === 'Bearer ' + GOOD) && w.refreshes === 0);
+  } });
+  await scenario(b, 'migrate-both-keys', { init: { ...cfgSb, ...ses(), ...OLD_SES('OLD_AT', 'rtOLD') }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page);
+    const m = await page.evaluate(() => ({ nu: JSON.parse(localStorage.getItem('jcm-sb-session')), old: localStorage.getItem('brain-sb-session') }));
+    check('migrate: with both keys, jcm-sb-session is kept as it was', m.nu && m.nu.at === GOOD && m.nu.rt === 'rt1', m);
+    check('migrate: with both keys, the old one is removed', m.old === null, m);
+  } });
+  await scenario(b, 'signout-note', { init: { ...cfgSb, ...ses() }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page); await page.click('#settingsBtn'); await page.waitForSelector('#setDlg[open]');
+    check('sign out: the note about every jcm-book-library app is shown with the button', await page.locator('#sbOut').isVisible() && (await page.locator('#sbOutNote').innerText()) === 'This signs you out of every jcm-book-library app on this device.', await page.locator('#sbOutNote').innerText());
+    await page.click('#sbOut'); await page.waitForFunction(() => /Signed out/.test(document.getElementById('sbMsg').textContent));
+    check('sign out: the shared session key is removed and the server is told', (await page.evaluate(() => localStorage.getItem('jcm-sb-session'))) === null && w.logouts === 1);
+    check('sign out: the note hides with the button', !(await page.locator('#sbOutNote').isVisible()));
+  } });
+  await scenario(b, 'token-concurrent', { init: { ...cfgSb, ...ses() }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page); await page.waitForTimeout(200); w.refreshes = 0;
+    const r = await page.evaluate(() => Promise.all([sb.token(true), sb.token(true)]));
+    check('token: two concurrent sb.token(true) make exactly one refresh request', w.refreshes === 1 && r[0] === FRESH && r[1] === FRESH, [w.refreshes, r]);
+    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('jcm-sb-session')));
+    check('token: the rotated session is stored under the shared key', s.at === FRESH && s.rt === 'rt2', s);
+  } });
+  await scenario(b, 'token-lock', { init: { ...cfgSb, ...ses() }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page); await page.waitForTimeout(200); w.refreshes = 0;
+    const r = await page.evaluate(async () => {
+      let release; const held = new Promise(res => { release = res; }), got = new Promise(res => { navigator.locks.request('jcm-sb-refresh', async () => { res(); await held; }); });
+      await got;                                            // another app holds the refresh lock
+      const p = sb.token(true); await new Promise(x => setTimeout(x, 150));
+      localStorage.setItem('jcm-sb-session', JSON.stringify({ at: 'NEWER_AT', rt: 'rtNEWER', exp: Date.now() + 3600e3, email: 'me@example.com' }));
+      release(); return p;                                  // it refreshed while we waited
+    });
+    check('token: waits for the lock, then uses the session the other app stored (no refresh request)', r === 'NEWER_AT' && w.refreshes === 0, [r, w.refreshes]);
+  } });
+  await scenario(b, 'refresh-400-newer', { init: { ...cfgSb, ...ses(EXPIRED, Date.now() - 1000) }, setup: w => { seedSbBasic(w); w.refreshStatus = 400;
+      w.onRefresh = () => w.page.evaluate(() => localStorage.setItem('jcm-sb-session', JSON.stringify({ at: 'NEWER_AT', rt: 'rtNEWER', exp: Date.now() + 3600e3, email: 'me@example.com' }))); }, run: async (page, w) => {
+    await live(page);
+    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('jcm-sb-session')));
+    check('refresh 400: when another app already stored a newer session, keep it instead of signing out', s && s.rt === 'rtNEWER' && w.refreshes === 1, [s, w.refreshes]);
+    check('refresh 400: data loaded with the newer session', w.sbCalls.length > 0 && w.sbCalls.every(c => c.headers.authorization === 'Bearer NEWER_AT') && (await page.evaluate(() => state.data.Plan.length)) === 3);
+  } });
+  await scenario(b, 'refresh-400-alone', { init: { ...cfgSb, ...ses(EXPIRED, Date.now() - 1000) }, setup: w => { seedSbBasic(w); w.refreshStatus = 400; }, run: async (page, w) => {
+    await page.waitForSelector('#notice:not([hidden])');
+    check('refresh 400: with no newer session, signs out as before', (await page.evaluate(() => localStorage.getItem('jcm-sb-session'))) === null && (await page.locator('#refreshBtn').innerText()) === 'Connect' && (await page.locator('#notice').innerText()).includes('Supabase') && w.sbCalls.length === 0);
+  } });
+
+  // 9. Pages from The Library (shared.activity)
+  const feedSetup = w => { seedSbBasic(w);
+    w.insert('log', { date: '2025-03-10', steps: 5000, km: 3, active_mins: 30, pages: 120, max_c: null, min_c: null, mood: 'G', note: '' });   // typed pages beat the feed
+    w.insert('log', { date: '2025-03-11', steps: 6000, km: null, active_mins: null, pages: null, max_c: null, min_c: null, mood: 'F', note: '' }); // blank pages: the feed applies
+    w.feed('2025-03-10', 30); w.feed('2025-03-10', 40);                                     // summed per day = 70, ignored
+    w.feed('2025-03-11', 50);
+    w.feed('2025-03-12', 25);                                                               // no Log row at all
+    w.feed('2025-03-13', 999, { app: 'other' });                                            // another app: not read
+    w.feed(T, 77);                                                                          // today, no Log row
+  };
+  const FEED_SHOWN = [['2025-03-10', 70], ['2025-03-11', 50], ['2025-03-12', 25]];
+  await scenario(b, 'feed', { init: { ...cfgSb, ...ses() }, setup: feedSetup, run: async (page, w) => {
+    await live(page);
+    const sc = w.sharedCalls[0] || {};
+    check('feed: read once with the signed-in token, schema `shared`, filtered to app=books', w.sharedCalls.length === 1 && sc.method === 'GET' && sc.headers['accept-profile'] === 'shared' && sc.headers.authorization === 'Bearer ' + GOOD && sc.headers.apikey && /select=date,amount/.test(decodeURIComponent(sc.query)) && /app=eq\.books/.test(sc.query) && /limit=1000/.test(sc.query), sc);
+    const f = await page.evaluate(() => [...state.feed.entries()]);
+    check('feed: amounts summed per date into state.feed (other apps left out)', JSON.stringify(Object.fromEntries(f)) === JSON.stringify({ '2025-03-10': 70, '2025-03-11': 50, '2025-03-12': 25, [T]: 77 }), f);
+    check('feed: state.data.Log is only what was typed (no feed-only rows, typed null stays null)', await page.evaluate(() => state.data.Log.length === 2 && state.data.Log.find(r => r.date === '2025-03-11').pages === null && state.data.Log.find(r => r.date === '2025-03-10').pages === 120));
+    // Home: today's feed-only day counts in the average
+    check('feed: Home "Average pages read" counts a feed-only day', (await page.locator('#homeStats [data-stat=pages] .big').innerText()).startsWith('77'), await page.locator('#homeStats [data-stat=pages] .big').innerText());
+    // Fitness: month tile, grid, year table, trend chart
+    await page.click('.tab[data-tab=fitness]');
+    await page.evaluate(() => { state.month = '2025-03'; renderMonth(); });
+    const tile = await page.locator('#monthPanel .tile', { hasText: 'Pages' }).first().locator('.num').innerText();
+    check('feed: month total pages = typed 120 + feed 50 + feed-only 25 (typed beats the feed)', tile === '195', tile);
+    check('feed: year-to-date line includes feed pages', (await page.locator('#monthPanel .ytd').innerText()).includes('195 pages'), await page.locator('#monthPanel .ytd').innerText());
+    const cell = d => page.locator(`.mgrid .v[data-logday="${d}"]`).nth(3);
+    check('feed: grid shows the typed 120 (no marker) on 10 Mar, feed 50 on 11 Mar and feed-only 25 on 12 Mar', (await cell('2025-03-10').innerText()) === '120' && (await cell('2025-03-11').innerText()) === '50' && (await cell('2025-03-12').innerText()) === '25');
+    check('feed: feed pages carry the "From The Library" label; typed ones do not', (await cell('2025-03-11').getAttribute('title')).includes('From The Library') && (await cell('2025-03-12').getAttribute('title')).includes('From The Library') && !(await cell('2025-03-10').getAttribute('title')).includes('From The Library') && (await cell('2025-03-10').getAttribute('data-feed')) === null);
+    await page.selectOption('#statYear', '2025');
+    const tr = await page.locator('#statTable tbody tr', { hasText: 'Mar' }).first().locator('td').allInnerTexts();
+    check('feed: year table, March average pages = (120 + 50 + 25) / 3 = 65', tr[8] === '65', tr);
+    await page.click('[data-trend-stat=pages]');
+    const tn = await page.locator('#trendPanel .tr-tiles .tile .num').first().innerText();
+    check('feed: trend chart draws a feed-only day (this month so far = 77)', tn === '77' && (await page.locator('#trendPanel svg').first().innerHTML()).includes('This month 77') && !(await page.locator('#trendPanel').innerText()).includes('Nothing logged yet'), tn);
+    // Log form
+    const form = async d => { await page.evaluate(x => { state.logDate = x; renderLog(); }, d); return page.evaluate(() => ({ v: document.getElementById('lPages').value, ph: document.getElementById('lPages').placeholder })); };
+    let fm = await form('2025-03-10'); check('feed: Log form shows the typed 120 and no placeholder', fm.v === '120' && fm.ph === '', fm);
+    fm = await form('2025-03-11'); check('feed: Log form, blank pages -> value stays blank, placeholder "50 from The Library"', fm.v === '' && fm.ph === '50 from The Library', fm);
+    fm = await form('2025-03-14'); check('feed: Log form, no feed for the day -> plain blank', fm.v === '' && fm.ph === '', fm);
+    // save with pages blank
+    await form('2025-03-11'); const b0 = w.sbCalls.length;
+    await page.fill('#lSteps', '6100'); await page.click('#logForm button[type=submit]');
+    await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live' && /Supabase/.test(document.getElementById('statusText').textContent)); await page.waitForTimeout(300);
+    let wr = w.sbCalls.slice(b0).filter(c => c.method !== 'GET');
+    check('feed: saving an existing day with pages blank -> one PATCH of the changed field, no pages value', wr.length === 1 && wr[0].method === 'PATCH' && wr[0].table === 'log' && JSON.stringify(wr[0].body) === '{"steps":6100}', wr.map(x => [x.method, x.body]));
+    await form('2025-03-12'); const b1 = w.sbCalls.length;
+    await page.fill('#lNote', 'quiet day'); await page.click('#logForm button[type=submit]');
+    await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live' && /Supabase/.test(document.getElementById('statusText').textContent)); await page.waitForTimeout(300);
+    wr = w.sbCalls.slice(b1).filter(c => c.method !== 'GET');
+    check('feed: saving a feed-only day with pages blank -> new row has no pages value', wr.length === 1 && wr[0].method === 'POST' && wr[0].table === 'log' && wr[0].body.length === 1 && wr[0].body[0].pages == null && wr[0].body[0].date === '2025-03-12', wr.map(x => [x.method, x.body]));
+    const saved = w.sb.log.find(r => r.date === '2025-03-12');
+    check('feed: stored Log rows hold only typed pages', saved && saved.pages == null && w.sb.log.find(r => r.date === '2025-03-11').pages === null && w.sb.log.find(r => r.date === '2025-03-10').pages === 120, w.sb.log);
+    await page.evaluate(() => { state.month = '2025-03'; renderMonth(); });
+    check('feed: after saving, the feed still fills the blank pages', (await cell('2025-03-12').innerText()) === '25' && (await cell('2025-03-11').innerText()) === '50');
+    check('feed: no write anywhere carries a feed value', writes(w).every(c => [].concat(c.body || []).every(o => o.pages == null || o.pages === 120)), writes(w).map(x => x.body));
+    check('feed: never a POST, PATCH or DELETE against `shared`', w.sharedCalls.length >= 1 && w.sharedCalls.every(c => c.method === 'GET'), w.sharedCalls.map(c => c.method));
+    check('feed: no console warning when the view works', w.warns.length === 0, w.warns);
+  } });
+  await scenario(b, 'feed-missing-view', { init: { ...cfgSb, ...ses() }, setup: w => { feedSetup(w); w.noView = true; }, run: async (page, w) => {
+    await live(page);
+    check('missing view (404): app loads and works, no error notice', (await page.locator('#notice').isHidden()) && (await page.locator('#homeToday').innerText()).includes('Strength & Conditioning') && (await page.locator('#statusText').innerText()).startsWith('Supabase ·'));
+    check('missing view: state.feed is an empty Map and exactly one console.warn', await page.evaluate(() => state.feed instanceof Map && state.feed.size === 0) && w.warns.filter(x => /The Library/.test(x)).length === 1, w.warns);
+    check('missing view: Home shows no pages from the feed', !(await page.locator('#homeStats [data-stat=pages] .big').innerText()).startsWith('77'));
+    await page.click('.tab[data-tab=fitness]'); await page.evaluate(() => { state.month = '2025-03'; renderMonth(); });
+    const tile = await page.locator('#monthPanel .tile', { hasText: 'Pages' }).first().locator('.num').innerText();
+    check('missing view: month shows only typed pages (120)', tile === '120', tile);
+    check('missing view: still no calls other than reads', writes(w).length === 0 && w.sharedCalls.every(c => c.method === 'GET'));
+  } });
+  await scenario(b, 'feed-paging', { init: { ...cfgSb, ...ses() }, setup: w => { seedSbBasic(w); for (let i = 0; i < 1500; i++) w.feed('2025-04-01', 1, { logged_at: '2025-04-01T' + pad(Math.floor(i / 60) % 24) + ':' + pad(i % 60) + ':00Z' }); for (let i = 0; i < 700; i++) w.feed('2025-04-02', 2, { logged_at: '2025-04-02T' + pad(Math.floor(i / 60) % 24) + ':' + pad(i % 60) + ':00Z' }); }, run: async (page, w) => {
+    await live(page);
+    const offs = w.sharedCalls.map(c => /offset=(\d+)/.exec(c.query)[1]);
+    check('feed paging: 2200 rows read 1000 at a time', offs.join() === '0,1000,2000', offs);
+    check('feed paging: all pages summed per day', await page.evaluate(() => state.feed.get('2025-04-01') === 1500 && state.feed.get('2025-04-02') === 1400));
+  } });
+  await scenario(b, 'feed-sheet-mode', { init: copyInit, setup: w => { w.feed(T, 5); }, run: async (page, w) => {
+    await live(page);
+    check('feed: Sheet mode never reads it, state.feed is empty', w.sharedCalls.length === 0 && (await page.evaluate(() => state.feed instanceof Map && state.feed.size === 0)));
+    check('feed: Sheet mode still shows the sheet\'s own pages (100, 120, 90)', await page.evaluate(() => statLog() === state.data.Log && state.data.Log.map(r => r.pages).join() === '100,120,90'));
+  } });
+  await scenario(b, 'feed-check-copy', { init: { ...copyInit, brain_config: { backend: 'supabase', clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' } }, setup: w => {
+      [[add(-3), 10000, 7.2, 60, 100, 18, 9, 'G', ''], [add(-2), 4000, 2.9, 30, 120, 15, 8, 'F', 'Rain'], [add(-1), 14000, 10.1, 120, 90, 20, 10, 'G', '']].forEach(([date, steps, km, a, pages, mx, mn, mood, note]) => w.insert('log', { date, steps, km, active_mins: a, pages, max_c: mx, min_c: mn, mood, note }));
+      w.feed(add(-3), 999); w.feed(add(-1), 1); w.feed(add(-10), 500); }, run: async (page, w) => {
+    await live(page);
+    check('check/copy: the feed was read', w.sharedCalls.length >= 1 && (await page.evaluate(() => state.feed.size)) === 3);
+    await page.click('#settingsBtn'); await page.waitForSelector('#setDlg[open]');
+    await page.click('#sbCheck'); await page.waitForFunction(() => /differ|match/.test(document.getElementById('sbMsg').textContent), null, { timeout: 8000 });
+    const m = await page.locator('#sbMsg').innerText();
+    check('check: Log matches (feed pages and feed-only days are not counted as differences)', /✓ Log/.test(m) && !/✗ Log/.test(m), m);
+    await page.click('#sbCopy'); await page.waitForFunction(() => !/^(Comparing|Checking|Reading|Check|They differ|Supabase and your Sheet match)/.test(document.getElementById('sbMsg').textContent) && document.getElementById('sbMsg').textContent.length > 0, null, { timeout: 8000 });
+    const pv = await page.locator('#sbMsg').innerText();
+    check('copy: the preview does not list the Log tab or any feed value', !/Log/.test(pv) && !/999|500/.test(pv), pv);
+    check('copy: no Sheet write carries a feed value', w.sheetCalls.every(c => c.startsWith('GET ')), w.sheetCalls.filter(c => !c.startsWith('GET')));
+  } });
+  await scenario(b, 'feed-phone', { init: { ...cfgSb, ...ses() }, vp: { width: 390, height: 900 }, setup: feedSetup, run: async (page) => {
+    await live(page); await page.click('.tab[data-tab=fitness]').catch(() => {});
+    await page.evaluate(() => { showTab('fitness'); state.month = '2025-03'; renderMonth(); state.logDate = '2025-03-11'; renderLog(); });
+    const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+    check('feed layout 390px: no horizontal scroll on the Fitness tab with feed pages', m.sw <= m.iw + 1, m);
+    await page.screenshot({ path: path.join(OUT, 'shot-feed-390.png') });
   } });
 
   // 7. Layout

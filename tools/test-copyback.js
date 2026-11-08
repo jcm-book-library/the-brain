@@ -101,11 +101,12 @@ async function install(page, w) {
   await page.route(SBU + '/**', r => {
     const u = new URL(r.request().url()), m = u.pathname.match(/^\/rest\/v1\/(\w+)$/);
     if (!m || r.request().method() !== 'GET') { w.sbWrites = (w.sbWrites || 0) + 1; return r.fulfill({ status: 405, body: '{}' }); }
+    if (m[1] === 'activity') { w.feedReads = (w.feedReads || 0) + 1; if (!w.sb.activity) return r.fulfill({ status: 404, contentType: 'application/json', body: '{"message":"no such view"}' }); } // The Library's pages view (schema shared)
     const off = Number(u.searchParams.get('offset') || 0), lim = Number(u.searchParams.get('limit') || 1000);
     r.fulfill({ contentType: 'application/json', body: JSON.stringify(w.sb[m[1]].slice(off, off + lim)) });
   });
 }
-const INIT = { 'jm-google-token': { t: 'x', exp: Date.now() + 3600e3 }, 'brain-sb-session': { at: TOKEN, rt: 'rt1', exp: Date.now() + 3600e3, email: 'me@example.com' },
+const INIT = { 'jm-google-token': { t: 'x', exp: Date.now() + 3600e3 }, 'jcm-sb-session': { at: TOKEN, rt: 'rt1', exp: Date.now() + 3600e3, email: 'me@example.com' },
   'brain_config': { backend: 'supabase', clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' } };
 async function scenario(browser, name, w, run, init = INIT) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }), page = await ctx.newPage();
@@ -186,11 +187,12 @@ const old = ['Plan backup 2026-01-01', 'Plan backup 2026-01-02', 'Plan backup 20
   });
 
   // 3. Already in step: nothing to copy, nothing written.
-  const w3 = world();
+  const w3 = world(); w3.sb.activity = [{ date: T, amount: 999 }, { date: add(-40), amount: 5 }]; // The Library's pages: shown in the app, never copied
   await scenario(b, 'same', w3, async page => {
     await openSet(page); await page.click('#sbCopy'); await waitMsg(page, /already matches|This will change/);
     check('in step: says nothing to copy', /already matches Supabase/.test(await msg(page)), await msg(page));
     check('in step: nothing written', sheetWrites(w3).length === 0);
+    check('in step: The Library pages were read but are not part of the copy or the comparison', w3.feedReads >= 1 && !w3.tab('Log').data.some(r => r.includes(999)));
   });
 
   // 4. Sheet mode: the button copies the other way and never writes to the Sheet.

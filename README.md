@@ -15,6 +15,8 @@ A week planner and daily log that reads and writes a Google Sheet. One page (`in
 ## Supabase pilot
 The page can also use a Supabase database (project `jcm-apps`, schema `brain`) instead of the sheet. The sheet is the default until switch-over. In **Settings**: *Where your data lives* picks the source per device, *Email me a sign-in link* (or *Sign in with Google*, once set up) signs in to Supabase (the emailed link, or an email and password, which also works in a home-screen app) and stays signed in, *Check Sheet and Supabase match* reads both and says what differs, and the copy button copies from the source in use to the other one: *Copy Sheet → Supabase* replaces Supabase (only reads the sheet); *Copy Supabase → Sheet* previews the changes, makes hidden dated backup tabs (`Plan backup 2026-10-21`, newest 3 per tab), writes only the cells that differ, and checks the result. Settings, Routine, Goals and Links are edited on the **Setup** tab.
 
+- **Shared sign-in:** The Brain and The Library share one Supabase sign-in on this device, so signing out of one signs out both.
+- **Pages from The Library:** in Supabase mode, a day's pages you haven't typed come from The Library (read-only, hover shows "From The Library"); typed pages always win.
 - Setup steps, click by click: [`supabase/SETUP.md`](supabase/SETUP.md)
 - Tables and access rules: [`supabase/01-schema.sql`](supabase/01-schema.sql). Row Level Security lets only the signed-in owner read or write their rows; signed-out visitors get nothing. The publishable key in `index.html` is meant to be public.
 - Each table mirrors a sheet tab, plus `row_id` (the app's handle on a row), `user_id` and `updated_at`.
