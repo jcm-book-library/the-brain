@@ -7,12 +7,14 @@
 - One file, `index.html`, no build step (plus `apple-touch-icon.png`, the 180px home-screen icon: the blue lens eye on the navy grid). Live: https://jcm-book-library.github.io/the-brain/ (from `main`).
 - Layout rule from the owner: keep everything as symmetrical as possible. Fixed-size cards sit in equal-width pairs or rows (a test checks the Home pairs); anything that can grow (Upcoming lists, the next 6 days) takes a full-width row of its own.
 - The ★ event marker lives in the Plan `Type` text (trailing ★). Use `hasStar` / `plainType` / `withStar` / `calEvent`, never read `type` raw, so a real column can replace it later.
-- Data: the Google Sheet (tabs in README) or, in the Supabase pilot, the `brain` schema of the `jcm-apps` project. The data layer is `refresh` / `addRows` / `updateRow` / `deleteRow`; each branches on `useSb()`. Screens never call either backend directly.
+- Data: the Google Sheet (tabs in README) or (the default, switched over 8 Nov 2026) the `brain` schema of the `jcm-apps` project. The data layer is `refresh` / `addRows` / `updateRow` / `deleteRow`; each branches on `useSb()`. Screens never call either backend directly.
 - Tests: `tools/test.js` (Sheets mode), `tools/test-supabase.js` (Supabase mode) and `tools/test-copyback.js` (Supabase → Sheet copy), all against fakes. Run all three before every push.
 - Supabase → Sheet copy (`diffTabs` / `copyToSheet` / `backupTabs`) is the app's only bulk write to the Sheet: preview first, hidden dated backup tab per changed tab (newest 3 kept), cell-level writes, re-check before writing, read-back after. Change it with care and keep its test passing.
 
-## Supabase pilot
+## Supabase
 
-- Pilot runs side by side with the Sheet until the owner says "switch over". Until then the Sheet is the default and must stay working. Sheet → Supabase only reads the Sheet; Supabase → Sheet follows the rules above.
+- Switched over (8 Nov 2026): Supabase is the default on every device unless it has chosen the Sheet, which is now the archive. Copy Sheet → Supabase is hidden and refuses (tests reach it with `window.__TEST_SHEET_COPY__`); Check and the weekly Copy Supabase → Sheet stay, following the rules above.
 - Schema changes go in a new numbered file in `supabase/` that the owner pastes into the SQL Editor. Every table keeps RLS on with the "own rows" policy and no grants to `anon`.
+- Sign-in is shared by every jcm-book-library app: one session under `jcm-sb-session` (the old `brain-sb-session` is moved over once at startup), token refresh inside the `jcm-sb-refresh` Web Lock with the stored session re-read first (`sb.token`, same logic as The Library's `sb`). Signing out signs out all of them; keep the note beside the button.
+- Pages from The Library: in Supabase mode `sbReadFeed()` reads the view `shared.activity` (`app=eq.books`, header `Accept-Profile: shared`) into `state.feed` (date to pages), read-only. `state.data.Log` stays exactly what was typed; use `pagesOf` / `pagesOn` / `statLog()` wherever pages are READ for display or stats, and never write feed values (Log, Sheet, `diffTabs`, `sbKey`, Check, Copy). A failed read leaves `state.feed` empty with one `console.warn`.
 - Never ask for, store or use the `service_role` key or the database password. Claude can't reach the project from the cloud sandbox (proxy blocks it), so the owner runs SQL and the copy in their browser.

@@ -803,13 +803,14 @@ dialog.sheet form{padding:0}
   <div class="field"><label for="sSheet">Google Sheet link or ID</label><input id="sSheet" required></div>
   <div class="field"><label for="sClient">OAuth Client ID</label><input id="sClient" placeholder="….apps.googleusercontent.com"></div>
   <p class="muted" style="margin:0;font-size:13px">Both are saved in this browser only. The Client ID is the same one your book library uses. Paydays, weather location and birthday window live on the sheet's Settings tab.</p>
-  <div class="field"><label for="sSource">Where your data lives</label><select id="sSource"><option value="sheets">Google Sheet</option><option value="supabase">Supabase (pilot)</option></select></div>
+  <div class="field"><label for="sSource">Where your data lives</label><select id="sSource"><option value="supabase">Supabase</option><option value="sheets">Google Sheet (archive)</option></select></div>
   <div class="sb-box">
     <p class="muted" id="sbState" style="margin:0;font-size:13px"></p>
     <div class="sb-acts" id="sbEmailRow"><input id="sbEmail" type="email" autocomplete="username" placeholder="Your email" aria-label="Email for Supabase sign-in"><button class="btn" type="button" id="sbMail">Email me a sign-in link</button></div>
     <div class="sb-acts" id="sbPwRow"><input id="sbPw" type="password" autocomplete="current-password" placeholder="Password" aria-label="Supabase password"><button class="btn" type="button" id="sbPwIn">Sign in with password</button></div>
     <div class="sb-acts" id="sbSetRow"><input id="sbNewPw" type="password" autocomplete="new-password" placeholder="New password (12+ characters)" aria-label="New Supabase password"><button class="btn" type="button" id="sbSetPw">Set password</button></div>
     <div class="sb-acts"><button class="btn" type="button" id="sbIn">Sign in with Google</button><button class="btn btn-ghost" type="button" id="sbOut">Sign out of Supabase</button><button class="btn" type="button" id="sbCheck">Check Sheet and Supabase match</button><button class="btn" type="button" id="sbCopy">Copy Sheet → Supabase</button></div>
+    <p class="muted" id="sbOutNote" style="margin:0;font-size:13px">This signs you out of every jcm-book-library app on this device.</p>
     <p class="muted" id="sbMsg" style="margin:0;font-size:13px;white-space:pre-line"></p>
   </div>
   <p class="muted" id="setMsg" style="margin:0;font-size:13px"></p>
@@ -848,7 +849,7 @@ const BOOL_COLS = new Set(['done', 'cd', 'active', 'tosee', 'pin']);
 const NUM_COLS = new Set(['steps', 'km', 'act', 'pages', 'tmax', 'tmin', 'year', 'month', 'every', 'order']);
 const colLetter = i => String.fromCharCode(65 + i);
 
-const state = { data: {}, rowCount: {}, tab: 'home', focus: null, wx: {}, live: false, busy: false };
+const state = { data: {}, feed: new Map(), rowCount: {}, tab: 'home', focus: null, wx: {}, live: false, busy: false };
 
 /* ---------- dates (local, ISO yyyy-mm-dd) ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -893,9 +894,22 @@ const g = {
   }
 };
 
-/* ---------- Supabase (pilot: switched on in Settings; the Sheet stays the default until switch-over) ---------- */
+/* ---------- Supabase (the default since switch-over; a device can still choose the Sheet archive in Settings) ---------- */
 // The publishable key is meant to be public: Row Level Security only lets a signed-in owner see their own rows.
-const SB = { url: 'https://apeflgdzclpxiktaxyfk.supabase.co', key: 'sb_publishable_AHVRXW-Zi3lLaHilBab1Sg_fPzPvWcg', schema: 'brain', sesKey: 'brain-sb-session' };
+const SB = { url: 'https://apeflgdzclpxiktaxyfk.supabase.co', key: 'sb_publishable_AHVRXW-Zi3lLaHilBab1Sg_fPzPvWcg', schema: 'brain', sesKey: 'jcm-sb-session', lock: 'jcm-sb-refresh' };
+/* Sign-in is shared by every jcm-book-library app on this device (they all live on jcm-book-library.github.io): one session under
+   one key (jcm-sb-session). Supabase replaces the refresh token on each refresh, so two apps refreshing at once could sign each
+   other out: refreshes are serialised across tabs and apps with a Web Lock, and the stored session is re-read inside the lock.
+   Signing out here signs out every app on this device. */
+/* Once, at startup, before anything reads the session: move the old Brain-only session to the shared key so the owner stays signed in. */
+(function moveOldSession() {
+  try {
+    const old = localStorage.getItem('brain-sb-session');
+    if (old == null) return;
+    if (localStorage.getItem(SB.sesKey) == null) localStorage.setItem(SB.sesKey, old);
+    localStorage.removeItem('brain-sb-session');
+  } catch (e) {}
+})();
 /* Each tab's table, and app column -> table column. */
 const SBT = {
   Plan:     ['plan',     { id: 'id', date: 'date', end: 'end_date', time: 'time', title: 'title', cat: 'category', type: 'type', done: 'done', cd: 'countdown', notes: 'notes' }],
@@ -910,7 +924,11 @@ const SBT = {
 };
 /* Columns that must be unique in Supabase (checked before a copy so it can't half-fail). */
 const SB_UNIQUE = { Plan: ['id'], Log: ['date'], Goals: ['year', 'month'], People: ['id'], Lists: ['id'], Notes: ['id'], Settings: ['key'] };
-const useSb = () => g.cfg().backend === 'supabase';
+/* Switched over: Supabase is where the data lives unless this device has chosen the Sheet. The Sheet is the archive, kept up
+   to date by Copy Supabase → Sheet; copying the other way would overwrite live data, so it is hidden (tests can still reach it). */
+const useSb = () => g.cfg().backend !== 'sheets';
+const sheetCopyAllowed = () => !!window.__TEST_SHEET_COPY__;
+const withLock = fn => (typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request) ? navigator.locks.request(SB.lock, fn) : fn();
 const jwtClaims = t => { try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return {}; } };
 const sb = {
   ses() { try { return JSON.parse(localStorage.getItem(SB.sesKey) || 'null'); } catch (e) { return null; } },
@@ -951,21 +969,28 @@ const sb = {
   },
   /* Access tokens last an hour; the refresh token keeps you signed in for good. One refresh at a time. */
   async token(force) {
-    const s = this.ses();
-    if (!s || !s.rt) { if (useSb()) signedOut(); throw { code: 'signin' }; }
-    if (!force && s.exp > Date.now()) return s.at;
-    if (!this._ref) this._ref = (async () => {
+    const s0 = this.ses();
+    if (!s0 || !s0.rt) { if (useSb()) signedOut(); throw { code: 'signin' }; }
+    if (!force && s0.exp > Date.now()) return s0.at;
+    if (!this._ref) this._ref = withLock(async () => {
+      const s = this.ses();                                  // re-read: another app may have refreshed while we waited
+      if (!s || !s.rt) { if (useSb()) signedOut(); throw { code: 'signin' }; }
+      if (s.at !== s0.at && s.exp > Date.now()) return s.at;
       const r = await fetch(`${SB.url}/auth/v1/token?grant_type=refresh_token`, { method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: s.rt }) });
       const b = await r.json().catch(() => ({}));
-      if (r.status === 400 || r.status === 401 || r.status === 403) { this.forget(); if (useSb()) signedOut(); throw { code: 'signin' }; }
-      if (!r.ok) throw { code: 'api', message: b.msg || b.error_description || 'Supabase sign-in HTTP ' + r.status };
-      return this.keep(b).at;
-    })().finally(() => { this._ref = null; });
+      if (r.ok && b.access_token) return this.keep(b).at;
+      if (r.status === 400 || r.status === 401 || r.status === 403) {
+        const now = this.ses();                              // refreshed elsewhere in the meantime: keep that one
+        if (now && now.rt && now.rt !== s.rt && now.exp > Date.now()) return now.at;
+        this.forget(); if (useSb()) signedOut(); throw { code: 'signin' };
+      }
+      throw { code: 'api', message: b.msg || b.error_description || 'Supabase sign-in HTTP ' + r.status };
+    }).finally(() => { this._ref = null; });
     return this._ref;
   },
   async api(path, opts = {}, retried) {
-    const t = await this.token();
-    const o = { method: opts.method || 'GET', headers: { apikey: SB.key, Authorization: 'Bearer ' + t, 'Accept-Profile': SB.schema, 'Content-Profile': SB.schema } };
+    const t = await this.token(), sc = opts.schema || SB.schema;
+    const o = { method: opts.method || 'GET', headers: { apikey: SB.key, Authorization: 'Bearer ' + t, 'Accept-Profile': sc, 'Content-Profile': sc } };
     if (opts.prefer) o.headers.Prefer = opts.prefer;
     if (opts.body) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(opts.body); }
     const res = await fetch(`${SB.url}/rest/v1/${path}`, o);
@@ -1039,6 +1064,36 @@ async function sbReadAll() {
   }));
   return data;
 }
+/* ---------- pages from The Library ----------
+   The Library logs reading in Supabase (view shared.activity, rows for the signed-in owner only). Its daily pages fill any day
+   where no pages were typed here. state.feed maps yyyy-mm-dd -> pages and is READ-ONLY: it is never saved to the Log, the Sheet or
+   Supabase, and never reaches Check or Copy. state.data.Log stays exactly what was typed; the helpers below add the feed at read time. */
+async function sbReadFeed() {
+  const feed = new Map();
+  try {
+    const page = 1000;
+    for (let from = 0; ; from += page) {
+      const got = await sb.api(`activity?select=date,amount&app=eq.books&order=date,logged_at&limit=${page}&offset=${from}`, { schema: 'shared' });
+      if (!Array.isArray(got)) throw new Error('unexpected reply');
+      got.forEach(r => { const d = String(r.date || '').slice(0, 10), n = Number(r.amount); if (d && Number.isFinite(n)) feed.set(d, (feed.get(d) || 0) + n); });
+      if (got.length < page) break;
+    }
+  } catch (e) { console.warn('Pages from The Library could not be read; showing typed pages only.', (e && e.message) || e); return new Map(); }
+  return feed;
+}
+const feedOn = d => { const n = state.feed && state.feed.get(d); return n == null ? null : n; };
+/* A day's pages as shown: the typed Log value if there is one, else the feed, else null. */
+const pagesOf = r => r && r.pages != null ? r.pages : feedOn(r && r.date);
+const pagesOn = d => { const r = (state.data.Log || []).find(x => x.date === d); return r ? pagesOf(r) : feedOn(d); };
+/* The Log rows for stats and charts: real rows with effective pages (copies, so the real rows stay as typed), plus a read-only
+   row for each feed-only day. _feed marks pages that came from the feed. With an empty feed this is state.data.Log itself. */
+function statLog() {
+  const log = state.data.Log || [];
+  if (!state.feed || !state.feed.size) return log;
+  const have = new Set(), out = log.map(r => { have.add(r.date); return r.pages == null && feedOn(r.date) != null ? { ...r, pages: feedOn(r.date), _feed: true } : r; });
+  state.feed.forEach((n, d) => { if (!have.has(d)) out.push({ date: d, steps: null, km: null, act: null, pages: n, tmax: null, tmin: null, mood: '', note: '', _feed: true }); });
+  return out;
+}
 
 function loadGis() {
   return new Promise((ok, fail) => {
@@ -1104,8 +1159,10 @@ async function refresh() {
   if (state.busy) return;
   setStatus('loading', 'Loading…');
   try {
-    if (useSb()) state.data = await sbReadAll();
+    let feed = new Map();
+    if (useSb()) { state.data = await sbReadAll(); feed = await sbReadFeed(); }
     else { const r = await readSheet(); state.data = r.data; state.rowCount = r.rowCount; }
+    state.feed = feed;
     state.live = true; rt.lastLoad = Date.now();
     if (useSb()) rt.start(); else if (rt.want) rt.stop();
     $('refreshBtn').textContent = 'Refresh';
@@ -1321,7 +1378,7 @@ function renderLog() {
       <div class="f"><label for="lSteps">Steps</label><input id="lSteps" type="number" inputmode="numeric" value="${esc(v('steps'))}"></div>
       <div class="f"><label for="lKm">KM</label><input id="lKm" type="number" step="0.01" inputmode="decimal" value="${esc(v('km'))}"></div>
       <div class="f"><label for="lAct">Active mins</label><input id="lAct" type="number" inputmode="numeric" value="${esc(v('act'))}"></div>
-      <div class="f"><label for="lPages">Pages</label><input id="lPages" type="number" inputmode="numeric" value="${esc(v('pages'))}"></div>
+      <div class="f"><label for="lPages">Pages</label><input id="lPages" type="number" inputmode="numeric" value="${esc(v('pages'))}"${v('pages') === '' && feedOn(f) != null ? ` placeholder="${esc(feedOn(f))} from The Library" title="From The Library"` : ''}></div>
       <div class="f"><label for="lMax">Max °C</label><input id="lMax" type="number" step="0.1" inputmode="decimal" value="${esc(v('tmax', w.max ?? ''))}"></div>
       <div class="f"><label for="lMin">Min °C</label><input id="lMin" type="number" step="0.1" inputmode="decimal" value="${esc(v('tmin', w.min ?? ''))}"></div>
       <div class="moods" role="group" aria-label="Mood"><span class="muted" style="font-size:12px;font-weight:600">Mood</span>
@@ -1528,7 +1585,7 @@ const nf0 = x => Math.round(x).toLocaleString('en-AU');
 /* Averages and the catch-up figure for the month, worked out the same way as the Fitness tab. */
 function metricMonth(k, t) {
   const ym = t.slice(0, 7), [y, m] = ym.split('-').map(Number), dim = new Date(y, m, 0).getDate();
-  const log = (state.data.Log || []).filter(r => r.date.startsWith(ym)), vals = log.filter(r => r[k] != null);
+  const log = statLog().filter(r => r.date.startsWith(ym)), vals = log.filter(r => r[k] != null);
   const goal = ((state.data.Goals || []).find(x => x.year === y && x.month === m) || {})[k] || null;
   const total = vals.reduce((a, r) => a + r[k], 0), n = vals.length;
   const last = log.reduce((a, r) => r.steps != null && r.date > a ? r.date : a, '');
@@ -1731,13 +1788,13 @@ document.querySelectorAll('dialog.sheet').forEach(d => d.addEventListener('click
 function yearOptions(sel, cur) {
   const ys = new Set([Number(todayIso().slice(0, 4))]);
   (state.data.Plan || []).forEach(p => p.date && ys.add(Number(p.date.slice(0, 4))));
-  (state.data.Log || []).forEach(p => p.date && ys.add(Number(p.date.slice(0, 4))));
+  statLog().forEach(p => p.date && ys.add(Number(p.date.slice(0, 4))));
   const list = [...ys].sort(); sel.innerHTML = list.map(y => `<option ${y === cur ? 'selected' : ''}>${y}</option>`).join('');
 }
 function renderMonth() {
   const t = todayIso(); if (!state.month) state.month = t.slice(0, 7);
   const [y, m] = state.month.split('-').map(Number), dim = new Date(y, m, 0).getDate();
-  const log = (state.data.Log || []).filter(r => r.date.startsWith(state.month));
+  const log = statLog().filter(r => r.date.startsWith(state.month));
   const byDay = {}; log.forEach(r => { byDay[Number(r.date.slice(8, 10))] = r; });
   const goal = (state.data.Goals || []).find(gg => gg.year === y && gg.month === m) || {};
   const sum = k => log.reduce((a, r) => a + (r[k] || 0), 0), cnt = k => log.filter(r => r[k] != null).length;
@@ -1768,7 +1825,7 @@ function renderMonth() {
     <span class="sub">${moods.map((n, i) => n ? ['Good', 'Fair', 'Poor', 'Bad'][i] + ' ' + Math.round(n / mt * 100) + '%' : '').filter(Boolean).join(' · ')}</span>
     <div class="moodbar" style="margin-top:4px">${moods.map((n, i) => `<i style="width:${n / mt * 100}%;background:var(--m-${'GFPB'[i]})"></i>`).join('')}</div>` : '<span class="num">–</span><span class="sub">No moods logged</span>'}</div>`);
   // year to date, like the totals across the top of the old tab
-  const yl = (state.data.Log || []).filter(r => r.date.startsWith(y + '-') && r.date <= t);
+  const yl = statLog().filter(r => r.date.startsWith(y + '-') && r.date <= t);
   const ys = k => yl.reduce((a, r) => a + (r[k] || 0), 0);
   const ytd = yl.length ? `<p class="ytd">${y} so far: <b>${nf(ys('steps'))}</b> steps · <b>${nf(ys('km'), 1)}</b> km · <b>${nf(ys('act'))}</b> active mins · <b>${nf(ys('pages'))}</b> pages</p>` : '';
   // day grid
@@ -1781,7 +1838,7 @@ function renderMonth() {
       const ds = `${state.month}-${pad(d)}`, r = byDay[d], v = r ? r[k] : null;
       if (ds > t) { g += '<div class="v" data-future></div>'; continue; }
       const gl = goal[k], gattr = v != null && gl && k !== 'mood' && k !== 'tmax' ? `data-g="${v >= gl ? 'up' : 'down'}"` : '';
-      g += `<button type="button" class="v" ${gattr} ${k === 'mood' && v ? `data-m="${v}"` : ''} data-logday="${ds}" title="${esc(fmt(ds, { weekday: 'short', day: 'numeric', month: 'short' }))}${r && r.note ? ': ' + esc(r.note) : ''}">${v == null || v === '' ? '' : esc(f(v))}</button>`;
+      g += `<button type="button" class="v" ${gattr} ${k === 'mood' && v ? `data-m="${v}"` : ''} data-logday="${ds}" ${k === 'pages' && r && r._feed && v != null ? 'data-feed' : ''} title="${esc(fmt(ds, { weekday: 'short', day: 'numeric', month: 'short' }))}${r && r.note ? ': ' + esc(r.note) : ''}${k === 'pages' && r && r._feed && v != null ? ' · From The Library' : ''}">${v == null || v === '' ? '' : esc(f(v))}</button>`;
     }
   });
   const label = fromIso(state.month + '-01').toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
@@ -1794,7 +1851,7 @@ function renderMonth() {
 }
 function renderStats() {
   const sel = $('statYear'), y = Number(sel.value) || Number(todayIso().slice(0, 4)); yearOptions(sel, y);
-  const log = (state.data.Log || []).filter(r => r.date.startsWith(y + '-'));
+  const log = statLog().filter(r => r.date.startsWith(y + '-'));
   const goals = state.data.Goals || [];
   const avg = (rows, k) => { const v = rows.map(r => r[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const n0 = (x, d = 0) => x == null ? '' : x.toLocaleString('en-AU', { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -1853,7 +1910,7 @@ function renderReview() {
   const plan = state.data.Plan || [], wk = plan.filter(p => rvInWeek(p, s, e)), done = wk.filter(p => p.done).length;
   const pct = wk.length ? done / wk.length : 0, pcol = pct >= 0.8 ? 'var(--ok)' : 'var(--under)';
   const events = wk.filter(p => hasStar(p.type)).length, social = wk.filter(p => p.cat === 'Social').length;
-  const log = (state.data.Log || []).filter(r => r.date >= s && r.date <= e);
+  const log = statLog().filter(r => r.date >= s && r.date <= e);
   const mid = addDays(s, 3), plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   const stat = (k, label) => {
     const v = log.filter(r => r[k] != null), avg = v.length ? v.reduce((a, r) => a + r[k], 0) / v.length : null, goal = metricMonth(k, mid).goal;
@@ -1964,7 +2021,7 @@ function trHoverSvg(d) {
 }
 function renderTrend() {
   const el = $('trendPanel'); if (!el) return;
-  const s = trState(), k = s.stat, view = s.view, t = todayIso(), [cy, cm] = t.split('-').map(Number), today = Number(t.slice(8, 10)), log = state.data.Log || [];
+  const s = trState(), k = s.stat, view = s.view, t = todayIso(), [cy, cm] = t.split('-').map(Number), today = Number(t.slice(8, 10)), log = statLog();
   const dp = k === 'km' ? 1 : 0, nf = x => x == null ? '–' : x.toLocaleString('en-AU', { minimumFractionDigits: dp, maximumFractionDigits: dp });
   const label = TR_STATS.find(x => x[0] === k)[1];
   const by = {}; log.forEach(r => { if (r.date && r[k] != null) (by[r.date.slice(0, 7)] = by[r.date.slice(0, 7)] || Array(32).fill(null))[Number(r.date.slice(8, 10))] = r[k]; });
@@ -2475,17 +2532,18 @@ $('planForm').addEventListener('submit', async e => { e.preventDefault(); $('pla
 function drawSb() {
   const s = sb.ses();
   $('sbState').textContent = s && s.rt ? 'Supabase: signed in' + (s.email ? ' as ' + s.email : '') + '. You stay signed in on this device until you sign out.' : 'Supabase: not signed in on this device.';
-  $('sbIn').hidden = $('sbEmailRow').hidden = $('sbPwRow').hidden = !!(s && s.rt); $('sbSetRow').hidden = !(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbCopy').hidden = $('sbCheck').hidden = !(s && s.rt);
+  $('sbIn').hidden = $('sbEmailRow').hidden = $('sbPwRow').hidden = !!(s && s.rt); $('sbSetRow').hidden = !(s && s.rt); if (!$('sbEmail').value) $('sbEmail').value = g.cfg().sbEmail || ''; $('sbOut').hidden = $('sbOutNote').hidden = $('sbCopy').hidden = $('sbCheck').hidden = !(s && s.rt);
+  if (!useSb() && !sheetCopyAllowed()) $('sbCopy').hidden = true;
   $('sbCopy').dataset.armed = ''; $('sbCopy').textContent = copyLabel();
 }
 /* The copy always goes from the source in use to the other one, so it can never overwrite what you're working in. */
 const copyLabel = () => useSb() ? 'Copy Supabase → Sheet' : 'Copy Sheet → Supabase';
-function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend || 'sheets'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
+function openSettings(msg) { const c = g.cfg(); $('sSource').value = c.backend === 'sheets' ? 'sheets' : 'supabase'; drawSb(); $('sbMsg').textContent = ''; $('sSheet').value = c.sheetId; $('sClient').value = c.clientId || ''; $('setMsg').textContent = msg || ''; $('openSheet').href = `https://docs.google.com/spreadsheets/d/${c.sheetId}/edit`; $('setDlg').showModal(); }
 $('setForm').addEventListener('submit', e => {
   const sh = $('sSheet').value.trim(), m = sh.match(/\/d\/([\w-]{20,})/), id = m ? m[1] : sh, cl = $('sClient').value.trim();
   if (!/^[\w-]{20,}$/.test(id)) { e.preventDefault(); $('setMsg').textContent = 'That doesn\'t look like a sheet link or ID.'; return; }
   if (cl && !/\.apps\.googleusercontent\.com$/.test(cl)) { e.preventDefault(); $('setMsg').textContent = 'That doesn\'t look like a Client ID.'; return; }
-  const was = g.cfg().backend || 'sheets', src = $('sSource').value;
+  const was = useSb() ? 'supabase' : 'sheets', src = $('sSource').value;
   g.saveCfg({ sheetId: id, clientId: cl, backend: src }); g.client = null;
   if (src !== was) state.live = false;
   connect();
@@ -2542,6 +2600,7 @@ $('sbOut').addEventListener('click', async () => { await sb.signOut(); drawSb();
 let sheetPlan = null;
 $('sbCopy').addEventListener('click', async e => {
   const b = e.currentTarget, toSheet = useSb(), say = m => { $('sbMsg').textContent = m; };
+  if (!toSheet && !sheetCopyAllowed()) { say('Supabase is where your data lives now; the Sheet is the archive. Changes made in Sheet mode don\'t reach Supabase.'); return; }
   const disarm = () => { b.dataset.armed = ''; b.textContent = copyLabel(); sheetPlan = null; };
   if (!g.valid()) { say('Connect to Google first (the copy ' + (toSheet ? 'writes to' : 'reads') + ' your Sheet). A Google window will open; then press Copy again.'); googleSignIn(); return; }
   if (b.dataset.armed !== '1') {

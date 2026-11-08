@@ -1,6 +1,6 @@
-# Supabase pilot: setup
+# Supabase: setup
 
-The Brain can read and write a Supabase database instead of the Google Sheet. **The Sheet stays the default** until you switch over; the Supabase copy is for trying out. The Sheet is only ever read by the copy, never changed.
+The Brain runs on Supabase (switched over 8 Nov 2026): every device uses it unless that device has picked **Google Sheet (archive)** in Settings. The Sheet is the archive, kept up to date by **Copy Supabase → Sheet** (weekly). Copy Sheet → Supabase is gone, so the archive can never overwrite live data. The steps below are kept for reference (rebuilding, or a new device).
 
 Project: `jcm-apps` (Sydney), `https://apeflgdzclpxiktaxyfk.supabase.co`. Tables live in the `brain` schema.
 
@@ -70,7 +70,7 @@ A phone's home-screen app keeps its own storage, separate from Safari, so an ema
 2. On the phone: **Settings**, type your email, type the password, **Sign in with password**. Then choose **Supabase** under *Where your data lives* and **Save & connect**.
 3. After that you stay signed in on that device until you press **Sign out of Supabase**.
 
-Supabase limits repeated wrong guesses, but a long password is what protects your data.
+A phone's home-screen app signs in once, with the password, and stays signed in. It keeps its own storage, so it doesn't share the sign-in with Safari or with other home-screen apps; a browser tab on the same phone as The Library does (see "Sign-in is shared with The Library" below).
 
 ### Check where things stand
 
@@ -87,7 +87,7 @@ Even without this, other accounts couldn't see your data: Row Level Security onl
 
 ## 7. Try it
 
-- **Settings → Where your data lives → Supabase (pilot) → Save & connect.** The status shows "Supabase · <time>".
+- **Settings → Where your data lives → Supabase → Save & connect.** The status shows "Supabase · <time>".
 - Settings, Routine, Goals and Links are edited on the **Setup** tab (in either mode), so you don't need the Sheet or the Supabase dashboard for them.
 - Each device remembers its own choice.
 
@@ -100,7 +100,7 @@ In Supabase mode the copy button reads **Copy Supabase → Sheet**. Use it weekl
 3. To go back: set **Where your data lives** to **Google Sheet** and **Save & connect**. Nothing is missing.
 
 To see the hidden backups: in the Sheet, **View → Hidden sheets**, or the ☰ list of tabs at the bottom left.
-- You stay signed in to Supabase on each device until you click **Sign out of Supabase** in Settings.
+- You stay signed in to Supabase on each device until you click **Sign out of Supabase** in Settings. That also signs you out of The Library on the same device (see the next section).
 
 Optional check: SQL Editor → New query → paste [`02-check.sql`](02-check.sql) → Run. It lists each table's row count and confirms RLS is on.
 
@@ -127,6 +127,25 @@ If the Google sign-in screen is in **Testing** mode, your account must be under 
 3. Then in The Brain's Settings, **Sign in with Google** works too.
 
 Tip while you're in Google: add a backup way to verify (myaccount.google.com → **Security** → recovery phone or **backup codes**) so a missing tablet doesn't lock you out again.
+
+## Sign-in is shared with The Library
+
+The Brain and The Library both live on `jcm-book-library.github.io`, so in the same browser on the same device they share one Supabase sign-in (browser storage key `jcm-sb-session`). Sign in to either one and the other is signed in too.
+
+- **Signing out signs out both.** Settings says so next to **Sign out of Supabase**: "This signs you out of every jcm-book-library app on this device."
+- **Already signed in to The Brain?** Nothing to do. The first time the new version opens, it moves the old Brain-only sign-in to the shared one, so you stay signed in.
+- **Refreshing is shared too.** Supabase replaces the refresh token each time, so two apps refreshing at the same moment could sign each other out. The apps take turns (a browser lock named `jcm-sb-refresh`), and each checks whether the other has already refreshed. If a refresh is refused but the other app has already stored a newer sign-in, it keeps that one instead of signing you out.
+- **A phone home-screen app** keeps its own storage, separate from Safari and from other home-screen apps, so it signs in once with the password (above) and stays signed in.
+
+## Pages from The Library
+
+The Library logs your reading in Supabase. When The Brain is using Supabase, it also reads the view `shared.activity` (only the rows where `app` is `books`; Row Level Security still applies, so it is only your own) and adds up the pages for each day.
+
+- Wherever a day's pages are shown or counted (Home average, Fitness month, year table, trend chart, Sunday review), The Brain uses the pages you typed in the Log if there are any, otherwise the pages from The Library. A day with no Log row still counts with its Library pages.
+- The Log form shows only what you typed. If the Pages box is blank and The Library has pages for that day, the box shows them greyed out ("34 from The Library"). Saving with it blank leaves it blank, so The Library's pages keep applying. Type a number to override them.
+- Library pages are only ever read. They are never written to the Log, the Sheet or Supabase, and are not part of **Check** or the copy buttons. In Google Sheet mode they are not used.
+- If the view can't be read (for example it hasn't been set up yet), The Brain carries on with typed pages only and writes one warning in the browser console. No error is shown.
+- Where a day's pages come from The Library, hovering over them shows "From The Library".
 
 ## Good to know
 
