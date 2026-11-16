@@ -430,13 +430,16 @@ html[data-mode=light] #v-notes{--ic-violet:#7c5cd6;--ic-cobalt:#2f5fd0;--ic-teal
 .ie{transition:opacity .25s}
 .iedge{fill:none;stroke:color-mix(in srgb,var(--muted) 55%,transparent);stroke-width:1.2}
 .ie.hot .iedge{stroke:var(--fg);stroke-width:2}
-.ispark{fill:none;stroke:var(--spark,#ff9a4d);stroke-width:3;stroke-linecap:round;stroke-dasharray:1.6 98.4;filter:drop-shadow(0 0 3px var(--spark,#ff9a4d));animation:ispark var(--d,5s) linear var(--dl,0s) infinite}
+.ispark{fill:none;stroke:var(--spark,#ff9a4d);stroke-width:4;stroke-linecap:round;stroke-dasharray:1.6 98.4;display:none}
+.ie.spk .ispark{display:inline;animation:ispark var(--d,5s) linear var(--dl,0s) infinite}
 @keyframes ispark{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 .inode{position:absolute;transform:translate(-50%,-50%);border:0;background:none;padding:0;margin:0;color:var(--fg);font:inherit;cursor:pointer;transition:opacity .25s;-webkit-tap-highlight-color:transparent}
 .inode[data-drag]{touch-action:none;cursor:grab}
 .inode.t{width:44px;height:44px}.inode.n{width:18px;height:18px}.inode.pe{width:16px;height:16px}
-.inode .if{position:absolute;inset:0;animation:ifloat var(--fd,7s) ease-in-out var(--fdl,0s) infinite alternate}
-@keyframes ifloat{from{transform:translate(-2px,-3px)}to{transform:translate(3px,3px)}}
+.inode .if{position:absolute;inset:0}
+@media (prefers-reduced-motion:reduce){.ie.spk .ispark{animation:none}}
+/* the map is the busiest part of the page: no backdrop blur behind it, so nothing is re-blurred while it moves */
+#v-notes>.panel,#ideaSide{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--bg) 85%,var(--glass))}
 .idot{position:absolute;inset:0;border-radius:50%;transition:transform .15s,box-shadow .15s}
 .inode.t .idot{background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--ic) 45%,#fff),var(--ic) 55%,color-mix(in srgb,var(--ic) 55%,transparent));box-shadow:0 0 22px var(--ic),0 0 0 2px color-mix(in srgb,var(--ic) 40%,transparent)}
 .inode.n .idot{background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--ic) 40%,#fff) 0,var(--ic) 45%,color-mix(in srgb,var(--ic) 35%,transparent) 100%);box-shadow:0 0 12px var(--ic)}
@@ -2201,7 +2204,7 @@ const ideaTitle = n => String(n.note || '').split('\n').map(s => s.trim()).find(
 const ideaLabel = n => { const t = ideaTitle(n); return t.length > 40 ? t.slice(0, 40).trimEnd() + '…' : t; };
 const ideaPos = n => { const m = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(n.pos || ''); return m ? [Math.min(980, Math.max(20, +m[1])), Math.min(620, Math.max(20, +m[2]))] : null; };
 const ideaOn = n => (!state.notesTopic || topicOf(n) === state.notesTopic) && (!state.notesColor || ideaCol(n) === state.notesColor);
-let ideaM = null;
+let ideaM = null, ideaHoverKey = '';
 // nodes (topic hubs, notes, linked people and events) and edges, laid out the same way every time
 function ideaModel() {
   const notes = state.data.Notes || [], people = state.data.People || [], plan = state.data.Plan || [];
@@ -2246,7 +2249,7 @@ function ideaEdgesHtml(M) {
 }
 function ideaNodeHtml(nd, M) {
   const h = ideaHash(nd.k), cls = `inode ${nd.kind}${M.off.has(nd.k) ? ' off' : ''}${state.notesSel === nd.k ? ' sel' : ''}`;
-  const pos = `left:${(nd.x / 10).toFixed(2)}%;top:${(nd.y / 6.4).toFixed(2)}%;--fd:${6 + h % 5}s;--fdl:-${h % 6}s`;
+  const pos = `left:${(nd.x / 10).toFixed(2)}%;top:${(nd.y / 6.4).toFixed(2)}%`;
   const lab = nd.kind === 'n' ? 'Note: ' + nd.label : nd.kind === 't' ? 'Topic: ' + nd.label : (nd.sub === 'p' ? 'Person: ' : 'Event: ') + nd.label;
   return `<button type="button" class="${cls}" data-ik="${esc(nd.k)}" ${nd.kind === 'n' ? 'data-drag' : ''} style="${pos};--ic:var(--ic-${nd.col})" aria-label="${esc(lab)}" aria-pressed="${state.notesSel === nd.k}"><span class="if"><span class="idot"></span><span class="ilab">${esc(nd.label)}</span></span></button>`;
 }
@@ -2289,14 +2292,20 @@ function renderNotes() {
   if (!ideaNodeBy(state.notesSel)) state.notesSel = '';
   $('ideaMap').innerHTML = `<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">${ideaEdgesHtml(ideaM)}</svg>` + ideaM.nodes.map(nd => ideaNodeHtml(nd, ideaM)).join('');
   { const w = $('ideaMap').parentElement; if (w.scrollWidth > w.clientWidth && !w.dataset.centred) { w.dataset.centred = '1'; w.scrollLeft = (w.scrollWidth - w.clientWidth) / 2; } }
-  ideaSide();
+  ideaSide(); ideaSparks();
 }
 function ideaSelect(key) {
   state.notesSel = ideaNodeBy(key) ? key : '';
   document.querySelectorAll('#ideaMap .inode').forEach(b => { const on = b.dataset.ik === state.notesSel; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); });
-  ideaSide();
+  ideaSide(); ideaSparks();
+}
+// sparks only travel along the links of the hovered or selected node
+function ideaSparks() {
+  const hk = ideaHoverKey, sk = state.notesSel;
+  document.querySelectorAll('#ideaMap .ie').forEach(g => g.classList.toggle('spk', !!((hk && (g.dataset.a === hk || g.dataset.b === hk)) || (sk && (g.dataset.a === sk || g.dataset.b === sk)))));
 }
 function ideaHover(key) {
+  ideaHoverKey = key; ideaSparks();
   const map = $('ideaMap'), nb = new Set([key]);
   map.querySelectorAll('.ie').forEach(g => { const hit = !!key && (g.dataset.a === key || g.dataset.b === key); g.classList.toggle('hot', hit); g.classList.toggle('dim', !!key && !hit); if (hit) { nb.add(g.dataset.a); nb.add(g.dataset.b); } });
   map.querySelectorAll('.inode').forEach(b => b.classList.toggle('dim', !!key && !nb.has(b.dataset.ik)));
