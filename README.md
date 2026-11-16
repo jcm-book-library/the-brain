@@ -1,10 +1,10 @@
 # The Brain
 
-A week planner and daily log that reads and writes a Google Sheet. One page (`index.html`), no build step, hosted on GitHub Pages.
+A week planner and daily log. Data lives in Supabase (the `jcm-apps` project, schema `brain`); the Google Sheet is kept as an archive and is copied from Supabase weekly. One page (`index.html`), no build step, hosted on GitHub Pages.
 
 ## How it works
-- You sign in with Google in the browser. The page then reads and writes the sheet directly through the Google Sheets API.
-- No personal data is stored in this repo. Everything loads from the sheet after sign-in.
+- You sign in in the browser (see the Supabase section below). The page reads and writes Supabase directly. A device can still choose the Sheet, in which case it goes through the Google Sheets API with a Google sign-in.
+- No personal data is stored in this repo. Everything loads from Supabase (or the Sheet) after sign-in.
 - The sheet link and OAuth Client ID are saved in your browser (Settings). The Client ID is picked up from the book library automatically when both run on `jcm-book-library.github.io`.
 - Weather comes from Open-Meteo (no key needed).
 - **Tabs:** Home (countdowns, top headlines, weather, average steps and pages, quick add, today, next 6 days), Upcoming (month calendar of events, any day's full list, events coming up), Paper, Fitness (monthly progress, log, year to date), Family & Friends, Notes (notes and lists) and Setup (routine, goals, links, app settings).
@@ -41,10 +41,16 @@ People: **Groups** is a comma-separated list (for example `IV, HFP`). **Links** 
 Keep the column order. Rows can be added, edited or sorted by hand in the sheet; the page finds rows by ID.
 
 ## Testing
-`tools/test.js` runs the page in headless Chromium against a fake, in-memory Sheets API:
+Three suites run the page in headless Chromium against fakes. Each takes a directory for its screenshots, and all three should pass before every push:
 
 ```
 NODE_PATH=$(npm root -g) node tools/test.js /tmp/shots
 NODE_PATH=$(npm root -g) node tools/test-supabase.js /tmp/shots
-NODE_PATH=$(npm root -g) node tools/test-copyback.js
+NODE_PATH=$(npm root -g) node tools/test-copyback.js /tmp/shots
 ```
+
+- `tools/test.js`: the whole app in Sheets mode, against a fake in-memory Sheets API.
+- `tools/test-supabase.js`: the app in Supabase mode, against a fake Supabase.
+- `tools/test-copyback.js`: the Supabase to Sheet copy (preview, backups, cell-level writes, read-back).
+
+`test.js` can be pinned to a date to check weekday, month-end and year-end behaviour: `BRAIN_TEST_DATE=2026-12-31 NODE_PATH=$(npm root -g) node tools/test.js /tmp/shots`. Without it, the tests use today's date.

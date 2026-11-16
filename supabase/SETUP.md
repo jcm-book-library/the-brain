@@ -52,6 +52,8 @@ Merging adds the Supabase options to Settings. Nothing changes day to day: the p
 
 ## 5. Sign in and copy (on the live page, 3 minutes)
 
+> This step describes the original move from the Sheet. That is done (see **Good to know**), and **Copy Sheet → Supabase** is now hidden, so only the sign-in part is needed today.
+
 1. Open https://jcm-book-library.github.io/the-brain/ and make sure it's connected to Google as usual.
 2. Click **Settings**. In the Supabase box, type your email and click **Email me a sign-in link**.
 3. Open the email from Supabase **on the same device and browser** and click the link. You come back to the page with Settings open, saying "Signed in to Supabase as …".
@@ -150,7 +152,7 @@ The Library logs your reading in Supabase. When The Brain is using Supabase, it 
 ## Good to know
 
 - Free projects pause after about a week with no use. Opening The Brain in Supabase mode counts as use. See **First: is the project paused?** at the top for how to restore one.
-- Switch-over (later, when you say): the page would default to Supabase, the copy button goes away, and the Sheet tabs get a "Moved to Supabase on <date>" note. Not done yet.
+- Switch-over: done on 8 Nov 2026. Supabase is the default on every device, the Sheet is the archive, and Copy Sheet → Supabase is hidden. Check and the weekly Copy Supabase → Sheet remain.
 
 ## Live sync between devices (Supabase, 1 minute)
 
