@@ -7,7 +7,9 @@ const OUT = process.argv[2] || __dirname;
 
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const today = new Date(); const T = iso(today);
+// BRAIN_TEST_DATE=yyyy-mm-dd pins both this script's "today" and the page's clock (for weekday/month-end checks)
+const FIXED = process.env.BRAIN_TEST_DATE || '';
+const today = FIXED ? new Date(+FIXED.slice(0, 4), +FIXED.slice(5, 7) - 1, +FIXED.slice(8, 10), 12) : new Date(); const T = iso(today);
 const add = n => { const d = new Date(today); d.setDate(d.getDate() + n); return iso(d); };
 const serial = s => { const [y, m, d] = s.split('-').map(Number); return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5); };
 
@@ -47,6 +49,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' in {} ? undefined : undefined });
   const ctx = await b.newContext({ viewport: { width: 1360, height: 1000 } });
+  if (FIXED) await ctx.clock.setFixedTime(today);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -181,7 +184,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('upcoming: add to the selected day opens the pop-up for that date', (await page.inputValue('#fDate')) === add(2)); await page.click('#itemDlg [data-close]');
   { const lab = await page.locator('#calPanel h2').innerText(); await page.click('[data-calnav="1"]'); await page.waitForTimeout(80);
     const lab2 = await page.locator('#calPanel h2').innerText(); await page.click('[data-calnav="0"]'); await page.waitForTimeout(80);
-    check('upcoming: month arrows move and Today comes back', lab !== lab2 && (await page.locator('#calPanel h2').innerText()) === lab && await page.locator('#calPanel .mc').count() === 42, [lab, lab2]); }
+    check('upcoming: month arrows move and Today comes back', lab !== lab2 && (await page.locator('#calPanel h2').innerText()) === today.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }) && await page.locator('#calPanel .mc').count() === 42, [lab, lab2]); }
   { const xs = []; for (let i = 0; i < 6; i++) { xs.push(Math.round((await page.locator('[data-calnav="1"]').boundingBox()).x)); await page.click('[data-calnav="1"]'); await page.waitForTimeout(40); }
     check('upcoming: month arrow stays put (' + [...new Set(xs)].join(',') + ')', new Set(xs).size === 1); await page.click('[data-calnav="0"]'); }
   const gotoDay = async d => { if (!(await page.locator(`#calPanel [data-calday="${d}"]`).count())) await page.click('[data-calnav="1"]'); await page.click(`#calPanel [data-calday="${d}"]`); await page.waitForTimeout(100); };
@@ -233,7 +236,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.locator('#monthPanel .v[data-logday]').first().click(); await page.waitForTimeout(100);
   check('clicking a day opens it in the log', (await page.inputValue('#logDate')).endsWith('-01'));
   await page.click('[data-month="-1"]'); await page.waitForTimeout(100);
-  check('month nav goes back', !(await page.locator('#monthPanel h2').innerText()).startsWith(new Date().toLocaleDateString('en-AU', { month: 'long' })));
+  check('month nav goes back', !(await page.locator('#monthPanel h2').innerText()).startsWith(today.toLocaleDateString('en-AU', { month: 'long' })));
   await page.click('[data-month="1"]'); if (early) await page.click('[data-month="1"]');
   await page.screenshot({ path: path.join(OUT, 'shot-month.png'), fullPage: true });
 
@@ -492,9 +495,9 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
     check('review: the banner is hidden once reviewed', await page.isHidden('#reviewBanner'));
     await page.evaluate(() => document.getElementById('moreDlg').showModal()); await page.click('#moreDlg [data-review-open]'); await page.waitForTimeout(200);
     check('review: footer shows the last reviewed date', /^Last reviewed: \w{3} \d{1,2} \w{3,4}$/.test(await page.innerText('#reviewLast')), await page.innerText('#reviewLast'));
-    await page.click('[data-review-nav="-1"]'); await page.click('[data-review-done]'); await live(); await page.waitForTimeout(300);
+    await page.click('[data-review-nav="-1"]'); const prevStart = await page.evaluate(() => state.rvStart); await page.click('[data-review-done]'); await live(); await page.waitForTimeout(300);
     { const rows = db.Settings.filter(r => r[0] === 'review_last');
-      check('review: a second save updates the same row (no duplicate)', rows.length === 1 && rows[0][1] === serial(ad(shown, -1)) && db.Settings.length === nS + 1, rows); }
+      check('review: a second save updates the same row (no duplicate)', rows.length === 1 && rows[0][1] === serial(ad(prevStart, 6)) && db.Settings.length === nS + 1, rows); }
 
     // phone
     await page.setViewportSize({ width: 390, height: 844 });
@@ -511,7 +514,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
     const prev = await page.evaluate(() => { const r = document.documentElement, o = [r.dataset.theme, r.dataset.mode]; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; return o; });
     await page.waitForTimeout(150); await page.screenshot({ path: path.join(OUT, 'shot-review-stone.png') });
     { const lum = c => { const m = c.match(/[\d.]+/g).map(Number); const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(m[0]) + .7152 * f(m[1]) + .0722 * f(m[2]); };
-      const cols = await page.evaluate(() => { const q = (s, p = 'color') => getComputedStyle(document.querySelector(s))[p]; return { big: q('#rvPlans .rv-big'), muted: q('#rvPlans .rv-meta'), title: q('#reviewTitle'), bg: q('#reviewDlg', 'backgroundColor'), card: q('#rvPlans', 'backgroundColor'), ok: q('#rvFit [data-rv-stat] b') }; });
+      const cols = await page.evaluate(() => { const q = (s, p = 'color') => { const e = document.querySelector(s); return e ? getComputedStyle(e)[p] : null; }; return { big: q('#rvPlans .rv-big'), muted: q('#rvPlans .rv-meta'), title: q('#reviewTitle'), bg: q('#reviewDlg', 'backgroundColor'), card: q('#rvPlans', 'backgroundColor'), ok: q('#rvFit [data-rv-stat] b') }; });
       const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
       check('review Stone: headline, muted and verdict text are readable on the light card', ratio(cols.big, cols.card) >= 4.5 && ratio(cols.muted, cols.card) >= 3.5 && ratio(cols.title, cols.card) >= 4.5 && (!cols.ok || ratio(cols.ok, cols.card) >= 3), cols); }
     await page.evaluate(p => { const r = document.documentElement; r.dataset.theme = p[0]; if (p[1] == null) delete r.dataset.mode; else r.dataset.mode = p[1]; if (p[0] == null) delete r.dataset.theme; }, prev);
