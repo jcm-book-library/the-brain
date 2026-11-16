@@ -144,6 +144,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 .cat-h{display:flex;align-items:center;gap:8px;font:500 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:4px}
 .cat-h i{width:8px;height:8px;border-radius:2px;display:inline-block}
 .items{list-style:none;margin:0;padding:0}
+.items.past>li{opacity:.7}
 .item{display:flex;align-items:center;gap:10px;padding:6px 4px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);min-width:0}
 .item:first-child{border-top:0}
 .item .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
@@ -396,9 +397,14 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 .mc{display:grid;grid-template-rows:auto 1fr;gap:4px;min-height:118px;padding:6px 7px 7px;text-align:left;border:1px solid var(--line);background:var(--raise);border-radius:10px;min-width:0;position:relative;color:var(--fg)}
 .mc:hover{border-color:var(--muted)}
 .mc[data-out=true]{opacity:.38}
-.mc[data-past=true]:not([data-out=true]){opacity:.7}
-.mc[data-today=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.mc[data-sel=true]{background:color-mix(in srgb,var(--accent) 14%,var(--raise))}
+.mc:where([data-past=true]):not([data-out=true]){background-color:color-mix(in srgb,var(--bg) 60%,transparent);background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--line) 70%,transparent) 6px 7px)}
+.mc:where([data-past=true]):not([data-out=true]) .mn{color:var(--muted)}
+.mc:where([data-past=true]):not([data-out=true]) .ce{opacity:.55}
+.mc[data-today=true]{border:2px solid var(--accent);padding:5px 6px 6px;background:color-mix(in srgb,var(--accent) 20%,var(--raise))}
+.mc[data-sel=true]{background-color:color-mix(in srgb,var(--accent) 14%,var(--raise));outline:2px solid var(--fg);outline-offset:1px}
+.mc[data-today=true][data-sel=true]{background-color:color-mix(in srgb,var(--accent) 32%,var(--raise))}
+.mhd{display:flex;align-items:center;gap:6px;min-width:0}
+.mtoday{font:700 10px/1 var(--display);text-transform:uppercase;letter-spacing:.08em;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:3px 6px}
 .mn{font:500 14px/1 var(--display)}
 .mpay{position:absolute;top:6px;right:8px;font-size:12px;color:var(--ok)}
 .mlist{display:grid;gap:3px;align-content:start;min-width:0}
@@ -408,7 +414,7 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 .mlegend{font-size:13px;color:var(--muted);margin:10px 0 0}
 @media (max-width:520px){.mnav .navlabel{width:7.5em !important;font-size:16px}}
 @media (max-width:700px){.cds{grid-template-columns:repeat(2,minmax(0,1fr))}.cds .cd:last-child:nth-child(odd){grid-column:1/-1}}
-@media (max-width:700px){.mcal{gap:3px}.mc{min-height:62px;padding:4px 4px 5px}.mn{font-size:13px}.mlist{display:flex;flex-wrap:wrap;gap:3px}.ce{width:7px;height:7px;padding:0;border:0;border-radius:50%;font-size:0;background:var(--c)}.mmore{font-size:10px;padding:0}.mpay{top:4px;right:5px;font-size:11px}}
+@media (max-width:700px){.mcal{gap:3px}.mc{min-height:62px;padding:4px 4px 5px}.mc[data-today=true]{padding:3px 3px 4px}.mn{font-size:13px}.mtoday{display:none}.mc[data-today=true] .mn{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink)}.mc[data-sel=true]{outline-offset:0}.mlist{display:flex;flex-wrap:wrap;gap:3px}.ce{width:7px;height:7px;padding:0;border:0;border-radius:50%;font-size:0;background:var(--c)}.mmore{font-size:10px;padding:0}.mpay{top:4px;right:5px;font-size:11px}}
 
 /* notes: ideas map */
 #v-notes{--ic-violet:#a78bfa;--ic-cobalt:#5b8cff;--ic-teal:#2dd4bf;--ic-green:#4ade80;--ic-yellow:#facc15;--ic-orange:#fb923c;--ic-red:#f87171;--ic-pink:#f472b6}
@@ -424,13 +430,16 @@ html[data-mode=light] #v-notes{--ic-violet:#7c5cd6;--ic-cobalt:#2f5fd0;--ic-teal
 .ie{transition:opacity .25s}
 .iedge{fill:none;stroke:color-mix(in srgb,var(--muted) 55%,transparent);stroke-width:1.2}
 .ie.hot .iedge{stroke:var(--fg);stroke-width:2}
-.ispark{fill:none;stroke:var(--spark,#ff9a4d);stroke-width:3;stroke-linecap:round;stroke-dasharray:1.6 98.4;filter:drop-shadow(0 0 3px var(--spark,#ff9a4d));animation:ispark var(--d,5s) linear var(--dl,0s) infinite}
+.ispark{fill:none;stroke:var(--spark,#ff9a4d);stroke-width:4;stroke-linecap:round;stroke-dasharray:1.6 98.4;display:none}
+.ie.spk .ispark{display:inline;animation:ispark var(--d,5s) linear var(--dl,0s) infinite}
 @keyframes ispark{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 .inode{position:absolute;transform:translate(-50%,-50%);border:0;background:none;padding:0;margin:0;color:var(--fg);font:inherit;cursor:pointer;transition:opacity .25s;-webkit-tap-highlight-color:transparent}
 .inode[data-drag]{touch-action:none;cursor:grab}
 .inode.t{width:44px;height:44px}.inode.n{width:18px;height:18px}.inode.pe{width:16px;height:16px}
-.inode .if{position:absolute;inset:0;animation:ifloat var(--fd,7s) ease-in-out var(--fdl,0s) infinite alternate}
-@keyframes ifloat{from{transform:translate(-2px,-3px)}to{transform:translate(3px,3px)}}
+.inode .if{position:absolute;inset:0}
+@media (prefers-reduced-motion:reduce){.ie.spk .ispark{animation:none}}
+/* the map is the busiest part of the page: no backdrop blur behind it, so nothing is re-blurred while it moves */
+#v-notes>.panel,#ideaSide{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--bg) 85%,var(--glass))}
 .idot{position:absolute;inset:0;border-radius:50%;transition:transform .15s,box-shadow .15s}
 .inode.t .idot{background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--ic) 45%,#fff),var(--ic) 55%,color-mix(in srgb,var(--ic) 55%,transparent));box-shadow:0 0 22px var(--ic),0 0 0 2px color-mix(in srgb,var(--ic) 40%,transparent)}
 .inode.n .idot{background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--ic) 40%,#fff) 0,var(--ic) 45%,color-mix(in srgb,var(--ic) 35%,transparent) 100%);box-shadow:0 0 12px var(--ic)}
@@ -1684,7 +1693,7 @@ function renderUpcoming() {
     const ev = dayEntries(d, who), show = ev.slice(0, 3), more = ev.length - show.length, out = !d.startsWith(state.calMonth);
     const label = `${fmt(d, { weekday: 'long', day: 'numeric', month: 'long' })}${ev.length ? ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') : ''}`;
     return `<button type="button" class="mc" data-calday="${d}" data-out="${out}" data-today="${d === t}" data-past="${d < t}" data-sel="${d === state.calDay}" aria-label="${esc(label)}">
-      <span class="mn">${Number(d.slice(8))}</span>${pay.is(d) ? '<span class="mpay" title="Payday">$</span>' : ''}
+      <span class="mhd"><span class="mn">${Number(d.slice(8))}</span>${d === t ? '<span class="mtoday">Today</span>' : ''}</span>${pay.is(d) ? '<span class="mpay" title="Payday">$</span>' : ''}
       <span class="mlist">${show.map(x => `<span class="ce${x.done ? ' done' : ''}" style="--c:${CATVAR(x.cat)}" title="${esc(x.title)}">${x.kind === 'birthday' ? '🎂 ' : x.kind === 'catchup' ? '☕ ' : ''}${esc(x.title)}</span>`).join('')}${more > 0 ? `<span class="mmore">+${more} more</span>` : ''}</span></button>`;
   });
   const label = fromIso(first).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
@@ -1695,9 +1704,9 @@ function renderUpcoming() {
 }
 function renderDayPanel() {
   const d = state.calDay, its = itemsOn(d), who = whoByPlan(), pay = paydayInfo(), bds = dayEntries(d, who).filter(x => x.kind === 'birthday');
-  $('dayPanel').innerHTML = `<div class="panel-head"><div><div class="eyebrow">${d === todayIso() ? 'Today' : 'Selected day'}</div><h2>${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
+  $('dayPanel').innerHTML = `<div class="panel-head"><div><div class="eyebrow">${d === todayIso() ? 'Today' : d < todayIso() ? 'Past day' : 'Selected day'}</div><h2>${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
       <div>${pay.is(d) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(x => `<span class="tag">🎂 ${esc(x.title)}'s birthday</span>`).join(' ')}<button class="btn" type="button" data-add="${d}" style="margin-left:8px">+ Add to this day</button></div></div>
-    ${its.length ? `<ul class="items">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing on this day.</p>'}`;
+    ${its.length ? `<ul class="items${d < todayIso() ? ' past' : ''}">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing on this day.</p>'}`;
 }
 function renderEvents() {
   const t = todayIso(), to = addDays(t, state.eMore ? 365 : 90), list = upcomingItems(t, to);
@@ -2195,7 +2204,7 @@ const ideaTitle = n => String(n.note || '').split('\n').map(s => s.trim()).find(
 const ideaLabel = n => { const t = ideaTitle(n); return t.length > 40 ? t.slice(0, 40).trimEnd() + '…' : t; };
 const ideaPos = n => { const m = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(n.pos || ''); return m ? [Math.min(980, Math.max(20, +m[1])), Math.min(620, Math.max(20, +m[2]))] : null; };
 const ideaOn = n => (!state.notesTopic || topicOf(n) === state.notesTopic) && (!state.notesColor || ideaCol(n) === state.notesColor);
-let ideaM = null;
+let ideaM = null, ideaHoverKey = '';
 // nodes (topic hubs, notes, linked people and events) and edges, laid out the same way every time
 function ideaModel() {
   const notes = state.data.Notes || [], people = state.data.People || [], plan = state.data.Plan || [];
@@ -2240,7 +2249,7 @@ function ideaEdgesHtml(M) {
 }
 function ideaNodeHtml(nd, M) {
   const h = ideaHash(nd.k), cls = `inode ${nd.kind}${M.off.has(nd.k) ? ' off' : ''}${state.notesSel === nd.k ? ' sel' : ''}`;
-  const pos = `left:${(nd.x / 10).toFixed(2)}%;top:${(nd.y / 6.4).toFixed(2)}%;--fd:${6 + h % 5}s;--fdl:-${h % 6}s`;
+  const pos = `left:${(nd.x / 10).toFixed(2)}%;top:${(nd.y / 6.4).toFixed(2)}%`;
   const lab = nd.kind === 'n' ? 'Note: ' + nd.label : nd.kind === 't' ? 'Topic: ' + nd.label : (nd.sub === 'p' ? 'Person: ' : 'Event: ') + nd.label;
   return `<button type="button" class="${cls}" data-ik="${esc(nd.k)}" ${nd.kind === 'n' ? 'data-drag' : ''} style="${pos};--ic:var(--ic-${nd.col})" aria-label="${esc(lab)}" aria-pressed="${state.notesSel === nd.k}"><span class="if"><span class="idot"></span><span class="ilab">${esc(nd.label)}</span></span></button>`;
 }
@@ -2283,14 +2292,20 @@ function renderNotes() {
   if (!ideaNodeBy(state.notesSel)) state.notesSel = '';
   $('ideaMap').innerHTML = `<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">${ideaEdgesHtml(ideaM)}</svg>` + ideaM.nodes.map(nd => ideaNodeHtml(nd, ideaM)).join('');
   { const w = $('ideaMap').parentElement; if (w.scrollWidth > w.clientWidth && !w.dataset.centred) { w.dataset.centred = '1'; w.scrollLeft = (w.scrollWidth - w.clientWidth) / 2; } }
-  ideaSide();
+  ideaSide(); ideaSparks();
 }
 function ideaSelect(key) {
   state.notesSel = ideaNodeBy(key) ? key : '';
   document.querySelectorAll('#ideaMap .inode').forEach(b => { const on = b.dataset.ik === state.notesSel; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', String(on)); });
-  ideaSide();
+  ideaSide(); ideaSparks();
+}
+// sparks only travel along the links of the hovered or selected node
+function ideaSparks() {
+  const hk = ideaHoverKey, sk = state.notesSel;
+  document.querySelectorAll('#ideaMap .ie').forEach(g => g.classList.toggle('spk', !!((hk && (g.dataset.a === hk || g.dataset.b === hk)) || (sk && (g.dataset.a === sk || g.dataset.b === sk)))));
 }
 function ideaHover(key) {
+  ideaHoverKey = key; ideaSparks();
   const map = $('ideaMap'), nb = new Set([key]);
   map.querySelectorAll('.ie').forEach(g => { const hit = !!key && (g.dataset.a === key || g.dataset.b === key); g.classList.toggle('hot', hit); g.classList.toggle('dim', !!key && !hit); if (hit) { nb.add(g.dataset.a); nb.add(g.dataset.b); } });
   map.querySelectorAll('.inode').forEach(b => b.classList.toggle('dim', !!key && !nb.has(b.dataset.ik)));
