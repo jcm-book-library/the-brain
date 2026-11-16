@@ -1652,7 +1652,7 @@ function renderHomeNext() {
     return `<div class="acc" data-open="${open}"><button type="button" class="acc-h" data-acc="${d}" aria-expanded="${open}" aria-controls="acc-${d}">
         <span class="acc-d">${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'short' }))}</span><span class="acc-n">${its.length ? its.length + (its.length === 1 ? ' task' : ' tasks') : 'Free'}</span>
         <span class="acc-t">${tags}</span><span class="acc-w">${w ? Math.round(w.max) + '° · ' + (w.rain ?? 0) + '%' : ''}</span><span class="chev" aria-hidden="true"></span></button>
-      <div class="acc-b" id="acc-${d}" ${open ? '' : 'hidden'}>${its.length ? `<ul class="items${d < todayIso() ? ' past' : ''}">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing planned.</p>'}<button type="button" class="add" data-add="${d}">+ Add to ${esc(fmt(d, { weekday: 'long' }))}</button></div></div>`;
+      <div class="acc-b" id="acc-${d}" ${open ? '' : 'hidden'}>${its.length ? `<ul class="items">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing planned.</p>'}<button type="button" class="add" data-add="${d}">+ Add to ${esc(fmt(d, { weekday: 'long' }))}</button></div></div>`;
   }).join('');
 }
 
@@ -1706,7 +1706,7 @@ function renderDayPanel() {
   const d = state.calDay, its = itemsOn(d), who = whoByPlan(), pay = paydayInfo(), bds = dayEntries(d, who).filter(x => x.kind === 'birthday');
   $('dayPanel').innerHTML = `<div class="panel-head"><div><div class="eyebrow">${d === todayIso() ? 'Today' : d < todayIso() ? 'Past day' : 'Selected day'}</div><h2>${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
       <div>${pay.is(d) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(x => `<span class="tag">🎂 ${esc(x.title)}'s birthday</span>`).join(' ')}<button class="btn" type="button" data-add="${d}" style="margin-left:8px">+ Add to this day</button></div></div>
-    ${its.length ? `<ul class="items">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing on this day.</p>'}`;
+    ${its.length ? `<ul class="items${d < todayIso() ? ' past' : ''}">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing on this day.</p>'}`;
 }
 function renderEvents() {
   const t = todayIso(), to = addDays(t, state.eMore ? 365 : 90), list = upcomingItems(t, to);
