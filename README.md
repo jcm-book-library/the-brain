@@ -17,6 +17,7 @@ The data lives in Supabase (project `jcm-apps`, schema `brain`); switched over o
 
 - **Shared sign-in:** The Brain and The Library share one Supabase sign-in on this device, so signing out of one signs out both.
 - **Pages from The Library:** in Supabase mode, a day's pages you haven't typed come from The Library (read-only, hover shows "From The Library"); typed pages always win.
+- **Workouts:** the Fitness tab's routines, exercise library, gym screen and records live only in Supabase (`supabase/05-workouts.sql`); they are not copied to the Sheet. A session in progress is kept on the device until you save it.
 - Setup steps, click by click: [`supabase/SETUP.md`](supabase/SETUP.md)
 - Tables and access rules: [`supabase/01-schema.sql`](supabase/01-schema.sql). Row Level Security lets only the signed-in owner read or write their rows; signed-out visitors get nothing. The publishable key in `index.html` is meant to be public.
 - Each table mirrors a sheet tab, plus `row_id` (the app's handle on a row), `user_id` and `updated_at`.

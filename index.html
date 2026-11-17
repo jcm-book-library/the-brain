@@ -620,7 +620,7 @@ html[data-mode=light] #v-notes{--ic-violet:#7c5cd6;--ic-cobalt:#2f5fd0;--ic-teal
 .reviewbar b{font:600 14px/1.4 var(--display)}
 .reviewbar .rv-txt{flex:1 1 220px;min-width:0;color:var(--muted);font-size:13px}
 .reviewbar .rv-acts{display:flex;gap:8px}
-dialog.review{width:min(1000px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 32px);overflow:hidden}
+dialog.review{width:min(1000px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 32px);overflow:hidden;background:linear-gradient(var(--glass),var(--glass)),var(--bg)}
 dialog.review[open]{display:flex;flex-direction:column}
 .rv-head,.rv-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--surface);position:sticky;z-index:1}
 .rv-head{top:0;border-bottom:1px solid var(--line)}
@@ -3540,7 +3540,13 @@ async function wkSeed() {
     }
     rt.lastSave = Date.now();
     wk.seeding = false; await refresh();
-  } catch (e) { wk.seedFail = true; console.warn('Workouts could not be set up.', (e && e.message) || e); }
+  } catch (e) {
+    // another device may have set it up at the same moment (its rows already exist): re-read before giving up
+    // (still marked as seeding while it re-reads, so the redraw doesn't start another attempt)
+    try { await refresh(); } catch (e2) {}
+    wk.seedTries = (wk.seedTries || 0) + 1;
+    if (!(exAll().length && (state.data.Routines || []).length) && (!exAll().length || wk.seedTries > 2)) { wk.seedFail = true; console.warn('Workouts could not be set up.', (e && e.message) || e); }
+  }
   wk.seeding = false; renderWorkouts();
 }
 

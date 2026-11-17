@@ -105,6 +105,8 @@ async function install(page, w) {
     const filt = rows => { const f = q.get('row_id'); if (!f) return rows; const [op, v] = [f.split('.')[0], Number(f.split('.')[1])]; return rows.filter(x => op === 'eq' ? x.row_id === v : op === 'gt' ? x.row_id > v : true); };
     if (t === 'exercises' && w.noEquip && method === 'POST' && req.postDataJSON().some(o => 'equipment' in o)) return json({ code: 'PGRST204', message: "Could not find the 'equipment' column of 'exercises' in the schema cache" }, 400);
     if (w.failSets && t === 'workout_sets' && method === 'POST') return json({ message: 'boom' }, 500);
+    // another device seeded the library a moment earlier: its rows land, this POST hits the unique rule
+    if (w.raceSeed && t === 'exercises' && method === 'POST') { if (!w.raced) { w.raced = true; req.postDataJSON().forEach(o => w.insert(t, o)); } return json({ code: '23505', message: 'duplicate key value violates unique constraint' }, 409); }
     if (method === 'GET') { if (t === 'exercises' && w.noEquip) w.sb[t].forEach(x => { delete x.equipment; }); const off = Number(q.get('offset') || 0), lim = Math.min(Number(q.get('limit') || 1000), 1000); return json(filt(w.sb[t]).sort((a, b) => a.row_id - b.row_id).slice(off, off + lim)); }
     if (method === 'POST') { req.postDataJSON().forEach(o => w.insert(t, o)); return r.fulfill({ status: 201, body: '' }); }
     if (method === 'PATCH') { const hit = filt(w.sb[t]); const b = req.postDataJSON(); hit.forEach(x => Object.assign(x, b)); return json(hit); }
@@ -574,6 +576,11 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
   const tickAll = async page => { for (let n = 0; n < 40; n++) { const b = page.locator('#gyBody .gy-tick[aria-pressed=false]').first(); if (!(await b.count())) break; await b.click(); } };
   const gyHas = (page, t) => page.locator('#gyBody .gy-card', { hasText: t }).count();
 
+  await scenario(b, 'wk-seed-race', { init: wkInit, setup: w => { seedSbBasic(w); w.raceSeed = true; }, run: async (page, w) => {
+    await wkOpen(page); await settle(page);
+    check('wk seed race: another device seeding at the same moment still ends with the panel, not the SQL message', !(await page.locator('#wkPanel').innerText()).includes('05-workouts.sql') && await page.locator('#wkPanel .wk-card').count() > 0);
+    check('wk seed race: the library is there once (65) and the routines were added', w.sb.exercises.length === 65 && w.sb.workout_routines.length === 2, [w.sb.exercises.length, w.sb.workout_routines.length]);
+  } });
   await scenario(b, 'wk-seed', { init: wkInit, setup: seedSbBasic, run: async (page, w) => {
     await wkOpen(page); await settle(page);
     const ex = posts(w, 'exercises'), rt_ = posts(w, 'workout_routines');
