@@ -620,7 +620,7 @@ html[data-mode=light] #v-notes{--ic-violet:#7c5cd6;--ic-cobalt:#2f5fd0;--ic-teal
 .reviewbar b{font:600 14px/1.4 var(--display)}
 .reviewbar .rv-txt{flex:1 1 220px;min-width:0;color:var(--muted);font-size:13px}
 .reviewbar .rv-acts{display:flex;gap:8px}
-dialog.review{width:min(1000px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 32px);overflow:hidden}
+dialog.review{width:min(1000px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 32px);overflow:hidden;background:linear-gradient(var(--glass),var(--glass)),var(--bg)}
 dialog.review[open]{display:flex;flex-direction:column}
 .rv-head,.rv-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--surface);position:sticky;z-index:1}
 .rv-head{top:0;border-bottom:1px solid var(--line)}
@@ -671,9 +671,126 @@ dialog.review[open]{display:flex;flex-direction:column}
 }
 @media (max-width:760px){.rv-row .rv-c{white-space:nowrap}}
 
-/* fitness placeholders */
-.later-card{border-style:dashed;background:transparent;display:grid;gap:4px;align-content:start}
-.later-card p{margin:0;color:var(--muted);font-size:14px}
+/* Workouts (Fitness tab panel, records, library editor and the gym screen). Supabase only. */
+.wk-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px;margin-bottom:14px}
+.wk-head .wk-title{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
+.wk-head h2{font-size:24px;font-weight:500}
+.wk-seg{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:4px;padding:4px;border-radius:12px;background:var(--surface);border:1px solid var(--line);min-width:220px}
+.wk-seg button{border:0;border-radius:8px;padding:9px 12px;min-height:40px;font:500 13px/1.2 var(--display);background:transparent;color:var(--muted)}
+.wk-seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.wk-acts{display:flex;gap:8px;flex-wrap:wrap}
+.wk-acts .btn{min-height:44px;padding:0 18px;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.wk-banner{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:10px 14px;border-radius:12px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));margin-bottom:14px;font-size:14px}
+.wk-banner b{flex:1 1 180px}
+.wk-msg{padding:6px 2px;color:var(--muted);font-size:14px;margin:0}
+.wk-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.wk-cols{grid-template-columns:minmax(0,1fr)}}
+.wk-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.wk-card h3{font:600 17px/1.3 var(--display);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.wk-card h3 small{font:400 12px/1.3 var(--body);color:var(--muted)}
+.wk-eb{font:500 11px/1.4 var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.wk-grp{display:flex;flex-direction:column;gap:6px}
+.wk-grp .wk-eb{display:flex;align-items:center;gap:8px}
+.wk-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--muted)}
+.wk-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--raise);border-radius:10px;padding:8px 12px;min-width:0}
+.wk-row[data-off=true]{opacity:.6}
+.wk-info{flex:1 1 150px;min-width:0;display:flex;flex-direction:column}
+.wk-info b{font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis}
+.wk-info span{font-size:12px;color:var(--muted)}
+.wk-ctl{display:flex;gap:4px;flex:none;flex-wrap:wrap}
+.wk-ctl .btn{min-width:40px;min-height:40px;padding:4px 10px}
+.wk-menu{flex:1 1 100%;display:grid;gap:4px;padding:6px 0 2px}
+.wk-menu .wk-eb{padding:4px 2px 0}
+.wk-opt{display:flex;justify-content:space-between;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;min-height:40px;font-size:14px;color:var(--fg)}
+.wk-opt:hover{border-color:var(--accent)}
+.wk-opt small{color:var(--muted);font-size:12px}
+.wk-pick{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--line);border-radius:10px;padding:10px}
+.wk-pick input[type=search]{width:100%;min-height:40px}
+.wk-chips{display:flex;gap:6px;flex-wrap:wrap}
+.wk-chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;min-height:34px;font-size:12px;font-weight:600}
+.wk-chip[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 22%,var(--surface));border-color:var(--accent);color:var(--fg)}
+.wk-list{display:grid;gap:4px;max-height:260px;overflow-y:auto}
+.wk-ladders{display:flex;gap:8px;flex-wrap:wrap}
+.wk-ladders .wk-chip{min-height:40px;font-size:13px;padding:8px 14px}
+.wk-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.wk-step{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wk-step>div{display:flex;gap:6px}
+.wk-step .stp,.gy-stp{width:40px;height:40px;flex:none;border-radius:10px;border:1px solid var(--line);background:var(--raise);color:var(--fg);font-size:18px;font-weight:500;padding:0;display:flex;align-items:center;justify-content:center}
+.wk-step output,.wk-step input{flex:1;min-width:0;height:40px;text-align:center;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--fg);font-size:15px;font-weight:700;padding:0 4px;display:flex;align-items:center;justify-content:center}
+.wk-big{font:700 40px/1.1 var(--display);color:var(--accent)}
+.wk-sub{font-size:15px}
+.wk-tbl{display:flex;flex-direction:column;gap:4px}
+.wk-tr{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:5px 10px;border-radius:8px;background:var(--raise)}
+.wk-tr.tot{font-weight:700;background:transparent;border-top:1px solid var(--line);border-radius:0;padding-top:8px}
+.wk-bar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--track)}
+.wk-bar i{display:block;height:100%}
+.wk-leg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.wk-leg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wk-leg span{display:flex;align-items:center;gap:6px;font-size:12px;min-width:0}
+.wk-leg i{width:10px;height:10px;border-radius:3px;flex:none}
+.wk-note{font-size:12px;color:var(--muted)}
+.wk-rec{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 10px;padding:8px 12px;border-radius:10px;background:var(--raise);font-size:14px}
+.wk-rec span{color:var(--muted);font-size:12px}
+.wk-sess{display:grid;grid-template-columns:5.6em minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 12px;border-radius:10px;background:var(--raise);font-size:14px}
+.wk-sess .btn{min-height:36px;padding:4px 10px;font-size:12px}
+.wk-sess .mut{color:var(--muted);font-size:12px}
+.wk-libform{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;border:1px dashed var(--line);border-radius:12px;padding:12px}
+.wk-libform label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);min-width:0}
+.wk-libform .w{grid-column:1/-1}
+.wk-lrow{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto minmax(0,.8fr) minmax(0,1.2fr);gap:8px 12px;align-items:center;padding:8px 12px;border-radius:10px;background:var(--raise)}
+.wk-lrow label{display:flex;align-items:center;gap:6px;font-size:13px;min-height:36px}
+.wk-lrow input[type=text],.wk-lrow select{width:100%;min-height:36px}
+@media (max-width:760px){.wk-lrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.wk-lrow .wk-info{grid-column:1/-1}.wk-lrow .wk-note-in{grid-column:1/-1}}
+@media (max-width:520px){.wk-libform{grid-template-columns:minmax(0,1fr)}.wk-sess{grid-template-columns:5em minmax(0,1fr)}.wk-sess .btn{grid-column:1/-1}}
+/* the gym screen: full screen on phones, a centred dialog on desktop */
+dialog.gym{width:min(520px,100vw);max-width:none;height:min(880px,calc(100vh - 24px));max-height:none;overflow:hidden;background:var(--bg);border-radius:20px}
+dialog.gym[open]{display:flex;flex-direction:column}
+@media (max-width:600px){dialog.gym{width:100%;height:100%;max-width:100%;max-height:100%;border-radius:0;border:0;margin:0}}
+.gy-top{flex:none;margin:12px 16px 0;padding:12px 16px;border-radius:20px;background:var(--glass);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.gy-r1,.gy-r2,.gy-r3{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.gy-r2{align-items:baseline}
+.gy-big{font:700 40px/1 var(--display);color:var(--accent)}
+.gy-bar{height:8px;border-radius:4px;background:var(--track);overflow:hidden}
+.gy-bar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.gy-r3{font-size:13px}
+.gy-x{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--raise);color:var(--fg);font-size:20px;padding:0;flex:none}
+.gy-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.gy-card{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;flex:none}
+.gy-card[data-done=true]{border-color:var(--ok)}
+.gy-c1{display:flex;align-items:center;gap:8px;min-width:0}
+.gy-c1 b{flex:1;min-width:0;font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.gy-c1 span.l{font-size:12px;color:var(--muted);flex:none}
+.gy-c2{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;min-width:0}
+.gy-kg{display:flex;align-items:center;gap:4px;min-width:0}
+.gy-kg output{width:60px;text-align:center;font-size:16px;font-weight:700}
+.gy-stp{width:44px;height:44px;font-size:20px}
+.gy-chip{min-width:56px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--raise);color:var(--fg);font-size:13px;font-weight:600;padding:0 8px;flex:none}
+.gy-tick{width:48px;height:48px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;flex:none;border:2px solid var(--muted);background:transparent;color:var(--muted)}
+.gy-tick[aria-pressed=true]{background:var(--ok);border-color:var(--ok);color:var(--accent-ink)}
+.gy-btn{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--raise);color:var(--fg);font-size:14px;font-weight:600;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0}
+.gy-cin{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gy-cin label{display:flex;flex-direction:column;gap:3px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);min-width:0}
+.gy-cin input{height:44px;width:100%;font-size:16px;text-align:center}
+.gy-foot{flex:none;display:flex;gap:10px;padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
+.gy-foot .gy-btn{height:52px;font-size:15px}
+.gy-foot .gy-btn.pri,.gy-btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.gy-foot .pri{flex:1 1 0}
+.gy-foot.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.gy-link{border:0;background:none;color:var(--muted);font-size:13px;min-height:44px;text-decoration:underline;padding:0 8px;align-self:center}
+.gy-sheet{position:absolute;left:0;right:0;bottom:0;max-height:70%;overflow-y:auto;background:var(--bg);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:3;box-shadow:0 -10px 30px rgba(0,0,0,.35)}
+.gy-sheet .wk-opt{min-height:48px}
+.gy-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.gy-tile{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.gy-tile b{font:700 20px/1.2 var(--display);white-space:nowrap}
+.gy-feel{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.gy-feel button{height:48px;border-radius:10px;border:1px solid var(--line);background:var(--raise);color:var(--fg);font-size:12px;font-weight:500;padding:0}
+.gy-feel button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.gy-in{display:flex;flex-direction:column;gap:3px}
+.gy-in input{height:44px;font-size:15px;width:100%}
+.gy-err{border:1px solid var(--danger);border-radius:12px;padding:12px 14px;color:var(--fg);display:flex;flex-direction:column;gap:8px}
+.gy-pb{display:flex;align-items:center;gap:8px;background:var(--raise);border-radius:10px;padding:0 12px;min-height:48px;font-size:14px}
+.gy-pb span{flex:1}.gy-pb small{color:var(--muted);font-size:12px}
+.gy-line{border-left:3px solid var(--c-home)}
 
 /* setup: one section at a time, rows lined up under one header */
 .setupnav{margin-bottom:14px;width:max-content;max-width:100%;overflow-x:auto}
@@ -836,6 +953,7 @@ dialog.sheet form{padding:0}
 
   <section id="v-fitness" class="home" hidden>
     <div class="panel" id="logPanel"></div>
+    <div class="panel" id="wkPanel"></div>
     <div class="panel" id="trendPanel"></div>
     <div class="panel" id="monthPanel"></div>
     <div class="panel">
@@ -843,10 +961,7 @@ dialog.sheet form{padding:0}
       <div class="table-wrap"><table id="statTable"></table></div>
       <div class="legend"><span><i style="background:var(--m-G)"></i>Good</span><span><i style="background:var(--m-F)"></i>Fair</span><span><i style="background:var(--m-P)"></i>Poor</span><span><i style="background:var(--m-B)"></i>Bad</span><span>Averages count logged days only. +/- is against that month's goal.</span></div>
     </div>
-    <div class="pair">
-      <div class="panel later-card"><div class="eyebrow">Coming later</div><h2>Personal workout sessions</h2><p>Your own home workouts: exercises, sets and weights.</p></div>
-      <div class="panel later-card"><div class="eyebrow">Coming later</div><h2>Records set</h2><p>Personal bests, picked up from your sessions and daily log.</p></div>
-    </div>
+    <div class="panel" id="recPanel"></div>
   </section>
 
   <section id="v-people" hidden>
@@ -932,6 +1047,18 @@ dialog.sheet form{padding:0}
     <div class="rv-nav"><button class="btn" type="button" data-review-nav="-1" aria-label="Previous week">‹</button><button class="btn" type="button" data-review-nav="1" aria-label="Next week">›</button><button class="btn" type="button" data-review-close>Close</button></div></div>
   <div class="rv-body" id="reviewBody"></div>
   <div class="rv-foot"><span class="rv-last" id="reviewLast"></span><button class="btn btn-primary" type="button" data-review-done>Mark week reviewed</button></div>
+</dialog>
+
+<dialog id="gymDlg" class="gym" aria-label="Workout session">
+  <div class="gy-top" id="gyHead"></div>
+  <div class="gy-body" id="gyBody"></div>
+  <div class="gy-foot" id="gyFoot"></div>
+  <div id="gySheet"></div>
+</dialog>
+
+<dialog id="wkLibDlg" class="review" aria-labelledby="wkLibTitle">
+  <div class="rv-head"><div class="rv-title"><div class="eyebrow">Workouts</div><h2 id="wkLibTitle">Exercise library</h2></div><div class="rv-nav"><button class="btn" type="button" data-wk="libclose">Close</button></div></div>
+  <div class="rv-body" id="wkLibBody"></div>
 </dialog>
 
 <dialog id="personDlg"><form method="dialog" id="personForm">
@@ -1337,7 +1464,7 @@ async function refresh() {
   setStatus('loading', 'Loading…');
   try {
     let feed = new Map();
-    if (useSb()) { state.data = await sbReadAll(); feed = await sbReadFeed(); }
+    if (useSb()) { state.data = await sbReadAll(); feed = await sbReadFeed(); await wkRead(); }
     else { const r = await readSheet(); state.data = r.data; state.rowCount = r.rowCount; }
     state.feed = feed;
     state.live = true; rt.lastLoad = Date.now();
@@ -1423,6 +1550,7 @@ async function ensureRows(tab, need) {
   await g.api(':batchUpdate', { method: 'POST', body: { requests: [{ appendDimension: { sheetId: TABS[tab].sid, dimension: 'ROWS', length: Math.max(500, need - have) } }] } });
 }
 async function addRows(tab, objs) {
+  if (SBW[tab]) { await sb.api(SBW[tab][0], { method: 'POST', body: objs.map(o => wOut(tab, o)), prefer: 'return=minimal' }); return; }
   if (useSb()) { await sb.api(SBT[tab][0], { method: 'POST', body: objs.map(o => sbOut(tab, o)), prefer: 'return=minimal' }); return; }
   const start = state.data[tab]._last + 1, end = start + objs.length - 1;
   await ensureRows(tab, end);
@@ -1430,6 +1558,14 @@ async function addRows(tab, objs) {
   await g.api(`/values/${encodeURIComponent(`${tab}!A${start}:${L}${end}`)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: { values: objs.map(o => rowOut(tab, o)) } });
 }
 async function updateRow(tab, o) {
+  if (SBW[tab]) {
+    const was = (state.data[tab] || []).find(x => x._row === o._row), cols = Object.entries(SBW[tab][1]);
+    const changed = cols.filter(([c, [, t]]) => !was || JSON.stringify(wVal(t, was[c])) !== JSON.stringify(wVal(t, o[c]))).map(x => x[0]);
+    if (!changed.length) return;
+    const got = await sb.api(`${SBW[tab][0]}?row_id=eq.${o._row}`, { method: 'PATCH', body: wOut(tab, o, changed), prefer: 'return=representation' });
+    if (!got || got.length !== 1) throw { code: 'api', message: 'that item was changed or removed elsewhere. Refreshed. Try again.' };
+    return;
+  }
   if (useSb()) {
     const was = (state.data[tab] || []).find(x => x._row === o._row);
     const changed = Object.keys(SBT[tab][1]).filter(c => !was || JSON.stringify(sbVal(c, was[c])) !== JSON.stringify(sbVal(c, o[c])));
@@ -1443,6 +1579,11 @@ async function updateRow(tab, o) {
   await g.api(`/values/${encodeURIComponent(`${tab}!A${o._row}:${L}${o._row}`)}?valueInputOption=USER_ENTERED`, { method: 'PUT', body: { values: [rowOut(tab, o)] } });
 }
 async function deleteRow(tab, o) {
+  if (SBW[tab]) {
+    const got = await sb.api(`${SBW[tab][0]}?row_id=eq.${o._row}`, { method: 'DELETE', prefer: 'return=representation' });
+    if (!got || got.length !== 1) throw { code: 'api', message: 'that item was already removed elsewhere. Refreshed.' };
+    return;
+  }
   if (useSb()) {
     const got = await sb.api(`${SBT[tab][0]}?row_id=eq.${o._row}`, { method: 'DELETE', prefer: 'return=representation' });
     if (!got || got.length !== 1) throw { code: 'api', message: 'that item was already removed elsewhere. Refreshed.' };
@@ -2785,7 +2926,7 @@ function renderPaper() {
 function renderAll() {
   $('todayLabel').textContent = fmt(todayIso(), { weekday: 'long', day: 'numeric', month: 'long' });
   applyTheme(themeChoice()); renderChips(); renderLinks();
-  ({ home: renderHome, upcoming: renderUpcoming, paper: renderPaper, fitness: () => { renderTrend(); renderMonth(); renderLog(); renderStats(); }, people: renderPeople, notes: () => { renderNotes(); renderLists(); }, setup: renderSetup })[state.tab]();
+  ({ home: renderHome, upcoming: renderUpcoming, paper: renderPaper, fitness: () => { renderTrend(); renderMonth(); renderLog(); renderStats(); renderWorkouts(); }, people: renderPeople, notes: () => { renderNotes(); renderLists(); }, setup: renderSetup })[state.tab]();
   previewAll();
 }
 
@@ -3238,6 +3379,520 @@ $('peopleSearch').addEventListener('input', renderPeople);
 $('refreshBtn').addEventListener('click', () => state.live || canLoad() ? (loadWeather().then(refresh).then(() => { try { sessionStorage.removeItem('brain-news'); } catch (e) {} return loadNews(); }).then(() => { if (state.live && state.tab === 'home') renderHomeNews(); })) : connect());
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state.live && !state.busy) refresh(); });
 setInterval(() => { if (state.live && state.focus === null) renderAll(); }, 60e3);
+
+/* ---------- Workouts ----------
+   Four Supabase tables (exercises, workout_routines, workout_sessions, workout_sets). They are Supabase-only: they are NOT in TABS or
+   SBT, so Check, Copy Supabase → Sheet and every Sheet routine never see them. They are read by wkRead() after sbReadAll(), kept in
+   state.data.Exercises / Routines / Sessions / Sets, and written through addRows / updateRow / deleteRow like everything else.
+   Column types: t text, b boolean, n number, d date, s timestamp (blank = null). */
+const SBW = {
+  Exercises: ['exercises', { id: ['id', 't'], name: ['name', 't'], area: ['area', 't'], muscle: ['muscle', 't'], measure: ['measure', 't'], each: ['each_side', 'b'], weighted: ['weighted', 'b'], secs: ['secs', 'n'], active: ['active', 'b'], note: ['note', 't'], equip: ['equipment', 't'] }],
+  Routines:  ['workout_routines', { id: ['id', 't'], name: ['name', 't'], ladder: ['ladder', 't'], items: ['items', 't'], rep: ['rep_secs', 'n'], chg: ['change_secs', 'n'], rest: ['rest_secs', 'n'], note: ['note', 't'] }],
+  Sessions:  ['workout_sessions', { id: ['id', 't'], date: ['date', 'd'], routine: ['routine_id', 't'], ladder: ['ladder', 't'], start: ['started_at', 's'], end: ['finished_at', 's'], place: ['place', 't'], feel: ['feel', 't'], note: ['note', 't'] }],
+  Sets:      ['workout_sets', { id: ['id', 't'], sid: ['session_id', 't'], ex: ['exercise_id', 't'], round: ['round', 'n'], reps: ['reps', 'n'], kg: ['kg', 'n'], secs: ['secs', 'n'], mins: ['mins', 'n'], km: ['km', 'n'], steps: ['steps', 'n'], at: ['done_at', 's'] }]
+};
+function wVal(t, v) {
+  if (t === 'b') return v === true || v === 'true' || v === 't';
+  if (t === 'n') { if (v === '' || v == null) return null; const n = Number(v); return isNaN(n) ? null : n; }
+  if (t === 'd' || t === 's') return v ? String(v) : null;
+  return v == null ? '' : String(v);
+}
+function wIn(tab, r) { const o = { _row: r.row_id }; Object.entries(SBW[tab][1]).forEach(([c, [d, t]]) => { o[c] = t === 'd' ? String(r[d] || '').slice(0, 10) : wVal(t, r[d]); }); return o; }
+/* an old copy of the SQL has no equipment column: leave it out of writes so they still work */
+function wOut(tab, o, only) { const r = {}; Object.entries(SBW[tab][1]).forEach(([c, [d, t]]) => { if (tab === 'Exercises' && c === 'equip' && wk.noEquip) return; if (!only || only.includes(c)) r[d] = wVal(t, o[c]); }); return r; }
+async function wkRead() {
+  const names = Object.keys(SBW);
+  try {
+    const got = await Promise.all(names.map(async n => {
+      const rows = [], page = 1000;
+      for (let from = 0; ; from += page) {
+        const r = await sb.api(`${SBW[n][0]}?select=*&order=row_id&limit=${page}&offset=${from}`);
+        if (!Array.isArray(r)) throw new Error('unexpected reply');
+        r.forEach(x => rows.push(x));
+        if (r.length < page) break;
+      }
+      return rows;
+    }));
+    names.forEach((n, i) => { state.data[n] = got[i].map(r => wIn(n, r)); });
+    if (got[0].length) wk.noEquip = !('equipment' in got[0][0]);
+    state.wkErr = false;
+  } catch (e) {
+    if (e && e.code === 'signin') throw e;
+    names.forEach(n => { state.data[n] = []; });
+    state.wkErr = true;
+    if (!wk.warned) { wk.warned = true; console.warn('Workouts tables could not be read; run supabase/05-workouts.sql.', (e && e.message) || e); }
+  }
+}
+
+const WK_AREAS = ['Upper', 'Core', 'Legs', 'Cardio'];
+const WK_MUSCLES = ['Triceps', 'Biceps', 'Shoulders', 'Chest', 'Back', 'Core', 'Legs', 'Cardio'];
+const WK_AREA_OF = { Triceps: 'Upper', Biceps: 'Upper', Shoulders: 'Upper', Chest: 'Upper', Back: 'Upper', Core: 'Core', Legs: 'Legs', Cardio: 'Cardio' };
+const WK_AREA_COL = { Upper: 'var(--c-sport)', Core: 'var(--c-other)', Legs: 'var(--c-fitness)', Cardio: 'var(--c-home)' };
+const WK_EQUIP = ['Dumbbell', 'Kettlebell', 'Ball', 'Bodyweight', 'Machine'];
+const WK_EQ_DEF = ['Dumbbell', 'Kettlebell', 'Ball', 'Bodyweight'];
+const WK_FEEL = ['Easy', 'Light', 'Solid', 'Tough', 'Hard'];
+const WK_LADDERS = ['10,8,6', '8,6,4', '12,10,8'];
+const wkEqLoad = () => { try { const a = JSON.parse(localStorage.getItem('brain-workout-equip') || 'null'); if (Array.isArray(a)) return a.filter(x => WK_EQUIP.includes(x)); } catch (e) {} return WK_EQ_DEF.slice(); };
+const wk = { rid: null, edit: false, menu: null, pick: false, q: '', pm: '', custom: false, equip: wkEqLoad(), pend: null, timer: null, seeding: false, seedFail: false, warned: false, noEquip: false, libNew: false, delArm: null };
+try { wk.rid = localStorage.getItem('brain-workout-routine') || null; } catch (e) {}
+
+/* the starting library: [name, muscle, equipment, extras] */
+const wkX = (name, muscle, equip, o) => ({ name, muscle, equip: equip || 'Dumbbell', ...(o || {}) });
+const WK_DK = 'Dumbbell, Kettlebell', WK_PB = 'Paused: foot injury';
+const WK_SEED = [
+  wkX('Overhead tricep extension', 'Triceps'), wkX('Behind-the-neck tricep extension', 'Triceps'), wkX('One-arm overhead triceps extension', 'Triceps', 0, { each: true }), wkX('Triceps kickback', 'Triceps', 0, { each: true }),
+  wkX('Hammer curl', 'Biceps'), wkX('Alternating biceps curl', 'Biceps', 0, { each: true }), wkX('Crossover curl', 'Biceps'), wkX('Zottman curl', 'Biceps'), wkX('Twisting curl', 'Biceps'), wkX('Reverse dumbbell curl', 'Biceps'),
+  wkX('Shoulder press', 'Shoulders'), wkX('Arnold press', 'Shoulders'), wkX('Standing lateral raise', 'Shoulders'), wkX('Alternating front raise', 'Shoulders', 0, { each: true }), wkX('Bent-over lateral raise', 'Shoulders'), wkX('Upright row', 'Shoulders', WK_DK), wkX('Shoulder shrug', 'Shoulders', WK_DK),
+  wkX('Parallel chest fly', 'Chest'), wkX('Upward chest fly', 'Chest'),
+  wkX('Bent-over row (underhand grip)', 'Back', WK_DK), wkX('Bent-over row (neutral grip)', 'Back', WK_DK),
+  wkX('Sit-up press', 'Core'), wkX('Halo', 'Core', WK_DK), wkX('Plank', 'Core', 'Bodyweight', { measure: 'time', secs: 60, weighted: false }), wkX('Side bend', 'Core', 0, { each: true }), wkX('Woodchop', 'Core', 0, { each: true }), wkX('Windmill', 'Core', 0, { each: true }),
+  wkX('Calf raises', 'Legs'), wkX('Sumo squat', 'Legs', WK_DK), wkX('Goblet squat', 'Legs', WK_DK), wkX('Front squat', 'Legs'), wkX('Romanian deadlift', 'Legs', WK_DK), wkX('Forward lunges', 'Legs', 0, { active: false, note: WK_PB }),
+  wkX('Treadmill', 'Cardio', 'Machine', { measure: 'cardio', weighted: false }),
+  // kettlebell
+  wkX('Kettlebell swing', 'Legs', 'Kettlebell'), wkX('Kettlebell deadlift', 'Legs', 'Kettlebell'), wkX('Single-arm kettlebell row', 'Back', 'Kettlebell', { each: true }), wkX('Kettlebell press', 'Shoulders', 'Kettlebell', { each: true }),
+  wkX('Kettlebell high pull', 'Shoulders', 'Kettlebell'), wkX('Kettlebell around-the-world', 'Core', 'Kettlebell'), wkX('Russian twist', 'Core', 'Kettlebell, Ball, Dumbbell'),
+  // ball
+  wkX('Ball crunch', 'Core', 'Ball', { weighted: false }), wkX('Ball plank', 'Core', 'Ball', { measure: 'time', secs: 45, weighted: false }), wkX('Ball dead bug', 'Core', 'Ball', { weighted: false }), wkX('Ball pass (V-up)', 'Core', 'Ball', { weighted: false }),
+  wkX('Ball back extension', 'Back', 'Ball', { weighted: false }), wkX('Ball glute bridge', 'Legs', 'Ball', { weighted: false }), wkX('Ball hamstring curl', 'Legs', 'Ball', { weighted: false }), wkX('Ball wall squat', 'Legs', 'Ball'), wkX('Ball push-up', 'Chest', 'Ball', { weighted: false }),
+  // bodyweight
+  ...[['Push-up', 'Chest'], ['Incline push-up', 'Chest'], ['Bench tricep dip', 'Triceps'], ['Bodyweight squat', 'Legs'], ['Glute bridge', 'Legs']].map(([n, m]) => wkX(n, m, 'Bodyweight', { weighted: false })),
+  wkX('Single-leg glute bridge', 'Legs', 'Bodyweight', { weighted: false, each: true }), wkX('Wall sit', 'Legs', 'Bodyweight', { weighted: false, measure: 'time', secs: 45 }),
+  wkX('Dead bug', 'Core', 'Bodyweight', { weighted: false }), wkX('Bird dog', 'Core', 'Bodyweight', { weighted: false, each: true }), wkX('Side plank', 'Core', 'Bodyweight', { weighted: false, measure: 'time', secs: 30, each: true }),
+  wkX('Bicycle crunch', 'Core', 'Bodyweight', { weighted: false }), wkX('Leg raise', 'Core', 'Bodyweight', { weighted: false }), wkX('Hollow hold', 'Core', 'Bodyweight', { weighted: false, measure: 'time', secs: 30 }), wkX('Superman', 'Back', 'Bodyweight', { weighted: false }),
+  wkX('Mountain climbers', 'Core', 'Bodyweight', { weighted: false, active: false, note: WK_PB })
+];
+const WK_AFTERNOON = ['Overhead tricep extension', 'Hammer curl', 'Shoulder press', 'Standing lateral raise', 'Sit-up press', 'Halo', 'Plank', 'Calf raises', 'Sumo squat', 'Goblet squat', 'Treadmill'];
+const wkSeedRows = () => WK_SEED.map((x, i) => ({ id: 'ex' + String(i + 1).padStart(3, '0'), name: x.name, area: WK_AREA_OF[x.muscle], muscle: x.muscle, measure: x.measure || 'reps', each: !!x.each, weighted: x.weighted !== false, secs: x.secs || null, active: x.active !== false, note: x.note || '', equip: x.equip }));
+
+/* ---------- Workouts: helpers ---------- */
+const wkOn = () => useSb() && state.live && !state.wkErr;
+const exAll = () => state.data.Exercises || [];
+const exById = id => exAll().find(e => e.id === id);
+const exName = id => (exById(id) || { name: id }).name;
+const wkIds = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean);
+const wkNum = (v, d) => v == null || v === '' || isNaN(Number(v)) ? d : Number(v);
+const wkDay = s => { const d = fromIso(s); return `${DAYS[(d.getDay() + 6) % 7]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
+const wkMin = ms => Math.max(0, Math.round(ms / 60000));
+const wkEquipOf = e => String(e.equip || '').split(',').map(x => x.trim()).filter(Boolean);
+const wkEqOk = e => { const q = wkEquipOf(e); return !q.length || q.some(x => wk.equip.includes(x)); };
+const wkAreaRank = e => { const i = WK_AREAS.indexOf((e && e.area) || ''); return i < 0 ? 9 : i; };
+const wkKg = n => (Math.round(n * 100) / 100).toString();
+function wkLadder(s) { const a = String(s || '').split(/[^0-9]+/).map(Number).filter(n => n > 0 && n <= 99).slice(0, 8); return a.length ? a : [10, 8, 6]; }
+function wkRoutine() {
+  const rs = state.data.Routines || [];
+  return rs.find(r => r.id === wk.rid) || rs.find(r => r.name === 'Afternoon') || rs[0] || null;
+}
+/* the routine as shown: saved values with any not-yet-saved calculator changes on top */
+const wkEff = r => r ? { ...r, ...(wk.pend && wk.pend.id === r.id ? wk.pend.r : {}) } : r;
+const wkItems = r => wkIds(r && r.items).map(exById).filter(Boolean);
+function wkNorm(ids) { return ids.map((id, i) => [id, i]).sort((a, b) => (wkAreaRank(exById(a[0])) - wkAreaRank(exById(b[0]))) || (a[1] - b[1])).map(x => x[0]); }
+/* history: last and best per exercise, from saved sets */
+function wkStats() {
+  const sess = new Map((state.data.Sessions || []).map(s => [s.id, s]));
+  const sets = (state.data.Sets || []).slice().sort((a, b) => ((sess.get(a.sid) || {}).date || '').localeCompare((sess.get(b.sid) || {}).date || '') || String(a.at || '').localeCompare(String(b.at || '')) || a._row - b._row);
+  const last = {}, best = {};
+  sets.forEach(s => {
+    const d = (sess.get(s.sid) || {}).date || '', b = best[s.ex] = best[s.ex] || { kg: 0, reps: 0, secs: 0, km: 0 };
+    last[s.ex] = { ...(last[s.ex] || {}), ...(s.kg != null ? { kg: s.kg } : {}), ...(s.secs != null ? { secs: s.secs } : {}), ...(s.mins != null ? { mins: s.mins } : {}), ...(s.km != null ? { km: s.km } : {}) };
+    if (s.kg != null && s.kg > 0) { if (s.kg > b.kg) { b.kg = s.kg; b.kgDate = d; b.reps = s.reps || 0; } else if (s.kg === b.kg && (s.reps || 0) > b.reps) b.reps = s.reps; }
+    if (s.secs != null && s.secs > b.secs) { b.secs = s.secs; b.secsDate = d; }
+    if (s.km != null && s.km > b.km) { b.km = s.km; b.kmDate = d; }
+  });
+  return { last, best, sess };
+}
+function wkLastTxt(e, st) {
+  const l = (st || wkStats()).last[e.id]; if (!l) return '';
+  if (e.measure === 'cardio') return l.mins != null ? `last ${wkKg(l.mins)} min` : '';
+  if (e.measure === 'time') return l.secs != null ? `last ${wkKg(l.secs)} s` : '';
+  return e.weighted && l.kg != null ? `last ${wkKg(l.kg)} kg` : '';
+}
+const wkTreadMins = () => { const st = wkStats(), t = exAll().filter(e => e.measure === 'cardio').map(e => st.last[e.id]).filter(l => l && l.mins).pop(); return t ? t.mins : 30; };
+/* the time calculator: per round reps R: work = rep exercises R × secs per rep (×2 each side) + timed exercises' seconds;
+   change-overs = (exercises − 1) × change-over per round; rest = (rounds − 1) × rest. Cardio is not in the circuit. */
+function wkCalc(r, items) {
+  const ladder = wkLadder(r && r.ladder), spr = wkNum(r && r.rep, 3), chg = wkNum(r && r.chg, 20), rest = wkNum(r && r.rest, 90);
+  const act = items.filter(e => e.active), circuit = act.filter(e => e.measure !== 'cardio'), cardio = act.filter(e => e.measure === 'cardio');
+  const n = circuit.length, rounds = n ? ladder : [];
+  const per = rounds.map(R => circuit.reduce((s, e) => s + (e.measure === 'time' ? wkNum(e.secs, 60) : R * spr * (e.each ? 2 : 1)), 0));
+  const work = per.reduce((a, b) => a + b, 0), co = n ? Math.max(0, n - 1) * chg * rounds.length : 0, rs = Math.max(0, rounds.length - 1) * rest;
+  const strength = work + co + rs, tread = cardio.length ? wkTreadMins() : 0;
+  return { ladder, rounds, spr, chg, rest, n, per, work, co, rs, strength, tread, circuit, cardio, total: strength / 60 + tread };
+}
+const wkFmtSec = s => { s = Math.round(s); const m = Math.floor(s / 60); return m ? `${m} m ${s % 60} s` : `${s} s`; };
+const wk1 = n => (Math.round(n * 10) / 10).toFixed(1);
+const wkMsg = t => `<div class="panel-head"><h2>Workouts</h2></div><p class="wk-msg">${t}</p>`;
+
+/* ---------- Workouts: first-open seeding (the SQL Editor has no signed-in user, so the app adds the library itself) ---------- */
+async function wkSeed() {
+  wk.seeding = true;
+  try {
+    let rows = exAll();
+    if (!rows.length) {
+      rows = wkSeedRows();
+      try { await addRows('Exercises', rows); }
+      catch (e) { if (e && e.code === 'signin') throw e; wk.noEquip = true; await addRows('Exercises', rows); }
+    }
+    if (!(state.data.Routines || []).length) {
+      const id = n => (rows.find(e => e.name === n) || {}).id;
+      await addRows('Routines', [
+        { id: 'wr001', name: 'Morning', ladder: '', items: [id('Treadmill')].filter(Boolean).join(','), rep: null, chg: null, rest: null, note: '30 min ≈ 3,500–4,000 steps' },
+        { id: 'wr002', name: 'Afternoon', ladder: '10,8,6', items: WK_AFTERNOON.map(id).filter(Boolean).join(','), rep: 3, chg: 20, rest: 90, note: '' }]);
+    }
+    rt.lastSave = Date.now();
+    wk.seeding = false; await refresh();
+  } catch (e) {
+    // another device may have set it up at the same moment (its rows already exist): re-read before giving up
+    // (still marked as seeding while it re-reads, so the redraw doesn't start another attempt)
+    try { await refresh(); } catch (e2) {}
+    wk.seedTries = (wk.seedTries || 0) + 1;
+    if (!(exAll().length && (state.data.Routines || []).length) && (!exAll().length || wk.seedTries > 2)) { wk.seedFail = true; console.warn('Workouts could not be set up.', (e && e.message) || e); }
+  }
+  wk.seeding = false; renderWorkouts();
+}
+
+/* ---------- Workouts: the Fitness panel ---------- */
+const wkEqChips = () => `<div class="wk-chips" role="group" aria-label="Equipment">${WK_EQUIP.map(q => `<button type="button" class="wk-chip" data-wk="eq" data-v="${q}" aria-pressed="${wk.equip.includes(q)}">${q}</button>`).join('')}</div>`;
+function wkCands(ex, taken) {
+  const ok = exAll().filter(e => e.active && !taken.has(e.id) && wkEqOk(e));
+  return { same: ok.filter(e => ex && e.muscle === ex.muscle), other: ok.filter(e => !(ex && e.muscle === ex.muscle)) };
+}
+const wkOpt = (e, attrs) => `<button type="button" class="wk-opt" ${attrs}><span>${esc(e.name)}</span><small>${esc(e.muscle || '')}${wkEquipOf(e).length ? ' · ' + esc(wkEquipOf(e).join(', ')) : ''}</small></button>`;
+function wkSwapMenu(ex, taken) {
+  const c = wkCands(ex, taken), pick = e => wkOpt(e, `data-wk="swapto" data-id="${esc(ex.id)}" data-to="${esc(e.id)}"`);
+  return `<div class="wk-menu">${wkEqChips()}${c.same.length ? `<div class="wk-eb">Same muscle (${esc(ex.muscle)})</div>` + c.same.map(pick).join('') : ''}${c.other.length ? '<div class="wk-eb">All active</div>' + c.other.map(pick).join('') : ''}${c.same.length + c.other.length ? '' : '<p class="wk-msg">Nothing else matches the equipment chosen.</p>'}</div>`;
+}
+function wkPickList() {
+  const r = wkEff(wkRoutine()), taken = new Set(wkIds(r && r.items)), q = wk.q.trim().toLowerCase();
+  const list = exAll().filter(e => e.active && !taken.has(e.id) && wkEqOk(e) && (!wk.pm || e.muscle === wk.pm) && (!q || (e.name + ' ' + e.muscle).toLowerCase().includes(q)));
+  return list.map(e => wkOpt(e, `data-wk="add" data-id="${esc(e.id)}"`)).join('') || '<p class="wk-msg">No exercises match.</p>';
+}
+function wkRoutineCard(r, items, st) {
+  const taken = new Set(items.map(e => e.id)), ed = wk.edit, nAct = items.filter(e => e.active).length;
+  const groups = WK_AREAS.concat([...new Set(items.map(e => e.area).filter(a => a && !WK_AREAS.includes(a)))]).map(a => [a, items.filter(e => (WK_AREAS.includes(e.area) ? e.area : e.area || '') === a)]).filter(g => g[1].length);
+  const rows = groups.map(([a, list]) => `<div class="wk-grp"><div class="wk-eb"><span class="wk-dot" style="background:${WK_AREA_COL[a] || 'var(--muted)'}"></span>${esc(a)}</div>${list.map((e, i) => {
+    const last = wkLastTxt(e, st), m = (e.measure === 'time' ? 'time' : e.measure === 'cardio' ? 'cardio' : 'reps') + (e.each ? ' · each side' : '');
+    return `<div class="wk-row" data-off="${!e.active}"><div class="wk-info"><b>${esc(e.name)}</b><span>${m}${last ? ' · ' + last : ''}${e.active ? '' : ' · paused'}</span></div>
+      ${ed ? `<div class="wk-ctl"><button type="button" class="btn" data-wk="up" data-id="${esc(e.id)}" aria-label="Move ${esc(e.name)} up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="btn" data-wk="down" data-id="${esc(e.id)}" aria-label="Move ${esc(e.name)} down" ${i === list.length - 1 ? 'disabled' : ''}>↓</button>
+        <button type="button" class="btn" data-wk="swapm" data-id="${esc(e.id)}" aria-haspopup="menu" aria-expanded="${wk.menu === e.id}">Swap ▾</button><button type="button" class="btn btn-danger" data-wk="rm" data-id="${esc(e.id)}" aria-label="Remove ${esc(e.name)}">×</button></div>
+      ${wk.menu === e.id ? wkSwapMenu(e, taken) : ''}` : ''}</div>`; }).join('')}</div>`).join('');
+  const add = ed ? (wk.pick ? `<div class="wk-pick"><input type="search" id="wkQ" placeholder="Search exercises" aria-label="Search exercises" value="${esc(wk.q)}">${wkEqChips()}
+      <div class="wk-chips" role="group" aria-label="Muscle"><button type="button" class="wk-chip" data-wk="pm" data-v="" aria-pressed="${!wk.pm}">All</button>${WK_MUSCLES.map(m => `<button type="button" class="wk-chip" data-wk="pm" data-v="${m}" aria-pressed="${wk.pm === m}">${m}</button>`).join('')}</div>
+      <div class="wk-list" id="wkPickList">${wkPickList()}</div><button type="button" class="btn" data-wk="pickclose">Close</button></div>`
+    : '<button type="button" class="btn" data-wk="pickopen" style="min-height:44px">+ Add exercise</button>') + '<button type="button" class="btn btn-ghost" data-wk="lib" style="min-height:44px">Exercise library</button>' : '';
+  return `<section class="wk-card" aria-label="Routine"><h3>Routine<small>${nAct} exercise${nAct === 1 ? '' : 's'}${r.note ? ' · ' + esc(r.note) : ''}</small></h3>${rows || '<p class="wk-msg">No exercises yet.</p>'}${add}</section>`;
+}
+function wkStep(k, label, val, aria) { return `<div class="wk-step"><span class="wk-eb" style="font-size:10px">${label}</span><div><button type="button" class="stp" data-wk="step" data-k="${k}" data-d="-1" aria-label="Less ${aria}">−</button><output aria-label="${aria}">${val}</output><button type="button" class="stp" data-wk="step" data-k="${k}" data-d="1" aria-label="More ${aria}">+</button></div></div>`; }
+function wkCalcCard(r, items) {
+  const c = wkCalc(r, items), lad = c.ladder.join(','), isPreset = WK_LADDERS.includes(lad) && !wk.custom;
+  const timed = c.circuit.find(e => e.measure === 'time');
+  const chips = WK_LADDERS.map(l => `<button type="button" class="wk-chip" data-wk="ladder" data-v="${l}" aria-pressed="${isPreset && lad === l}">${l.split(',').join('›')}</button>`).join('') + `<button type="button" class="wk-chip" data-wk="custom" aria-pressed="${!isPreset}">Custom</button>`;
+  const out = !c.n ? `<div class="wk-sub">No strength circuit in this routine.</div><div class="wk-big">${c.tread} min</div><div class="wk-sub">Cardio only (about ${c.tread} min).</div>` : `<div><span class="wk-eb">Strength circuit</span><div class="wk-big">≈ ${wk1(c.strength / 60)} min</div><div class="wk-sub">+ ${c.tread} min treadmill = <b>${wk1(c.total)} min</b></div></div>
+    <div class="wk-tbl">${c.per.map((w, i) => `<div class="wk-tr"><span>Round ${i + 1} · ${c.rounds[i]} reps</span><span>${wkFmtSec(w)}</span></div>`).join('')}
+      <div class="wk-tr"><span>Change-overs · ${c.rounds.length} × ${Math.max(0, c.n - 1)} × ${c.chg} s</span><span>${wkFmtSec(c.co)}</span></div><div class="wk-tr"><span>Rests · ${c.rounds.length - 1} × ${c.rest} s</span><span>${wkFmtSec(c.rs)}</span></div>
+      <div class="wk-tr"><span>Treadmill</span><span>${c.tread} min</span></div><div class="wk-tr tot"><span>Total</span><span>${wk1(c.total)} min</span></div></div>
+    ${(() => { const segs = [['Work', c.work, 'var(--accent)'], ['Change-overs', c.co, 'var(--c-sport)'], ['Rest', c.rs, 'var(--under)'], ['Treadmill', c.tread * 60, 'var(--c-home)']], tot = segs.reduce((s, x) => s + x[1], 0) || 1;
+      return `<div class="wk-bar" role="img" aria-label="${segs.map(s => s[0] + ' ' + wk1(s[1] / 60) + ' minutes').join(', ')}">${segs.map(s => `<i style="width:${(s[1] / tot * 100).toFixed(2)}%;background:${s[2]}"></i>`).join('')}</div><div class="wk-leg">${segs.map(s => `<span><i style="background:${s[2]}"></i>${s[0]} ${wk1(s[1] / 60)}</span>`).join('')}</div>`; })()}`;
+  return `<section class="wk-card" aria-label="Time calculator"><h3>Time calculator</h3>
+    <div><span class="wk-eb" id="wkLad">Ladder (reps per round)</span><div class="wk-ladders" role="group" aria-labelledby="wkLad" style="margin-top:6px">${chips}</div>
+      ${isPreset ? '' : `<input type="text" id="wkLadIn" inputmode="numeric" aria-label="Custom ladder" placeholder="12,10,8,6" value="${esc(lad)}" style="margin-top:8px;width:100%;min-height:40px">`}</div>
+    <div class="wk-steps">${wkStep('rep', 'Seconds per rep', wk1(c.spr).replace(/\.0$/, '') + ' s', 'seconds per rep')}${wkStep('chg', 'Change-over (s)', c.chg + ' s', 'change-over seconds')}${wkStep('rest', 'Rest between rounds (s)', c.rest + ' s', 'rest seconds')}${timed ? wkStep('plank', timed.name + ' (s)', wkNum(timed.secs, 60) + ' s', timed.name + ' seconds') : ''}</div>
+    <div style="height:1px;background:var(--line)"></div>${out}<div class="wk-note">Estimates only. Adjust seconds per rep to match your pace.</div></section>`;
+}
+function renderWorkouts() {
+  const el = $('wkPanel'), rec = $('recPanel'); if (!el) return;
+  if (!state.live) return;
+  if (!useSb()) { el.innerHTML = wkMsg('Workouts are kept in Supabase. Choose Supabase in Settings to use them.'); rec.hidden = true; return; }
+  if (state.wkErr) { el.innerHTML = wkMsg('Workouts need one Supabase step: run supabase/05-workouts.sql.'); rec.hidden = true; return; }
+  rec.hidden = false;
+  if (!exAll().length || !(state.data.Routines || []).length) {
+    if (!wk.seeding && !wk.seedFail && state.tab === 'fitness') wkSeed();
+    el.innerHTML = wkMsg(wk.seedFail ? 'Workouts need one Supabase step: run supabase/05-workouts.sql.' : 'Setting up your exercise library…'); renderRecords(); return;
+  }
+  const r0 = wkRoutine(), r = wkEff(r0), items = wkItems(r), st = wkStats(), rs = state.data.Routines || [], draft = gymRead();
+  el.innerHTML = `${draft ? `<div class="wk-banner"><b>Session in progress · ${esc(draft.rname || '')}</b><button type="button" class="btn btn-primary" data-wk="resume" style="min-height:44px">Resume</button></div>` : ''}
+    <div class="wk-head"><div class="wk-title"><span class="eyebrow">Workouts</span><h2>${esc(r.name)} session</h2></div>
+      <div class="wk-seg" role="group" aria-label="Routine" style="--n:${rs.length}">${rs.map(x => `<button type="button" data-wk="rt" data-v="${esc(x.id)}" aria-pressed="${x.id === r0.id}">${esc(x.name)}</button>`).join('')}</div>
+      <div class="wk-acts"><button type="button" class="btn" data-wk="edit" aria-pressed="${wk.edit}">${wk.edit ? 'Done editing' : 'Edit routine'}</button><button type="button" class="btn btn-primary" data-wk="start">▶ Start session</button></div></div>
+    <div class="wk-cols">${wkRoutineCard(r, items, st)}${wkCalcCard(r, items)}</div>`;
+  renderRecords(st);
+  if ($('wkLibDlg').open) renderLib();
+}
+
+/* ---------- Workouts: records and recent sessions ---------- */
+function renderRecords(st) {
+  const el = $('recPanel'); if (!el || el.hidden) return; st = st || wkStats();
+  const recs = exAll().filter(e => st.best[e.id]).map(e => ({ e, b: st.best[e.id] })).map(({ e, b }) => {
+    if (e.measure === 'cardio') return b.km > 0 ? { e, main: `${wkKg(b.km)} km`, sub: `longest · ${wkDay(b.kmDate)}` } : null;
+    if (e.measure === 'time') return b.secs > 0 ? { e, main: `${wkKg(b.secs)} s`, sub: `longest · ${wkDay(b.secsDate)}` } : null;
+    return b.kg > 0 ? { e, main: `${wkKg(b.kg)} kg`, sub: `${wkDay(b.kgDate)} · most reps at that weight: ${b.reps}` } : null;
+  }).filter(Boolean);
+  const sess = (state.data.Sessions || []).slice().sort((a, b) => b.date.localeCompare(a.date) || b._row - a._row).slice(0, 5), sets = state.data.Sets || [];
+  el.innerHTML = `<div class="panel-head"><h2>Records</h2><span class="muted" style="font-size:13px">From your saved sessions</span></div>
+    <div class="wk-cols"><section class="wk-card" aria-label="Personal bests"><h3>Personal bests</h3>${recs.map(x => `<div class="wk-rec"><b style="font-weight:500">${esc(x.e.name)}</b><b>${x.main}</b><span style="flex:1 1 100%">${esc(x.sub)}</span></div>`).join('') || '<p class="wk-msg">Records appear after your first saved session.</p>'}</section>
+    <section class="wk-card" aria-label="Last sessions"><h3>Last 5 sessions</h3>${sess.map(s => { const rn = ((state.data.Routines || []).find(r => r.id === s.routine) || { name: s.routine || 'Session' }).name, mine = sets.filter(x => x.sid === s.id), n = mine.filter(x => (exById(x.ex) || {}).measure !== 'cardio').length;
+      const mins = s.start && s.end ? wkMin(new Date(s.end) - new Date(s.start)) : null;
+      return `<div class="wk-sess" data-sess="${esc(s.id)}"><b style="font-weight:500">${wkDay(s.date)}</b><span>${esc(rn)}<span class="mut"> · ${mins != null ? mins + ' min · ' : ''}${n} sets${s.feel ? ' · ' + esc(s.feel) : ''}</span></span><button type="button" class="btn btn-danger" data-wk="sdel" data-id="${esc(s.id)}">${wk.delArm === s.id ? 'Remove?' : 'Delete'}</button></div>`; }).join('') || '<p class="wk-msg">No sessions saved yet.</p>'}</section></div>`;
+}
+
+/* ---------- Workouts: exercise library editor ---------- */
+function renderLib() {
+  const body = $('wkLibBody'), top = body.scrollTop, all = exAll(), list = all.filter(wkEqOk);
+  const muscles = WK_MUSCLES.concat([...new Set(all.map(e => e.muscle).filter(m => m && !WK_MUSCLES.includes(m)))]);
+  const opt = (v, cur, l) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l || v)}</option>`;
+  body.innerHTML = `<div class="wk-chips" style="align-items:center"><span class="wk-eb">Equipment</span>${wkEqChips()}<button type="button" class="btn btn-primary" data-wk="libnew" style="min-height:40px">+ New exercise</button></div>
+    ${wk.libNew ? `<form class="wk-libform" data-wk-newform autocomplete="off"><label class="w">Name<input name="name" required maxlength="80"></label>
+      <label>Muscle<select name="muscle">${WK_MUSCLES.map(m => opt(m, 'Legs')).join('')}</select></label><label>Measure<select name="measure">${opt('reps', 'reps', 'Reps')}${opt('time', '', 'Time')}${opt('cardio', '', 'Cardio')}</select></label>
+      <label>Equipment<select name="equip"><option value="">None</option>${WK_EQUIP.map(q => opt(q, 'Dumbbell')).join('')}</select></label><label style="flex-direction:row;align-items:center;gap:8px;min-height:40px"><input type="checkbox" name="each"> Each side</label>
+      <div class="w" style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" data-wk="libnew">Cancel</button><button type="submit" class="btn btn-primary">Add exercise</button></div></form>` : ''}
+    ${muscles.map(m => { const g = list.filter(e => e.muscle === m); return g.length ? `<div class="wk-grp"><div class="wk-eb"><span class="wk-dot" style="background:${WK_AREA_COL[WK_AREA_OF[m]] || 'var(--muted)'}"></span>${esc(m)}</div>${g.map(e => `<div class="wk-lrow" data-off="${!e.active}"><div class="wk-info"><b>${esc(e.name)}</b><span>${esc(wkEquipOf(e).join(', ') || 'No equipment set')}${e.secs && e.measure === 'time' ? ' · ' + e.secs + ' s' : ''}</span></div>
+      <label><input type="checkbox" data-lf="active" data-id="${esc(e.id)}" ${e.active ? 'checked' : ''}> ${e.active ? 'Active' : 'Paused'}</label><label><input type="checkbox" data-lf="each" data-id="${esc(e.id)}" ${e.each ? 'checked' : ''}> Each side</label>
+      <select data-lf="measure" data-id="${esc(e.id)}" aria-label="Measure for ${esc(e.name)}">${opt('reps', e.measure, 'Reps')}${opt('time', e.measure, 'Time')}${opt('cardio', e.measure, 'Cardio')}</select>
+      <input type="text" class="wk-note-in" data-lf="note" data-id="${esc(e.id)}" value="${esc(e.note)}" placeholder="Note" aria-label="Note for ${esc(e.name)}"></div>`).join('')}</div>` : ''; }).join('') || '<p class="wk-msg">No exercises match the equipment chosen.</p>'}`;
+  body.scrollTop = top;
+}
+
+/* ---------- Workouts: events ---------- */
+async function wkSetItems(ids) { const r = wkRoutine(); if (!r) return; await withBusy('Saving…', () => updateRow('Routines', { ...r, items: wkNorm(ids).join(',') })); }
+function wkQueue(patch, plank) {
+  const r = wkRoutine(); if (!r) return;
+  wk.pend = wk.pend && wk.pend.id === r.id ? wk.pend : { id: r.id, r: {}, plank: null };
+  Object.assign(wk.pend.r, patch); if (plank != null) wk.pend.plank = plank;
+  clearTimeout(wk.timer); wk.timer = setTimeout(wkFlush, 600); renderWorkouts();
+}
+async function wkFlush() {
+  clearTimeout(wk.timer); const p = wk.pend; if (!p) return; wk.pend = null;
+  const r = (state.data.Routines || []).find(x => x.id === p.id); if (!r) return;
+  const pl = p.plank != null ? exAll().find(e => e.measure === 'time' && wkIds(r.items).includes(e.id)) : null;
+  await withBusy('Saving…', async () => { await updateRow('Routines', { ...r, ...p.r }); if (pl) await updateRow('Exercises', { ...pl, secs: p.plank }); });
+}
+const wkStepSpec = { rep: [0.5, 1, 10], chg: [5, 0, 120], rest: [15, 0, 300], plank: [5, 10, 180] };
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-wk]'); if (!el) return;
+  const a = el.dataset.wk, id = el.dataset.id, r = wkRoutine();
+  if (a === 'rt') { await wkFlush(); wk.rid = el.dataset.v; wk.menu = null; wk.pick = false; try { localStorage.setItem('brain-workout-routine', wk.rid); } catch (x) {} renderWorkouts(); return; }
+  if (a === 'edit') { wk.edit = !wk.edit; wk.menu = null; wk.pick = false; renderWorkouts(); return; }
+  if (a === 'lib') { renderLib(); if (!$('wkLibDlg').open) $('wkLibDlg').showModal(); return; }
+  if (a === 'libclose') { $('wkLibDlg').close(); return; }
+  if (a === 'libnew') { wk.libNew = !wk.libNew; renderLib(); return; }
+  if (a === 'start') { await wkFlush(); gymStart(); return; }
+  if (a === 'resume') { gymResume(); return; }
+  if (a === 'eq') { const v = el.dataset.v; wk.equip = wk.equip.includes(v) ? wk.equip.filter(x => x !== v) : wk.equip.concat(v); try { localStorage.setItem('brain-workout-equip', JSON.stringify(wk.equip)); } catch (x) {}
+    renderWorkouts(); if ($('wkLibDlg').open) renderLib(); if ($('gymDlg').open) gyDraw(); return; }
+  if (a === 'pm') { wk.pm = el.dataset.v; renderWorkouts(); return; }
+  if (a === 'pickopen') { wk.pick = true; wk.q = ''; wk.pm = ''; renderWorkouts(); return; }
+  if (a === 'pickclose') { wk.pick = false; renderWorkouts(); return; }
+  if (a === 'swapm') { wk.menu = wk.menu === id ? null : id; renderWorkouts(); return; }
+  if (a === 'ladder') { wk.custom = false; wkQueue({ ladder: el.dataset.v }); return; }
+  if (a === 'custom') { wk.custom = true; renderWorkouts(); const i = $('wkLadIn'); if (i) i.focus(); return; }
+  if (a === 'step') { const k = el.dataset.k, [s, lo, hi] = wkStepSpec[k], eff = wkEff(r), items = wkItems(eff), c = wkCalc(eff, items);
+    const cur = k === 'plank' ? wkNum((c.circuit.find(x => x.measure === 'time') || {}).secs, 60) : c[k === 'rep' ? 'spr' : k];
+    const nv = Math.min(hi, Math.max(lo, Math.round((cur + s * Number(el.dataset.d)) * 10) / 10));
+    if (k === 'plank') wkQueue({}, nv); else wkQueue({ [k]: nv }); return; }
+  if (a === 'sdel') { if (wk.delArm !== id) { wk.delArm = id; renderRecords(); setTimeout(() => { if (wk.delArm === id) { wk.delArm = null; renderRecords(); } }, 3000); return; }
+    wk.delArm = null; const s = (state.data.Sessions || []).find(x => x.id === id); if (!s) return;
+    if (await withBusy('Removing…', async () => { for (const x of (state.data.Sets || []).filter(x => x.sid === id)) await deleteRow('Sets', x); await deleteRow('Sessions', s); })) toast('Session removed'); return; }
+  if (!r) return;
+  const ids = wkIds(r.items), ex = exById(id);
+  if (a === 'up' || a === 'down') { const grp = ids.filter(x => (exById(x) || {}).area === (ex || {}).area), gi = grp.indexOf(id), oj = gi + (a === 'up' ? -1 : 1); if (oj < 0 || oj >= grp.length) return;
+    const i = ids.indexOf(id), j = ids.indexOf(grp[oj]); [ids[i], ids[j]] = [ids[j], ids[i]]; await wkSetItems(ids); return; }
+  if (a === 'rm') { wk.menu = null; await wkSetItems(ids.filter(x => x !== id)); return; }
+  if (a === 'swapto') { wk.menu = null; await wkSetItems(ids.map(x => x === id ? el.dataset.to : x)); return; }
+  if (a === 'add') { const n = exById(id); if (!n) return; let at = -1; ids.forEach((x, i) => { if ((exById(x) || {}).area === n.area) at = i; });
+    ids.splice(at < 0 ? ids.length : at + 1, 0, id); await wkSetItems(ids); return; }
+});
+document.addEventListener('input', e => { const t = e.target;
+  if (t.id === 'wkQ') { wk.q = t.value; const l = $('wkPickList'); if (l) l.innerHTML = wkPickList(); } });
+document.addEventListener('change', async e => { const t = e.target;
+  if (t.id === 'wkLadIn') { wkQueue({ ladder: wkLadder(t.value).join(',') }); return; }
+  const f = t.dataset && t.dataset.lf; if (!f) return;
+  const ex = exById(t.dataset.id); if (!ex) return;
+  const o = { ...ex };
+  if (f === 'active') o.active = t.checked; else if (f === 'each') o.each = t.checked; else if (f === 'note') o.note = t.value.trim();
+  else if (f === 'measure') { o.measure = t.value; o.weighted = t.value === 'reps' ? ex.weighted : false; if (t.value === 'time' && !o.secs) o.secs = 45; }
+  await withBusy('Saving…', () => updateRow('Exercises', o));
+});
+document.addEventListener('submit', async e => { const f = e.target; if (!f.hasAttribute || !f.hasAttribute('data-wk-newform')) return;
+  e.preventDefault(); const fd = new FormData(f), name = String(fd.get('name') || '').trim(); if (!name) return;
+  const m = fd.get('muscle'), ms = fd.get('measure');
+  const o = { id: newId('ex'), name, area: WK_AREA_OF[m] || 'Upper', muscle: m, measure: ms, each: !!fd.get('each'), weighted: ms === 'reps', secs: ms === 'time' ? 45 : null, active: true, note: '', equip: fd.get('equip') || '' };
+  wk.libNew = false; if (await withBusy('Adding…', () => addRows('Exercises', [o]))) toast('Added ' + name); });
+
+/* ---------- Workouts: the gym screen ----------
+   The whole session in progress lives in localStorage `brain-workout-draft` (round, ticks, kg, times, swaps, start time) and is
+   put back after a reload. Nothing goes to Supabase until Save: one row in workout_sessions, then all done sets in workout_sets. */
+const GYM_KEY = 'brain-workout-draft';
+function gymRead() { try { const d = JSON.parse(localStorage.getItem(GYM_KEY) || 'null'); return d && d.v === 1 && Array.isArray(d.items) ? d : null; } catch (e) { return null; } }
+let gym = null, gyTimer = null;
+const gyUi = { sheet: null, reps: null, saving: false, err: false, armed: false };
+const gyPut = () => { try { if (gym) localStorage.setItem(GYM_KEY, JSON.stringify(gym)); } catch (e) {} };
+function gyDrop() { gym = null; try { localStorage.removeItem(GYM_KEY); } catch (e) {} }
+const gyK = (id, r) => id + '|' + r;
+const gyEx = id => exById(id) || { id, name: id, measure: 'reps', weighted: false, area: 'Upper', active: true };
+const gyCircuit = () => gym.items.filter(id => gyEx(id).measure !== 'cardio');
+const gyCardio = () => gym.items.filter(id => gyEx(id).measure === 'cardio');
+const gyN = () => gyCircuit().length ? gym.ladder.length : 0;
+const gyRung = () => gym.ladder[Math.min(gym.round, gym.ladder.length - 1)];
+const gyCards = () => gyN() ? gyCircuit().concat(gym.round === gyN() - 1 ? gyCardio() : []) : gyCardio();
+const gyTotal = () => gyCircuit().length * gyN() + gyCardio().length;
+const gyDone = () => Object.keys(gym.sets).length + gyCardio().filter(id => (gym.cardio[id] || {}).done).length;
+const gyClock = ms => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return (h ? h + ':' + pad(m) : m) + ':' + pad(s % 60); };
+const gyRepsFor = (id, r) => (gym.reps[gyK(id, r)] != null ? gym.reps[gyK(id, r)] : gym.ladder[Math.min(r, gym.ladder.length - 1)]);
+
+function gymStart() {
+  const r = wkEff(wkRoutine()); if (!r) return;
+  const items = wkItems(r).filter(e => e.active); if (!items.length) { toast('Add an exercise to the routine first'); return; }
+  if (gymRead()) { gymResume(); return; }
+  const st = wkStats(), kg = {}, cardio = {};
+  items.forEach(e => { if (e.weighted && e.measure === 'reps' && st.last[e.id] && st.last[e.id].kg != null) kg[e.id] = st.last[e.id].kg; });
+  const c = wkCalc(r, items), lastSess = (state.data.Sessions || []).slice().sort((a, b) => a.date.localeCompare(b.date) || a._row - b._row).filter(s => s.place).pop();
+  items.filter(e => e.measure === 'cardio').forEach(e => { cardio[e.id] = { mins: String(wkTreadMins()), km: '', steps: '', done: false }; });
+  gym = { v: 1, rid: r.id, rname: r.name, date: todayIso(), t0: Date.now(), t1: null, ladder: c.ladder, spr: c.spr, chg: c.chg, rest: c.rest, items: items.map(e => e.id), round: 0, sets: {}, kg, reps: {}, cardio, timers: {}, phase: 'play', feel: '', note: '', place: lastSess ? lastSess.place : '', sid: '', saved: false };
+  gyPut(); gyOpen();
+}
+function gymResume() { gym = gymRead(); if (!gym) { renderWorkouts(); return; } gyOpen(); }
+function gyOpen() {
+  gyUi.sheet = null; gyUi.reps = null; gyUi.err = false; gyUi.saving = false; gyUi.armed = false;
+  if (!$('gymDlg').open) $('gymDlg').showModal();
+  gyDraw(); clearInterval(gyTimer); gyTimer = setInterval(gyTick, 1000);
+}
+/* seconds still to do, from the calculator's own numbers */
+function gyLeft() {
+  const c = gyCircuit(), N = gyN(); let s = 0;
+  for (let r = gym.round; r < N; r++) {
+    c.forEach(id => { if (gym.sets[gyK(id, r)]) return; const e = gyEx(id); s += e.measure === 'time' ? wkNum(e.secs, 60) : gyRepsFor(id, r) * gym.spr * (e.each ? 2 : 1); });
+    s += Math.max(0, c.length - 1) * gym.chg; if (r < N - 1) s += gym.rest;
+  }
+  gyCardio().forEach(id => { const x = gym.cardio[id] || {}; if (!x.done) s += wkNum(x.mins, 30) * 60; });
+  return s;
+}
+function gyTick() {
+  if (!gym || !$('gymDlg').open) { clearInterval(gyTimer); return; }
+  const now = Date.now(); let ended = false;
+  Object.keys(gym.timers).forEach(k => { if (gym.timers[k] <= now) { const [id, r] = k.split('|'); delete gym.timers[k]; gyTickSet(id, Number(r), true); ended = true; try { navigator.vibrate && navigator.vibrate(200); } catch (e) {} } });
+  if (ended) { gyPut(); gyDraw(); return; }
+  const el = $('gyElapsed'); if (el && gym.phase === 'play') el.textContent = gyClock(now - gym.t0);
+  const lf = $('gyLeft'); if (lf && gym.phase === 'play') lf.textContent = '≈ ' + Math.max(0, Math.round(gyLeft() / 60)) + ' min left';
+  document.querySelectorAll('[data-gy-count]').forEach(b => { const end = gym.timers[b.dataset.gyCount]; if (end) b.textContent = '⏱ ' + Math.max(0, Math.ceil((end - now) / 1000)) + ' s · Stop'; });
+}
+function gyTickSet(id, r, on) {
+  const k = gyK(id, r), e = gyEx(id);
+  if (!on) { delete gym.sets[k]; delete gym.timers[k]; return; }
+  gym.sets[k] = { reps: e.measure === 'time' ? null : gyRepsFor(id, r), kg: e.weighted && e.measure === 'reps' && gym.kg[id] != null ? gym.kg[id] : null, secs: e.measure === 'time' ? wkNum(e.secs, 60) : null, at: Date.now() };
+}
+function gyCardHtml(id) {
+  const e = gyEx(id), r = gym.round, k = gyK(id, r), st = wkStats(), last = wkLastTxt(e, st), dot = `<span class="wk-dot" style="background:${WK_AREA_COL[e.area] || 'var(--muted)'}" aria-hidden="true"></span>`;
+  const head = `<div class="gy-c1">${dot}<b>${esc(e.name)}</b><span class="l">${e.each ? 'each side · ' : ''}${esc(last)}</span></div>`;
+  const tick = (on, attr, aria) => `<button type="button" class="gy-tick" ${attr} aria-pressed="${on}" aria-label="${esc(aria)}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`;
+  if (e.measure === 'cardio') {
+    const c = gym.cardio[id] = gym.cardio[id] || { mins: '30', km: '', steps: '', done: false };
+    const inp = (f, l, step) => `<label>${l}<input type="number" inputmode="decimal" step="${step}" min="0" data-gy-c="${esc(id)}" data-f="${f}" value="${esc(c[f])}" aria-label="${esc(e.name)} ${l}"></label>`;
+    return `<div class="gy-card" data-done="${!!c.done}" data-ex="${esc(id)}">${head}<div class="gy-cin">${inp('mins', 'Mins', 1)}${inp('km', 'Km', 0.01)}${inp('steps', 'Steps', 1)}</div><div class="gy-c2"><span class="wk-note">Not added to your daily steps</span>${tick(!!c.done, `data-gy="ctick" data-id="${esc(id)}"`, 'Done: ' + e.name)}</div></div>`;
+  }
+  const s = gym.sets[k], done = !!s;
+  if (e.measure === 'time') {
+    const secs = wkNum(e.secs, 60), run = gym.timers[k], left = run ? Math.max(0, Math.ceil((run - Date.now()) / 1000)) : 0;
+    return `<div class="gy-card" data-done="${done}" data-ex="${esc(id)}">${head}<div class="gy-c2"><button type="button" class="gy-btn" data-gy="timer" data-id="${esc(id)}" ${run ? `data-gy-count="${esc(k)}"` : ''}>${run ? '⏱ ' + left + ' s · Stop' : (done ? 'Again · ' : 'Start ') + secs + ' s'}</button>${tick(done, `data-gy="tick" data-id="${esc(id)}"`, (done ? 'Undo ' : 'Done: ') + e.name)}</div></div>`;
+  }
+  const reps = s ? s.reps : gyRepsFor(id, r), kg = gym.kg[id];
+  const kgUi = e.weighted ? `<div class="gy-kg"><button type="button" class="gy-stp" data-gy="kg" data-id="${esc(id)}" data-d="-2.5" aria-label="Less weight for ${esc(e.name)}">−</button><output aria-label="${esc(e.name)} weight">${kg != null ? wkKg(kg) + ' kg' : '— kg'}</output><button type="button" class="gy-stp" data-gy="kg" data-id="${esc(id)}" data-d="2.5" aria-label="More weight for ${esc(e.name)}">+</button></div>` : '';
+  const ed = gyUi.reps === k ? `<div class="gy-c2"><span class="wk-note">Reps for this set</span><div class="gy-kg"><button type="button" class="gy-stp" data-gy="reps" data-id="${esc(id)}" data-d="-1" aria-label="Fewer reps">−</button><output aria-label="Reps">${reps}</output><button type="button" class="gy-stp" data-gy="reps" data-id="${esc(id)}" data-d="1" aria-label="More reps">+</button></div></div>` : '';
+  return `<div class="gy-card" data-done="${done}" data-ex="${esc(id)}">${head}<div class="gy-c2">${kgUi}<button type="button" class="gy-chip" data-gy="repsedit" data-id="${esc(id)}" aria-label="Edit reps for ${esc(e.name)}">${reps} reps ✎</button>${tick(done, `data-gy="tick" data-id="${esc(id)}"`, (done ? 'Undo ' : 'Done: ') + e.name)}</div>${ed}</div>`;
+}
+function gySheetHtml() {
+  const sh = gyUi.sheet; if (!sh) return '';
+  const close = '<button type="button" class="gy-link" data-gy="sheetx">Cancel</button>';
+  if (!sh.from) return `<div class="gy-sheet" role="dialog" aria-label="Swap which exercise"><div class="wk-eb">Swap which exercise? (today only)</div>${gyCards().map(id => `<button type="button" class="wk-opt" data-gy="swapfrom" data-id="${esc(id)}"><span>${esc(gyEx(id).name)}</span><small>${esc(gyEx(id).muscle || '')}</small></button>`).join('')}${close}</div>`;
+  const ex = gyEx(sh.from), c = wkCands(ex, new Set(gym.items)), pick = e => wkOpt(e, `data-gy="swapto" data-id="${esc(e.id)}"`);
+  return `<div class="gy-sheet" role="dialog" aria-label="Swap ${esc(ex.name)} for"><div class="wk-eb">Replace ${esc(ex.name)} for today</div>${wkEqChips()}${c.same.length ? `<div class="wk-eb">Same muscle (${esc(ex.muscle || '')})</div>` + c.same.map(pick).join('') : ''}${c.other.length ? '<div class="wk-eb">All active</div>' + c.other.map(pick).join('') : ''}${close}</div>`;
+}
+function gyDraw() {
+  if (!gym) return;
+  const head = $('gyHead'), body = $('gyBody'), foot = $('gyFoot'), top = body.scrollTop;
+  if (gym.phase === 'done') { gyDone_(head, body, foot); body.scrollTop = top; return; }
+  const N = gyN(), tot = gyTotal(), dn = gyDone(), last = N ? gym.round >= N - 1 : true, rung = N ? gyRung() : null;
+  head.hidden = false; head.innerHTML = `<div class="gy-r1"><span class="wk-eb">${esc(gym.rname)}${N ? ` · Round ${gym.round + 1} of ${N}` : ''}</span><button type="button" class="gy-x" data-gy="close" aria-label="Close and keep this session">×</button></div>
+    <div class="gy-r2"><span class="gy-big">${N ? rung + ' reps' : 'Cardio'}</span><span class="muted" style="font-size:12px">${dn} of ${tot} done</span></div>
+    <div class="gy-bar" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${tot ? Math.round(dn / tot * 100) : 0}"><i style="width:${tot ? dn / tot * 100 : 0}%"></i></div>
+    <div class="gy-r3"><span id="gyElapsed">${gyClock(Date.now() - gym.t0)}</span><span class="muted" id="gyLeft">≈ ${Math.round(gyLeft() / 60)} min left</span></div>`;
+  body.innerHTML = gyCards().map(gyCardHtml).join('') + `<div style="display:flex;justify-content:space-between;flex-wrap:wrap">${gym.round > 0 ? '<button type="button" class="gy-link" data-gy="prev">‹ Previous round</button>' : '<span></span>'}<button type="button" class="gy-link" data-gy="discard">${gyUi.armed ? 'Discard? Tap again' : 'Discard session'}</button></div>`;
+  const nextRung = N && !last ? gym.ladder[gym.round + 1] : null;
+  foot.className = 'gy-foot'; foot.innerHTML = `<button type="button" class="gy-btn" data-gy="swap" aria-haspopup="dialog" style="width:112px;flex:none">Swap ▾</button><button type="button" class="gy-btn pri" data-gy="next">${last ? 'Finish' : 'Next round · ' + nextRung + ' reps →'}</button>`;
+  body.scrollTop = top; $('gySheet').innerHTML = gySheetHtml();
+}
+function gySummary() {
+  const sets = Object.entries(gym.sets).map(([k, s]) => ({ id: k.split('|')[0], round: Number(k.split('|')[1]), ...s })), st = wkStats();
+  let vol = 0; sets.forEach(s => { const e = gyEx(s.id); if (s.kg != null && s.reps) vol += s.reps * s.kg * (e.each ? 2 : 1); });
+  const pbs = [], seen = new Set();
+  sets.forEach(s => { if (seen.has(s.id)) return; seen.add(s.id); const e = gyEx(s.id), b = st.best[s.id], mine = sets.filter(x => x.id === s.id);
+    if (!b) return;
+    if (e.measure === 'time') { const m = Math.max(...mine.map(x => x.secs || 0)); if (b.secs > 0 && m > b.secs) pbs.push([e.name, wkKg(m) + ' s', wkKg(b.secs)]); }
+    else { const m = Math.max(0, ...mine.map(x => x.kg || 0)); if (b.kg > 0 && m > b.kg) pbs.push([e.name, wkKg(m) + ' kg', wkKg(b.kg)]); } });
+  const cardio = gyCardio().filter(id => (gym.cardio[id] || {}).done).map(id => { const c = gym.cardio[id], b = st.best[id], km = wkNum(c.km, null);
+    if (b && km != null && b.km > 0 && km > b.km) pbs.push([gyEx(id).name, wkKg(km) + ' km', wkKg(b.km)]); return { id, ...c }; });
+  return { sets, vol, pbs, cardio, mins: wkMin((gym.t1 || Date.now()) - gym.t0) };
+}
+function gyDone_(head, body, foot) {
+  const s = gySummary(), icon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  head.hidden = true; head.innerHTML = '';
+  body.innerHTML = `<div style="display:flex;align-items:center;gap:12px"><span style="width:44px;height:44px;border-radius:50%;border:1px solid var(--ok);color:var(--ok);display:flex;align-items:center;justify-content:center;flex:none">${icon}<path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><h2 style="font-size:26px;font-weight:700">Session done</h2><span class="muted" style="font-size:13px">${wkDay(gym.date)}${gym.place ? ' · ' + esc(gym.place) : ''}</span></div></div>
+    <div class="gy-tiles"><div class="gy-tile"><span class="wk-eb" style="font-size:10px">Time</span><b>${s.mins} min</b></div><div class="gy-tile"><span class="wk-eb" style="font-size:10px">Sets</span><b>${s.sets.length}</b></div><div class="gy-tile"><span class="wk-eb" style="font-size:10px">Volume</span><b>${Math.round(s.vol).toLocaleString('en-AU')} kg</b></div></div>
+    ${s.cardio.map(c => `<div class="gy-card gy-line" style="flex-direction:row;align-items:center;gap:12px"><span style="color:var(--c-home)">${icon}<path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">${esc(gyEx(c.id).name)} · ${esc(c.mins || 0)} min${c.km !== '' ? ' · ' + esc(c.km) + ' km' : ''}</b><span class="wk-note">${c.steps !== '' ? '≈' + Number(c.steps).toLocaleString('en-AU') + ' steps ' : ''}(not added to your daily steps)</span></div></div>`).join('')}
+    <div class="gy-card"><h2 style="font-size:18px">New personal bests</h2>${s.pbs.map(p => `<div class="gy-pb"><span><b>${esc(p[0])}</b> ${esc(p[1])}</span><small>was ${esc(p[2])}</small></div>`).join('') || '<p class="wk-msg">None this time. Records are compared with your earlier sessions.</p>'}</div>
+    <div class="gy-card"><h2 id="gyFeel" style="font-size:18px">How did it feel?</h2><div class="gy-feel" role="group" aria-labelledby="gyFeel">${WK_FEEL.map(f => `<button type="button" data-gy="feel" data-v="${f}" aria-pressed="${gym.feel === f}">${f}</button>`).join('')}</div>
+      <label class="gy-in"><span class="wk-eb" style="font-size:10px">Note</span><input type="text" id="gyNote" placeholder="Anything to remember?" value="${esc(gym.note)}"></label>
+      <label class="gy-in"><span class="wk-eb" style="font-size:10px">Place</span><input type="text" id="gyPlace" placeholder="Where did you train?" value="${esc(gym.place)}"></label></div>
+    ${gyUi.err ? `<div class="gy-err" role="alert"><span>Couldn't save. Your session is kept on this phone. Try again.</span><button type="button" class="gy-btn pri" data-gy="save">Try again</button></div>` : ''}
+    <div style="text-align:center"><button type="button" class="gy-link" data-gy="discard">${gyUi.armed ? 'Discard? Tap again' : 'Discard session'}</button></div>`;
+  foot.className = 'gy-foot two'; foot.innerHTML = `<button type="button" class="gy-btn" data-gy="close">Back to Fitness</button><button type="button" class="gy-btn pri" data-gy="save" ${gyUi.saving ? 'disabled' : ''}>${gyUi.saving ? 'Saving…' : 'Save session'}</button>`;
+  $('gySheet').innerHTML = '';
+}
+async function gySave() {
+  if (!gym || gyUi.saving) return;
+  gyUi.saving = true; gyUi.err = false; gyDraw();
+  try {
+    const s = gySummary(), dd = gym.date.replace(/-/g, '');
+    if (!gym.sid) { const used = (state.data.Sessions || []).map(x => x.id).filter(x => x.startsWith('ws' + dd + '-')).map(x => Number(x.split('-')[1]) || 0); gym.sid = `ws${dd}-${Math.max(0, ...used) + 1}`; gyPut(); }
+    const sid = gym.sid, iso_ = ms => new Date(ms).toISOString();
+    if (!gym.saved) { await addRows('Sessions', [{ id: sid, date: gym.date, routine: gym.rid, ladder: gym.ladder.join(','), start: iso_(gym.t0), end: iso_(gym.t1 || Date.now()), place: gym.place.trim(), feel: gym.feel, note: gym.note.trim() }]); gym.saved = true; gyPut(); }
+    const order = id => gym.items.indexOf(id), rows = [];
+    s.sets.slice().sort((a, b) => a.round - b.round || order(a.id) - order(b.id)).forEach(x => rows.push({ round: x.round + 1, ex: x.id, reps: x.reps, kg: x.kg, secs: x.secs, mins: null, km: null, steps: null, at: iso_(x.at) }));
+    s.cardio.forEach(c => rows.push({ round: null, ex: c.id, reps: null, kg: null, secs: null, mins: wkNum(c.mins, null), km: wkNum(c.km, null), steps: wkNum(c.steps, null), at: iso_(gym.t1 || Date.now()) }));
+    rows.forEach((x, i) => { x.id = `${sid}-${i + 1}`; x.sid = sid; });
+    if (rows.length) await addRows('Sets', rows);
+    rt.lastSave = Date.now(); clearInterval(gyTimer); gyDrop(); $('gymDlg').close(); toast('Session saved'); await refresh();
+  } catch (e) { gyUi.saving = false; gyUi.err = true; if (gym) gyDraw(); const b = $('gyBody'); if (b) b.scrollTop = b.scrollHeight; }
+}
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-gy]'); if (!el || !gym) return;
+  const a = el.dataset.gy, id = el.dataset.id, r = gym.round, k = id && gyK(id, r);
+  const redraw = () => { gyPut(); gyDraw(); };
+  if (a === 'close') { $('gymDlg').close(); return; }
+  if (a === 'discard') { if (!gyUi.armed) { gyUi.armed = true; gyDraw(); setTimeout(() => { if (gyUi.armed) { gyUi.armed = false; if (gym && $('gymDlg').open) gyDraw(); } }, 3000); return; }
+    clearInterval(gyTimer); gyDrop(); $('gymDlg').close(); toast('Session discarded'); return; }
+  if (a === 'tick') { const on = !gym.sets[k]; gyTickSet(id, r, on); redraw(); return; }
+  if (a === 'ctick') { const c = gym.cardio[id]; c.done = !c.done; redraw(); return; }
+  if (a === 'kg') { const cur = gym.kg[id] != null ? gym.kg[id] : 0, v = Math.max(0, cur + Number(el.dataset.d)); gym.kg[id] = v; if (gym.sets[k]) gym.sets[k].kg = v; redraw(); return; }
+  if (a === 'repsedit') { gyUi.reps = gyUi.reps === k ? null : k; gyDraw(); return; }
+  if (a === 'reps') { const v = Math.max(1, gyRepsFor(id, r) + Number(el.dataset.d)); gym.reps[k] = v; if (gym.sets[k]) gym.sets[k].reps = v; redraw(); return; }
+  if (a === 'timer') { if (gym.timers[k]) delete gym.timers[k]; else { gym.timers[k] = Date.now() + wkNum(gyEx(id).secs, 60) * 1000; delete gym.sets[k]; } redraw(); return; }
+  if (a === 'prev') { gym.round = Math.max(0, r - 1); gyUi.reps = null; redraw(); $('gyBody').scrollTop = 0; return; }
+  if (a === 'next') { gyUi.reps = null; if (gyN() && r < gyN() - 1) { gym.round = r + 1; redraw(); $('gyBody').scrollTop = 0; } else { gym.t1 = Date.now(); gym.phase = 'done'; redraw(); $('gyBody').scrollTop = 0; } return; }
+  if (a === 'swap') { gyUi.sheet = { from: null }; gyDraw(); return; }
+  if (a === 'sheetx') { gyUi.sheet = null; gyDraw(); return; }
+  if (a === 'swapfrom') { gyUi.sheet = { from: id }; gyDraw(); return; }
+  if (a === 'swapto') { const from = gyUi.sheet && gyUi.sheet.from, i = gym.items.indexOf(from); if (i < 0) return;
+    gym.items[i] = id; delete gym.sets[gyK(from, r)]; delete gym.timers[gyK(from, r)]; const st = wkStats(), n = exById(id);
+    if (n && n.weighted && gym.kg[id] == null && st.last[id] && st.last[id].kg != null) gym.kg[id] = st.last[id].kg;
+    if (n && n.measure === 'cardio' && !gym.cardio[id]) gym.cardio[id] = { mins: '30', km: '', steps: '', done: false };
+    gyUi.sheet = null; redraw(); return; }
+  if (a === 'feel') { gym.feel = gym.feel === el.dataset.v ? '' : el.dataset.v; redraw(); return; }
+  if (a === 'save') { await gySave(); return; }
+});
+document.addEventListener('input', e => { const t = e.target; if (!gym) return;
+  if (t.dataset && t.dataset.gyC) { (gym.cardio[t.dataset.gyC] = gym.cardio[t.dataset.gyC] || {})[t.dataset.f] = t.value; gyPut(); }
+  else if (t.id === 'gyNote') { gym.note = t.value; gyPut(); } else if (t.id === 'gyPlace') { gym.place = t.value; gyPut(); } });
+$('gymDlg').addEventListener('close', () => { clearInterval(gyTimer); gyUi.sheet = null; if (state.live) renderWorkouts(); });
+gym = null;
 
 /* ---------- boot ---------- */
 (async () => {

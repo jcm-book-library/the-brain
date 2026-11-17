@@ -102,6 +102,7 @@ async function install(page, w) {
     const u = new URL(r.request().url()), m = u.pathname.match(/^\/rest\/v1\/(\w+)$/);
     if (!m || r.request().method() !== 'GET') { w.sbWrites = (w.sbWrites || 0) + 1; return r.fulfill({ status: 405, body: '{}' }); }
     if (m[1] === 'activity') { w.feedReads = (w.feedReads || 0) + 1; if (!w.sb.activity) return r.fulfill({ status: 404, contentType: 'application/json', body: '{"message":"no such view"}' }); } // The Library's pages view (schema shared)
+    if (!w.sb[m[1]]) return r.fulfill({ status: 404, contentType: 'application/json', body: '{"message":"no such table"}' }); // e.g. the Workouts tables: not part of the copy
     const off = Number(u.searchParams.get('offset') || 0), lim = Number(u.searchParams.get('limit') || 1000);
     r.fulfill({ contentType: 'application/json', body: JSON.stringify(w.sb[m[1]].slice(off, off + lim)) });
   });
@@ -170,6 +171,7 @@ const old = ['Plan backup 2026-01-01', 'Plan backup 2026-01-02', 'Plan backup 20
     check('Log: new day appended at the end', rowsOf(w1, 'Log').length === 3 && rowsOf(w1, 'Log')[2][0] === serial(T));
     check('People, Lists, Notes, Links, Goals untouched', ['People', 'Lists', 'Notes', 'Links', 'Goals'].every(t => JSON.stringify(rowsOf(w1, t)) === JSON.stringify(sheetRows()[t])));
     check('nothing written to Supabase', !w1.sbWrites);
+    check('Workouts tables are not part of the copy: no Sheet tab, backup or write mentions them', !w1.tabs.some(t => /Exercises|Routines|Sessions|Sets|workout/i.test(t.title)) && w1.calls.every(c => !/Exercises|Routines|Sessions|workout/i.test(c.p + JSON.stringify(c.body || ''))) && !(await page.evaluate(() => Object.keys(TABS).concat(Object.keys(SBT)).some(k => /Exercises|Routines|Sessions|Sets/.test(k)))));
     // second run: nothing left to do
     const n = sheetWrites(w1).length;
     await page.click('#sbCopy'); await waitMsg(page, /already matches|This will change/);
