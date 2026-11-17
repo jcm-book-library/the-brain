@@ -193,7 +193,7 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     const p = w.sbCalls.slice(before).filter(c => c.method === 'PATCH');
     check('sbmode: tick -> exactly one PATCH with only `done`', p.length === 1 && p[0].table === 'plan' && JSON.stringify(p[0].body) === '{"done":true}' && /row_id=eq\.1$/.test(p[0].query), p.map(x => [x.query, x.body]));
     check('sbmode: tick persisted', w.sb.plan.find(r => r.id === 'e1').done === true);
-    await page.click('.tab[data-tab=notes]');
+    await page.click('.tab[data-tab=notes]'); await page.click('#ntTabs [data-ntab=lists]');
     const b2 = w.sbCalls.length;
     await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button');
     await page.waitForFunction(() => document.getElementById('lists').innerText.includes('New Show'));
@@ -206,11 +206,34 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     const d = w.sbCalls.slice(b3).filter(c => c.method === 'DELETE');
     check('sbmode: remove list item -> DELETE row_id=eq.N', d.length === 1 && d[0].table === 'lists' && d[0].query === `?row_id=eq.${dentist.row_id}`, d.map(x => x.query));
     const b4 = w.sbCalls.length;
-    await page.click('[data-ik="n:n1"]'); await page.click('[aria-label="Colour: Teal"]');
+    await page.click('#ntTabs [data-ntab=map]'); await page.click('[data-ik="n:n1"]'); await page.click('[aria-label="Colour: Teal"]');
     await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live'); await page.waitForTimeout(300);
     const pc = w.sbCalls.slice(b4).filter(c => c.method === 'PATCH');
     check('sbmode: note colour -> exactly one PATCH with only `color`', pc.length === 1 && pc[0].table === 'notes' && JSON.stringify(pc[0].body) === '{"color":"teal"}', pc.map(x => [x.query, x.body]));
     check('sbmode: zero calls to sheets.googleapis.com', w.sheetCalls.length === 0, w.sheetCalls);
+  } });
+
+  // 3-notes. Notes Inbox in Supabase mode: add bar, voice session, sort, move to a list
+  await scenario(b, 'notes-inbox', { init: { ...cfgSb, ...ses() }, setup: seedSbBasic, run: async (page, w) => {
+    await live(page); await page.evaluate(() => { window.__TEST_UNDO_MS__ = 1200; });
+    await page.click('.tab[data-tab=notes]'); await page.click('#ntTabs [data-ntab=inbox]');
+    const saved = async () => { await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live'); await page.waitForTimeout(300); };
+    let b0 = w.sbCalls.length;
+    await page.fill('#ntText', 'sb inbox note'); await page.press('#ntText', 'Enter'); await saved();
+    let po = w.sbCalls.slice(b0).filter(c => c.method === 'POST');
+    check('sbmode notes: the add bar POSTs one Inbox note', po.length === 1 && po[0].table === 'notes' && po[0].body.length === 1 && po[0].body[0].topic === 'Inbox' && po[0].body[0].note === 'sb inbox note', po.map(x => x.body));
+    b0 = w.sbCalls.length;
+    await page.click('#ntVoice'); await page.fill('#ntListen', 'Podcast: X'); await page.fill('#ntText', 'one'); await page.press('#ntText', 'Enter'); await saved();
+    await page.fill('#ntText', 'two'); await page.press('#ntText', 'Enter'); await saved();
+    const ws = w.sbCalls.slice(b0).filter(c => c.method !== 'GET');
+    check('sbmode notes: a voice session is one POST then one PATCH of only `note`', ws.length === 2 && ws[0].method === 'POST' && ws[0].body[0].topic === 'Voice notes' && ws[1].method === 'PATCH' && JSON.stringify(Object.keys(ws[1].body)) === '["note"]' && /^Podcast: X\n\d\d:\d\d one\n\d\d:\d\d two$/.test(ws[1].body.note), ws.map(x => [x.method, x.body]));
+    await page.click('#nSession [data-nvend]');
+    b0 = w.sbCalls.length;
+    await page.locator('#nInboxBody .nt-row').filter({ hasText: 'sb inbox note' }).locator('[data-nsort]').click(); await page.click('#ntPop [data-nm=list]'); await page.click('#ntPop [data-nlist="Playing"]'); await saved();
+    await page.waitForTimeout(1500); await saved();
+    const wr = w.sbCalls.slice(b0).filter(c => c.method !== 'GET');
+    check('sbmode notes: Move to a list POSTs the list row, then DELETEs the note after the Undo window', wr.length === 2 && wr[0].method === 'POST' && wr[0].table === 'lists' && wr[0].body[0].item === 'sb inbox note' && wr[0].body[0].list === 'Playing' && wr[1].method === 'DELETE' && wr[1].table === 'notes', wr.map(x => [x.method, x.table, x.body]));
+    check('sbmode notes: zero calls to sheets.googleapis.com', w.sheetCalls.length === 0, w.sheetCalls);
   } });
 
   // 3a. Live sync: a change on another device shows here without pressing Refresh

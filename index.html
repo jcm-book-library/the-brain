@@ -471,6 +471,71 @@ html[data-mode=light] #v-notes{--ic-violet:#7c5cd6;--ic-cobalt:#2f5fd0;--ic-teal
 @media (prefers-reduced-motion:reduce){.ie.spk .ispark{animation:none}}
 /* the map is the busiest part of the page: no backdrop blur behind it, so nothing is re-blurred while it moves */
 #v-notes>.panel,#ideaSide{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--bg) 85%,var(--glass))}
+/* notes: add bar, tabs, sections, rows, sort menu, undo (after the Library's wishlist) */
+#v-notes>.nt-add{position:sticky;top:6px;z-index:25;display:grid;gap:8px;padding:12px 14px;background:linear-gradient(var(--raise),var(--raise)),var(--bg)}
+.nt-addrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.nt-addrow .btn{padding:7px 22px}
+.nt-destrow{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.nt-dest,.nt-voice{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.nt-dest .chip-t,.nt-voice .chip-t{padding:5px 12px}
+.nt-dest .chip-t:disabled{opacity:.6}
+.nt-destrow input,.nt-voice input{flex:1 1 180px;min-width:0}
+.nt-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}
+.nt-foot .muted{font-size:12px;overflow-wrap:anywhere}
+.nt-foot .btn{padding:4px 12px;flex:none}
+.nt-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.nt-tab{border:0;background:transparent;color:var(--muted);border-radius:8px;padding:8px 6px;font:500 14px/1.3 var(--display);white-space:nowrap;display:flex;justify-content:center;align-items:baseline;gap:6px;min-width:0;cursor:pointer}
+.nt-tab[aria-selected=true]{background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent)}
+.nt-tab .n{font-size:12px}
+#ntInbox,#nInboxBody,#ntTopics{display:grid;gap:12px;min-width:0}
+#nSession:empty{display:none}
+.nt-sec{border:1px solid var(--line);border-radius:16px;padding:12px 16px;background:color-mix(in srgb,var(--bg) 85%,var(--glass));min-width:0}
+.nt-session{border-color:var(--accent)}
+.nt-sh{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;color:var(--fg);padding:2px 0;text-align:left;font:inherit;cursor:pointer}
+.nt-sh h3,.nt-sess-h h3{margin:0;font-size:15px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.nt-cnt{font-size:12px;font-weight:600;color:var(--muted);background:var(--raise);border-radius:999px;padding:0 8px;line-height:20px;flex:none}
+.nt-hint{font-size:12px;color:var(--muted)}
+.nt-car{margin-left:auto;color:var(--muted);transition:transform .15s;font-size:12px}
+.nt-sec.closed .nt-car{transform:rotate(-90deg)}
+.nt-sec.closed .nt-rows{display:none}
+.nt-rows{margin-top:6px}
+.nt-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:9px 0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.nt-row:first-child{border-top:0}
+.nt-main{min-width:0}
+.nt-t{font:inherit;font-weight:500;line-height:1.35;background:none;border:0;padding:0;color:var(--fg);text-align:left;overflow-wrap:anywhere;cursor:pointer;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
+.nt-t:hover{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
+.nt-m{font-size:12.5px;color:var(--muted);margin-top:1px;overflow-wrap:anywhere}
+.nt-m:empty{display:none}
+.nt-acts{display:flex;gap:6px;justify-content:flex-end}
+.nt-acts .btn{padding:4px 12px}
+.nt-empty{font-size:13px;color:var(--muted);margin:6px 0 2px}
+.nt-sess-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nt-sess-h .btn{margin-left:auto;padding:4px 12px}
+.nt-live{font-size:12px;font-weight:600;color:var(--ok)}
+.nt-lines{margin:8px 0 0;padding:0;list-style:none;max-height:220px;overflow-y:auto;display:grid;gap:3px;font-size:14px}
+.nt-lines li{display:flex;gap:10px;min-width:0;overflow-wrap:anywhere}
+.nt-tm{color:var(--muted);flex:none}
+.nt-pop{position:fixed;z-index:70;width:230px;max-height:min(70vh,420px);overflow:auto;background:linear-gradient(var(--raise),var(--raise)),var(--bg);border:1px solid var(--line);border-radius:12px;padding:5px;color:var(--fg)}
+.nt-pop button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;color:var(--fg);padding:8px 10px;border-radius:7px;font:inherit;font-size:13px;cursor:pointer}
+.nt-pop button:hover,.nt-pop button:focus-visible{background:var(--surface);outline:none}
+.nt-pop .btn-primary{width:auto;background:var(--accent);color:var(--accent-ink)}
+.nt-pop .nt-ph{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:6px 10px 2px}
+.nt-pop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.nt-pop form{display:flex;gap:6px;padding:6px}
+.nt-pop form input{flex:1;min-width:0}
+.nt-toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;width:calc(100vw - 24px);max-width:460px;pointer-events:none}
+.nt-toast{pointer-events:auto;width:100%;background:linear-gradient(var(--raise),var(--raise)),var(--bg);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:9px 14px;font-size:14px;display:flex;gap:14px;align-items:center}
+.nt-toast span{flex:1;min-width:0;overflow-wrap:anywhere}
+.nt-toast .btn{padding:3px 12px;flex:none}
+@media (max-width:700px){.nt-toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:560px){
+  #v-notes>.nt-add{padding:10px;gap:6px}
+  .nt-tab{padding:8px 2px;font-size:13px;gap:4px}
+  .nt-sec{padding:10px 12px}
+  .nt-row{grid-template-columns:minmax(0,1fr)}
+  .nt-acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nt-pop{left:8px !important;right:8px;top:auto !important;bottom:8px;width:auto;max-height:70vh}
+}
 .idot{position:absolute;inset:0;border-radius:50%;transition:transform .15s,box-shadow .15s}
 .inode.t .idot{background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--ic) 45%,#fff),var(--ic) 55%,color-mix(in srgb,var(--ic) 55%,transparent));box-shadow:0 0 22px var(--ic),0 0 0 2px color-mix(in srgb,var(--ic) 40%,transparent)}
 .inode.n .idot{background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--ic) 40%,#fff) 0,var(--ic) 45%,color-mix(in srgb,var(--ic) 35%,transparent) 100%);box-shadow:0 0 12px var(--ic)}
@@ -740,10 +805,25 @@ dialog.sheet form{padding:0}
     </div>
   </section>
 
-  <section id="v-notes" class="home" hidden><div class="panel"><div class="panel-head"><h2>Notes</h2><div class="seg" role="group" aria-label="Notes view"><button type="button" class="chip-t" data-iview="map" aria-pressed="true">Map</button><button type="button" class="chip-t" data-iview="list" aria-pressed="false">List</button></div><button class="btn" type="button" id="newNote">New note</button></div>
-    <div class="ifilt" id="ideaFilters"></div>
-    <div class="ilayout" id="ideaBox"><div class="imapwrap"><div id="ideaMap"></div></div><aside class="ipanel panel" id="ideaSide" aria-live="polite"></aside></div>
-    <div id="notes"></div></div><div class="grid2" id="lists"></div></section>
+  <section id="v-notes" class="home" hidden>
+    <div class="panel nt-add" id="ntAdd">
+      <form id="ntForm" class="nt-addrow" autocomplete="off">
+        <input id="ntText" aria-label="Jot something" placeholder="Jot something…" enterkeyhint="send">
+        <button class="btn btn-primary" type="submit">Add</button>
+      </form>
+      <div class="nt-destrow"><div class="nt-dest" id="ntDest" role="group" aria-label="Add to"></div><input id="ntTopic" aria-label="Topic" placeholder="Topic name" list="ntTopicList" hidden><datalist id="ntTopicList"></datalist></div>
+      <div class="nt-voice"><button type="button" class="chip-t" id="ntVoice" aria-pressed="false">Voice-note session</button>
+        <input id="ntListen" aria-label="Listening to" placeholder="Listening to (optional), e.g. Podcast: …" hidden></div>
+      <div class="nt-foot"><span class="muted" id="ntHint" aria-live="polite">Adds to the Notes Inbox</span><button class="btn btn-ghost" type="button" id="newNote">Full note…</button></div>
+    </div>
+    <div class="nt-tabs" id="ntTabs" role="tablist" aria-label="Notes sections"></div>
+    <div id="ntInbox" role="tabpanel"><div id="nSession"></div><div id="nInboxBody"></div></div>
+    <div id="ntTopics" role="tabpanel" hidden></div>
+    <div id="ntLists" role="tabpanel" hidden><div class="grid2" id="lists"></div></div>
+    <div class="panel" id="ntMap" role="tabpanel" hidden><div class="ifilt" id="ideaFilters"></div>
+      <div class="ilayout" id="ideaBox"><div class="imapwrap"><div id="ideaMap"></div></div><aside class="ipanel panel" id="ideaSide" aria-live="polite"></aside></div>
+      <p class="empty" id="ideaEmpty" hidden>No notes yet. Add one and it will show up on the map.</p></div>
+  </section>
   <section id="v-setup" hidden><div class="seg setupnav" id="setupNav" role="group" aria-label="Setup sections"></div><div id="setupGrid"></div></section>
 </div>
 
@@ -860,6 +940,7 @@ dialog.sheet form{padding:0}
 </form></dialog>
 
 <div class="toast" id="toast" hidden></div>
+<div class="nt-toasts" id="ntToasts"></div>
 
 <script>
 'use strict';
@@ -1564,7 +1645,7 @@ function searchGo(r) {
   else if (r.kind === 'note') { showTab('notes'); openNote(r.n); }
   else if (r.kind === 'person') openPerson(r.p);
   else if (r.kind === 'list') {
-    showTab('notes');
+    showTab('notes'); setNTab('lists');
     const f = [...document.querySelectorAll('form[data-list]')].find(x => x.dataset.list === r.l.list), panel = f && f.parentElement;
     if (panel) { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); panel.classList.remove('search-flash'); void panel.offsetWidth; panel.classList.add('search-flash'); setTimeout(() => panel.classList.remove('search-flash'), 1600); }
   } else if (r.kind === 'link') { if (/^https?:\/\//i.test(r.l.url || '')) window.open(r.l.url, '_blank', 'noopener'); else toast('That link has no web address.'); }
@@ -1790,8 +1871,8 @@ function parseQuick(text) {
   if (!cat) cat = CATS.find(c => QA_CAT[c] && QA_CAT[c].test(text)) || 'Other';
   return { title, date: date || t, dated: !!date, time, cat };
 }
-/* "Topic: the note" files it under that topic; anything else goes under "Quick note". */
-function parseNote(text) { const m = text.trim().match(/^([A-Za-z][\w &'’-]{0,22}):\s+(\S[\s\S]*)$/); return m ? { topic: m[1].trim(), note: m[2].trim() } : { topic: 'Quick note', note: text.trim() }; }
+/* "Topic: the note" files it under that topic; anything else goes to the Notes Inbox (older notes say "Quick note"). */
+function parseNote(text) { const m = text.trim().match(/^([A-Za-z][\w &'’-]{0,22}):\s+(\S[\s\S]*)$/); return m ? { topic: m[1].trim(), note: m[2].trim() } : { topic: 'Inbox', note: text.trim() }; }
 function quickPreview(f) {
   const v = f.querySelector('input').value, out = f.querySelector('.qa-prev'); let html;
   if (f.matches('[data-nq]')) { const q = parseNote(v);
@@ -2223,7 +2304,7 @@ async function saveNext(p, nd) {
 }
 function renderLists() {
   const all = state.data.Lists || [];
-  const names = ['Reading', 'Watching', 'Playing', 'To book', ...new Set(all.map(l => l.list).filter(n => !['Reading', 'Watching', 'Playing', 'To book'].includes(n)))];
+  const names = listNames();
   const order = { Current: 0, Open: 0, 'Up next': 1, Done: 2 };
   $('lists').innerHTML = names.map(n => { const items = all.filter(l => l.list === n).sort((a, b) => (order[a.status] ?? 1) - (order[b.status] ?? 1));
     return `<div class="panel"><div class="panel-head"><h2>${esc(n)}</h2><span class="muted" style="font-size:13px">${items.filter(i => i.status !== 'Done').length}</span></div>
@@ -2245,7 +2326,7 @@ const ideaOn = n => (!state.notesTopic || topicOf(n) === state.notesTopic) && (!
 let ideaM = null, ideaHoverKey = '';
 // nodes (topic hubs, notes, linked people and events) and edges, laid out the same way every time
 function ideaModel() {
-  const notes = state.data.Notes || [], people = state.data.People || [], plan = state.data.Plan || [];
+  const notes = mapNotes(), people = state.data.People || [], plan = state.data.Plan || [];
   const N = {}, nodes = [], edges = [], seen = new Set();
   const add = nd => { N[nd.k] = nd; nodes.push(nd); return nd; };
   const topics = [...new Set(notes.map(topicOf))].sort((a, b) => a.localeCompare(b));
@@ -2313,19 +2394,199 @@ function ideaSide() {
       ${evs.length ? `<optgroup label="Events">${evs.map(p => `<option value="e:${esc(p.id)}">${esc(p.title + (p.date ? ' · ' + fmt(p.date, { day: 'numeric', month: 'short' }) : ''))}</option>`).join('')}</optgroup>` : ''}</select>
     <div><button type="button" class="btn" data-iedit="${esc(n.id)}">Edit note</button></div>`;
 }
+/* ---------- notes: Inbox · Topics · Lists · Map ----------
+   Inbox = topic blank, "Inbox" or "Quick note"; topic "Archive" is archived. Everything goes through addRows / updateRow / deleteRow. */
+const NT_TABS = ['inbox', 'topics', 'lists', 'map'], NT_LABEL = { inbox: 'Inbox', topics: 'Topics', lists: 'Lists', map: 'Map' };
+const undoMs = () => Number(window.__TEST_UNDO_MS__) || 6000;
+const ntNorm = t => String(t || '').trim().toLowerCase();
+const noteIn = n => ['', 'inbox', 'quick note'].includes(ntNorm(n.topic));
+const noteArch = n => ntNorm(n.topic) === 'archive';
+const noteLines = n => String(n.note || '').split('\n').map(s => s.trim()).filter(Boolean);
+const noteHead = n => noteLines(n)[0] || '(empty note)';
+const noteRest = n => noteLines(n).slice(1).join('\n');
+const ntFind = id => (state.data.Notes || []).find(x => x.id === id);
+const ntPending = new Set(); // moved to a list, waiting out the Undo window
+const ntNewest = (a, b) => (b.date || '').localeCompare(a.date || '') || (b._row || 0) - (a._row || 0);
+const notesLive = () => (state.data.Notes || []).filter(n => !ntPending.has(n.id));
+const notesInbox = () => notesLive().filter(noteIn).sort(ntNewest);
+const mapNotes = () => (state.data.Notes || []).filter(n => !noteArch(n));
+function notesTopics() { // [{ topic, notes }], most notes first
+  const m = new Map();
+  notesLive().filter(n => !noteIn(n) && !noteArch(n)).forEach(n => { const t = n.topic.trim(); if (!m.has(t)) m.set(t, []); m.get(t).push(n); });
+  return [...m].map(([topic, notes]) => ({ topic, notes: notes.sort(ntNewest) })).sort((a, b) => b.notes.length - a.notes.length || a.topic.localeCompare(b.topic));
+}
+function listNames() { const base = ['Reading', 'Watching', 'Playing', 'To book']; return [...base, ...new Set((state.data.Lists || []).map(l => l.list).filter(n => n && !base.includes(n)))]; }
+const listOpen = n => n === 'To book' ? 'Open' : 'Up next';
+function ntTab() { if (!state.nTab) { let t = ''; try { t = localStorage.getItem('brain-notes-tab') || ''; } catch (e) {} state.nTab = NT_TABS.includes(t) ? t : 'inbox'; } return state.nTab; }
+function setNTab(t) { state.nTab = t; try { localStorage.setItem('brain-notes-tab', t); } catch (e) {} renderNotes(); }
+function ntClosed() { try { const c = JSON.parse(localStorage.getItem('brain-notes-closed') || '{}'); return c && typeof c === 'object' && !Array.isArray(c) ? c : {}; } catch (e) { return {}; } }
+const ntIsClosed = k => { const c = ntClosed(); return k in c ? !!c[k] : k === 'archive'; };
+function ntToggle(k) { const c = ntClosed(); c[k] = !ntIsClosed(k); try { localStorage.setItem('brain-notes-closed', JSON.stringify(c)); } catch (e) {} }
+function ntSec(key, title, count, rows, hint) {
+  const closed = ntIsClosed(key);
+  return `<section class="nt-sec${closed ? ' closed' : ''}" data-nsec="${esc(key)}"><button type="button" class="nt-sh" data-ntoggle="${esc(key)}" aria-expanded="${!closed}"><h3>${esc(title)}</h3><span class="nt-cnt">${count}</span>${hint ? `<span class="nt-hint">${esc(hint)}</span>` : ''}<span class="nt-car" aria-hidden="true">▾</span></button><div class="nt-rows">${rows}</div></section>`;
+}
+function ntRow(n, mode) {
+  const lines = noteLines(n).length, meta = [n.date ? fmt(n.date, { day: 'numeric', month: 'short' }) : '', lines > 1 ? lines + ' lines' : '', ntNorm(n.topic) === 'quick note' ? 'Quick note' : ''].filter(Boolean).join(' · ');
+  const acts = mode === 'archive' ? `<button type="button" class="btn" data-nrestore="${esc(n.id)}">Restore</button>` : `<button type="button" class="btn" data-nsort="${esc(n.id)}" aria-haspopup="menu" aria-expanded="false">Sort ▾</button>`;
+  return `<div class="nt-row" data-nrow="${esc(n.id)}"><div class="nt-main"><button type="button" class="nt-t" data-nedit="${esc(n.id)}">${esc(noteHead(n))}</button><div class="nt-m">${esc(meta)}</div></div><div class="nt-acts"><button type="button" class="btn" data-nedit="${esc(n.id)}">Edit</button>${acts}</div></div>`;
+}
+/* undo toast: the action has already happened (or is held back) until the window ends */
+function undoToast(msg, onUndo, onExpire) {
+  const el = document.createElement('div'); el.className = 'nt-toast'; el.setAttribute('role', 'status');
+  el.innerHTML = '<span></span><button type="button" class="btn nt-undo">Undo</button>'; el.firstChild.textContent = msg; $('ntToasts').appendChild(el);
+  let done = false, t;
+  const finish = fn => { if (done) return; done = true; clearTimeout(t); el.remove(); if (fn) fn(); };
+  t = setTimeout(() => finish(onExpire), undoMs());
+  el.querySelector('button').addEventListener('click', () => finish(onUndo));
+}
+/* popover menu: one at a time, on the body so no row clips it; a bottom sheet on phones (CSS) */
+let ntPop = null;
+function ntPopClose(refocus) {
+  if (!ntPop) return; const a = ntPop.anchor; ntPop = null;
+  const el = $('ntPop'); if (el) el.remove();
+  if (a && a.isConnected) { a.setAttribute('aria-expanded', 'false'); if (refocus) a.focus(); }
+}
+function ntPopOpen(id, anchor) { ntPopClose(); ntPop = { id, view: 'main', anchor }; anchor.setAttribute('aria-expanded', 'true'); ntPopDraw(true); }
+function ntPopDraw(focus) {
+  const n = ntFind(ntPop.id); if (!n) { ntPopClose(); return; }
+  let el = $('ntPop'); if (!el) { el = document.createElement('div'); el.id = 'ntPop'; el.className = 'nt-pop'; el.setAttribute('role', 'menu'); document.body.appendChild(el); }
+  const v = ntPop.view, item = (a, label, extra) => `<button type="button" role="menuitem" ${a}>${label}${extra || ''}</button>`, chev = '<span aria-hidden="true">›</span>', back = t => `${item('data-nm="back"', '‹ Back')}<div class="nt-ph">${t}</div>`;
+  let h;
+  if (v === 'topic') h = back('File under topic') + notesTopics().filter(t => t.topic !== (n.topic || '').trim()).map(t => item(`data-ntopic="${esc(t.topic)}"`, esc(t.topic), `<span class="nt-cnt">${t.notes.length}</span>`)).join('') + '<hr>' + item('data-nm="newtopic"', 'New topic…');
+  else if (v === 'newtopic') h = back('New topic') + `<form id="ntNewTopic"><input aria-label="New topic" placeholder="Topic name" required><button type="submit" class="btn btn-primary">File</button></form>`;
+  else if (v === 'list') h = back('Move to a list') + listNames().map(l => item(`data-nlist="${esc(l)}"`, esc(l))).join('');
+  else h = item('data-nm="topic"', 'File under topic', chev) + item('data-nm="list"', 'Move to a list', chev) + item('data-nm="plan"', 'Make a plan item') + (noteIn(n) ? '' : item('data-nm="inbox"', 'Back to Inbox')) + item('data-nm="archive"', 'Archive');
+  el.innerHTML = h; ntPopPlace();
+  if (focus) { const f = el.querySelector('input,button'); if (f) f.focus({ preventScroll: true }); }
+}
+function ntPopPlace() {
+  const el = $('ntPop'); if (!el || !ntPop || !ntPop.anchor.isConnected) return;
+  const r = ntPop.anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+  let top = r.bottom + 4; if (top + h > innerHeight - 8 && r.top - h - 4 > 8) top = r.top - h - 4;
+  el.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px'; el.style.top = top + 'px';
+}
+document.addEventListener('click', e => { if (ntPop && !e.target.closest('#ntPop') && !e.target.closest('[data-nsort]')) ntPopClose(); });
+document.addEventListener('keydown', e => {
+  if (!ntPop) return;
+  if (e.key === 'Escape') { e.preventDefault(); ntPopClose(true); return; }
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && e.target.closest('#ntPop')) { const items = [...$('ntPop').querySelectorAll('button')], i = items.indexOf(document.activeElement); if (!items.length) return; e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus(); }
+});
+addEventListener('scroll', () => { if (ntPop && !matchMedia('(max-width: 560px)').matches) ntPopPlace(); }, { passive: true });
+addEventListener('resize', () => ntPopPlace());
+document.addEventListener('click', async e => {
+  const b = e.target.closest('#ntPop button'); if (!b || !ntPop) return;
+  const id = ntPop.id, d = b.dataset;
+  if (d.nm === 'back') { ntPop.view = 'main'; ntPopDraw(true); return; }
+  if (d.nm === 'topic' || d.nm === 'list' || d.nm === 'newtopic') { ntPop.view = d.nm; ntPopDraw(true); return; }
+  if (d.ntopic != null) { await ntSetTopic(id, d.ntopic, 'Filed under ' + d.ntopic); return; }
+  if (d.nlist != null) { await ntMoveToList(id, d.nlist); return; }
+  if (d.nm === 'inbox') { await ntSetTopic(id, 'Inbox', 'Back in the Inbox'); return; }
+  if (d.nm === 'archive') { await ntArchive(id); return; }
+  if (d.nm === 'plan') { ntPlanFrom(id); return; }
+});
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'ntNewTopic' || !ntPop) return; e.preventDefault();
+  const t = e.target.querySelector('input').value.trim(); if (t) await ntSetTopic(ntPop.id, t, 'Filed under ' + t);
+});
+async function ntSetTopic(id, topic, msg) {
+  const n = ntFind(id); ntPopClose(); if (!n) return false;
+  const ok = await withBusy('Saving…', () => updateRow('Notes', { ...n, topic }));
+  if (ok && msg) toast(msg); return ok;
+}
+async function ntArchive(id, after) {
+  const n = ntFind(id); ntPopClose(); if (!n) return; const prev = n.topic, head = noteHead(n);
+  if (!await withBusy('Archiving…', () => updateRow('Notes', { ...n, topic: 'Archive' }))) return;
+  undoToast((after ? 'Plan item added. Archived “' : 'Archived “') + (head.length > 40 ? head.slice(0, 40) + '…' : head) + '”', async () => {
+    const c = ntFind(id); if (c) await withBusy('Restoring…', () => updateRow('Notes', { ...c, topic: prev }));
+  });
+}
+async function ntMoveToList(id, name) {
+  const n = ntFind(id); ntPopClose(); if (!n) return;
+  const o = { id: newId('l'), list: name, item: noteHead(n), status: listOpen(name), added: todayIso(), notes: noteRest(n) };
+  ntPending.add(id); renderNotes();
+  if (!await withBusy('Moving…', () => addRows('Lists', [o]))) { ntPending.delete(id); renderNotes(); return; }
+  undoToast(`Moved to ${name}`, async () => {
+    ntPending.delete(id); const l = (state.data.Lists || []).find(x => x.id === o.id);
+    if (l) await withBusy('Undoing…', () => deleteRow('Lists', l)); else renderNotes();
+  }, async () => {
+    const c = ntFind(id); if (c) await withBusy('Removing…', () => deleteRow('Notes', c));
+    ntPending.delete(id); renderNotes();
+  });
+}
+/* Make a plan item: the normal add dialog, prefilled; saving it archives the note */
+let planFromNote = null;
+function ntPlanFrom(id) {
+  const n = ntFind(id); ntPopClose(); if (!n) return;
+  openItem(null, todayIso()); planFromNote = id;
+  $('fTitle').value = noteHead(n); $('fNotes').value = noteRest(n); state.itemKey = 'item@note@' + id;
+}
+$('itemDlg').addEventListener('close', () => { planFromNote = null; });
+/* voice-note session: one note under "Voice notes"; each entry is a timed line appended to it */
+const VOICE_KEY = 'brain-voice-session';
+const voiceId = () => { try { return sessionStorage.getItem(VOICE_KEY) || ''; } catch (e) { return ''; } };
+const setVoiceId = id => { try { if (id) sessionStorage.setItem(VOICE_KEY, id); else sessionStorage.removeItem(VOICE_KEY); } catch (e) {} };
+const voiceOn = () => !!(state.nVoice || voiceId());
+let voiceQ = Promise.resolve();
+function voiceAdd(text) {
+  voiceQ = voiceQ.then(async () => {
+    const line = pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()) + ' ' + text, id = voiceId(), n = id && ntFind(id); let ok;
+    if (n) ok = await withBusy('Saving…', () => updateRow('Notes', { ...n, note: (n.note ? n.note + '\n' : '') + line }));
+    else { const lis = $('ntListen').value.trim(), o = { id: newId('n'), date: todayIso(), topic: 'Voice notes', note: (lis ? lis + '\n' : '') + line, links: '', color: '', pos: '' };
+      ok = await withBusy('Saving…', () => addRows('Notes', [o])); if (ok) { setVoiceId(o.id); $('ntListen').value = ''; } }
+    if (!ok && !$('ntText').value) $('ntText').value = text;
+    renderNotes();
+  });
+}
+function voiceEnd() { state.nVoice = false; setVoiceId(''); $('ntListen').value = ''; renderNotes(); }
+function ntSession() {
+  const box = $('nSession'); if (!voiceOn()) { box.innerHTML = ''; return; }
+  const n = ntFind(voiceId()), lines = n ? noteLines(n) : [];
+  box.innerHTML = `<section class="nt-sec nt-session" aria-label="Voice-note session"><div class="nt-sess-h"><h3>Voice-note session</h3><span class="nt-live">Listening</span><button type="button" class="btn" data-nvend>End session</button></div>
+    ${lines.length ? `<ol class="nt-lines" aria-live="polite">${lines.map(l => { const m = /^(\d\d:\d\d) (.*)$/.exec(l); return m ? `<li><span class="nt-tm">${m[1]}</span><span>${esc(m[2])}</span></li>` : `<li><span>${esc(l)}</span></li>`; }).join('')}</ol>` : '<p class="nt-empty">Type or dictate a line below. The first one starts the note under “Voice notes”.</p>'}</section>`;
+  const ol = box.querySelector('.nt-lines'); if (ol) ol.scrollTop = ol.scrollHeight;
+}
+/* add bar */
+function ntAddBar() {
+  const tops = notesTopics(), voice = voiceOn();
+  let dest = state.nDest || 'inbox', chips = tops.slice(0, 3).map(t => t.topic);
+  if (dest.startsWith('t:') && !chips.includes(dest.slice(2))) chips.push(dest.slice(2));
+  const chip = (k, label) => `<button type="button" class="chip-t" data-ndest="${esc(k)}" aria-pressed="${dest === k && !voice}"${voice ? ' disabled' : ''}>${esc(label)}</button>`;
+  $('ntDest').innerHTML = chip('inbox', 'Inbox') + chips.map(t => chip('t:' + t, t)).join('') + chip('new', 'Topic…');
+  $('ntTopic').hidden = !(dest === 'new' && !voice);
+  $('ntTopicList').innerHTML = tops.map(t => `<option value="${esc(t.topic)}">`).join('');
+  $('ntVoice').setAttribute('aria-pressed', String(voice));
+  $('ntListen').hidden = !(voice && !voiceId());
+  $('ntText').placeholder = voice ? 'Add a line to the session…' : 'Jot something…';
+  $('ntHint').textContent = voice ? 'Adds a timed line to one note under Voice notes' : dest === 'inbox' ? 'Adds to the Notes Inbox' : dest === 'new' ? 'Adds under the topic you type' : 'Adds to the topic “' + dest.slice(2) + '”';
+}
+$('ntForm').addEventListener('submit', async e => {
+  e.preventDefault(); const inp = $('ntText'), v = inp.value.trim(); if (!v) return;
+  if (voiceOn()) { inp.value = ''; voiceAdd(v); return; }
+  const dest = state.nDest || 'inbox'; let topic = 'Inbox';
+  if (dest === 'new') { topic = $('ntTopic').value.trim(); if (!topic) { $('ntTopic').focus(); return; } } else if (dest.startsWith('t:')) topic = dest.slice(2);
+  if (await withBusy('Saving note…', () => addRows('Notes', [{ id: newId('n'), date: todayIso(), topic, note: v, links: '', color: '', pos: '' }]))) { inp.value = ''; toast(topic === 'Inbox' ? 'Added to the Inbox' : 'Added under ' + topic); }
+});
 function renderNotes() {
-  const all = state.data.Notes || [], view = (state.notesView || (matchMedia('(max-width: 600px)').matches ? 'list' : 'map')) === 'list' ? 'list' : 'map', none = !all.length;
-  const topics = [...new Set(all.map(topicOf))].sort((a, b) => a.localeCompare(b));
+  const tab = ntTab(), live = notesLive(), inbox = notesInbox(), tops = notesTopics(), maps = mapNotes();
+  const openItems = (state.data.Lists || []).filter(l => l.status !== 'Done').length;
+  const counts = { inbox: inbox.length, topics: tops.reduce((s, t) => s + t.notes.length, 0), lists: openItems, map: maps.length };
+  ntAddBar();
+  $('ntTabs').innerHTML = NT_TABS.map(t => `<button type="button" class="nt-tab" role="tab" data-ntab="${t}" aria-selected="${t === tab}">${NT_LABEL[t]}<span class="n">${counts[t]}</span></button>`).join('');
+  $('ntInbox').hidden = tab !== 'inbox'; $('ntTopics').hidden = tab !== 'topics'; $('ntLists').hidden = tab !== 'lists'; $('ntMap').hidden = tab !== 'map';
+  ntSession();
+  $('nInboxBody').innerHTML = ntSec('inbox', 'New ideas to sort', inbox.length, inbox.map(n => ntRow(n, 'inbox')).join('') || '<p class="nt-empty">Inbox is clear. New notes from the add bar land here.</p>');
+  const arch = live.filter(noteArch).sort(ntNewest);
+  $('ntTopics').innerHTML = (tops.map(t => ntSec('t:' + t.topic, t.topic, t.notes.length, t.notes.map(n => ntRow(n, 'topic')).join(''))).join('') || '<p class="nt-empty">No topics yet. File a note from the Inbox to start one.</p>')
+    + ntSec('archive', 'Archive', arch.length, arch.map(n => ntRow(n, 'archive')).join('') || '<p class="nt-empty">Nothing archived.</p>');
+  if (ntPop) { const a = [...document.querySelectorAll('[data-nsort]')].find(b => b.dataset.nsort === ntPop.id); if (a && ntFind(ntPop.id)) { ntPop.anchor = a; a.setAttribute('aria-expanded', 'true'); ntPopPlace(); } else ntPopClose(); }
+  if (tab !== 'map') { ideaM = null; return; }
+  const topics = [...new Set(maps.map(topicOf))].sort((a, b) => a.localeCompare(b)), none = !maps.length;
   if (state.notesTopic && !topics.includes(state.notesTopic)) state.notesTopic = '';
-  document.querySelectorAll('[data-iview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.iview === view)));
-  $('ideaFilters').hidden = none;
+  $('ideaFilters').hidden = none; $('ideaEmpty').hidden = !none; $('ideaBox').hidden = none;
   $('ideaFilters').innerHTML = `<div class="gchips"><span class="fl">Topic</span><button type="button" class="chip-t" data-itopic="" aria-pressed="${!state.notesTopic}">All</button>${topics.map(t => `<button type="button" class="chip-t" data-itopic="${esc(t)}" aria-pressed="${state.notesTopic === t}">${esc(t)}</button>`).join('')}</div>
     <div class="gchips"><span class="fl">Colour</span><button type="button" class="chip-t" data-icf="" aria-pressed="${!state.notesColor}">All</button>${IDEA_COLS.map(c => `<button type="button" class="chip-t" data-icf="${c}" aria-pressed="${state.notesColor === c}"><span class="isw" style="--ic:var(--ic-${c})"></span>${ideaCap(c)}</button>`).join('')}</div>`;
-  const ns = all.filter(ideaOn).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  $('notes').innerHTML = ns.map(n => `<div class="note" data-note="${esc(n.id)}"><h3><span class="isw" style="--ic:var(--ic-${ideaCol(n)})"></span>${esc(topicOf(n))} ${n.date ? `<span class="muted" style="font-weight:400;font-size:12px">${esc(fmt(n.date, { day: 'numeric', month: 'short', year: 'numeric' }))}</span>` : ''}</h3><p>${esc(n.note)}</p></div>`).join('') || `<p class="empty">${none ? 'No notes yet. Add one and it will show up on the map.' : 'No notes match those filters.'}</p>`;
-  $('notes').hidden = view === 'map' && !none ? true : false;
-  $('ideaBox').hidden = view !== 'map' || none;
-  if (none || view !== 'map') { ideaM = null; return; }
+  if (none) { ideaM = null; return; }
   ideaM = ideaModel();
   if (!ideaNodeBy(state.notesSel)) state.notesSel = '';
   $('ideaMap').innerHTML = `<svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">${ideaEdgesHtml(ideaM)}</svg>` + ideaM.nodes.map(nd => ideaNodeHtml(nd, ideaM)).join('');
@@ -2371,9 +2632,8 @@ $('ideaMap').addEventListener('pointerup', async e => {
   if (n) await ideaSave(n, { pos: Math.round(d.nd.x) + ',' + Math.round(d.nd.y) }); });
 $('ideaMap').addEventListener('pointercancel', () => { ideaDrag = null; if (ideaM) renderNotes(); });
 $('v-notes').addEventListener('click', async e => {
-  const el = e.target.closest('[data-ik],[data-iview],[data-itopic],[data-icf],[data-icolor],[data-iunlink],[data-iedit]'); if (!el) return;
+  const el = e.target.closest('[data-ik],[data-itopic],[data-icf],[data-icolor],[data-iunlink],[data-iedit]'); if (!el) return;
   if (el.dataset.ik != null) { if (!ideaNoClick) ideaSelect(el.dataset.ik); return; }
-  if (el.dataset.iview) { state.notesView = el.dataset.iview; renderNotes(); return; }
   if (el.dataset.itopic != null) { state.notesTopic = el.dataset.itopic; renderNotes(); return; }
   if (el.dataset.icf != null) { state.notesColor = el.dataset.icf; renderNotes(); return; }
   const n = ideaSelNote(); if (!n) return;
@@ -2383,6 +2643,18 @@ $('v-notes').addEventListener('click', async e => {
     if (mine.includes(k)) { await ideaSave(n, { links: mine.filter(t => t !== k).join(';') }); return; }
     const o = k[0] === 'n' && (state.data.Notes || []).find(x => 'n:' + x.id === k); // linked from the other end
     if (o) await ideaSave(o, { links: ideaTokens(o).filter(t => t !== 'n:' + n.id).join(';') }); } });
+$('v-notes').addEventListener('click', e => {
+  const el = e.target.closest('[data-ntab],[data-ntoggle],[data-nedit],[data-nsort],[data-nrestore],[data-ndest],[data-nvend],#ntVoice'); if (!el) return;
+  const d = el.dataset;
+  if (d.ntab) { ntPopClose(); setNTab(d.ntab); return; }
+  if (d.ntoggle) { ntToggle(d.ntoggle); renderNotes(); return; }
+  if (d.nedit) { const n = ntFind(d.nedit); if (n) { ntPopClose(); openNote(n); } return; }
+  if (d.nsort) { if (ntPop && ntPop.id === d.nsort) ntPopClose(true); else ntPopOpen(d.nsort, el); return; }
+  if (d.nrestore) { ntSetTopic(d.nrestore, 'Inbox', 'Restored to the Inbox'); return; }
+  if (d.ndest) { state.nDest = d.ndest; renderNotes(); if (d.ndest === 'new') $('ntTopic').focus(); return; }
+  if (d.nvend != null) { voiceEnd(); toast('Session ended. It stays under Voice notes.'); return; }
+  if (el.id === 'ntVoice') { if (voiceOn()) { voiceEnd(); return; } state.nVoice = true; renderNotes(); if (!$('ntListen').hidden) $('ntListen').focus(); }
+});
 $('v-notes').addEventListener('change', async e => {
   if (e.target.id !== 'ideaLink' || !e.target.value) return;
   const n = ideaSelNote(); if (n) await ideaSave(n, { links: ideaTokens(n).concat(e.target.value).join(';') }); });
@@ -2506,8 +2778,9 @@ $('itemForm').addEventListener('submit', async e => {
   e.preventDefault();
   const o = { ...(editing || { id: newId('e') }), title: $('fTitle').value.trim(), date: $('fDate').value, end: $('fEnd').value && $('fEnd').value > $('fDate').value ? $('fEnd').value : '',
     time: normTime($('fTime').value), cat: $('fCat').value, type: withStar($('fType').value, $('fEvent').checked), notes: $('fNotes').value.trim(), done: $('fDone').checked, cd: $('fCd').checked };
+  const fromNote = !editing && planFromNote; planFromNote = null;
   $('itemDlg').close();
-  await withBusy('Saving…', () => editing ? updateRow('Plan', o) : addRows('Plan', [o]));
+  if (await withBusy('Saving…', () => editing ? updateRow('Plan', o) : addRows('Plan', [o])) && fromNote) await ntArchive(fromNote, true);
 });
 $('itemDel').addEventListener('click', async () => { if (!editing) return; const o = editing; $('itemDlg').close(); if (await withBusy('Deleting…', () => deleteRow('Plan', o))) toast('Deleted ' + o.title); });
 

@@ -79,6 +79,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
     return r.fulfill({ status: 404, body: '{}' });
   });
   await page.addInitScript(() => { localStorage.setItem('jm-google-token', JSON.stringify({ t: 'x', exp: Date.now() + 3600e3 })); localStorage.setItem('brain_config', JSON.stringify({ backend: 'sheets', clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' })); });
+  await page.addInitScript(() => { window.__TEST_UNDO_MS__ = 1500; });
   await page.goto('https://brain.test/');
   await page.waitForSelector('#status[data-state=live]', { timeout: 8000 });
   await page.waitForTimeout(400);
@@ -245,7 +246,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.screenshot({ path: path.join(OUT, 'shot-upcoming2.png'), fullPage: true });
 
   // to book: status dropdown on the Notes tab
-  await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(150);
+  await page.click('.tab[data-tab=notes]'); await page.click('[data-ntab=lists]'); await page.waitForTimeout(150);
   await page.selectOption('[data-status="l2"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
   check('to-book set to Done', db.Lists.find(r => r[0] === 'l2')[3] === 'Done');
 
@@ -406,17 +407,17 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const xs = []; for (let i = 0; i < 6; i++) { xs.push(Math.round((await page.locator('[data-month="1"]').boundingBox()).x)); await page.click('[data-month="-1"]'); await page.waitForTimeout(50); }
   check('month arrow stays put (' + [...new Set(xs)].join(',') + ')', new Set(xs).size === 1);
   // lists: status dropdown
-  await page.click('.tab[data-tab=notes]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('.tab[data-tab=notes]'); await page.click('[data-ntab=lists]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
   check('list status dropdown saves', db.Lists.find(r => r[0] === 'l1')[3] === 'Done');
 
-  check('notes tab holds the notes and the lists, and there is no Links tab or Week tab', (await page.locator('#v-notes #notes').count()) === 1 && (await page.locator('#v-notes #lists').count()) === 1 && (await page.locator('.tab[data-tab=links]').count()) === 0 && (await page.locator('.tab[data-tab=week]').count()) === 0);
+  check('notes tab holds the inbox, topics, lists and map, and there is no Links tab or Week tab', (await page.locator('#v-notes #nInboxBody').count()) === 1 && (await page.locator('#v-notes #ntTopics').count()) === 1 && (await page.locator('#v-notes #ideaMap').count()) === 1 && JSON.stringify(await page.locator('#ntTabs .nt-tab').evaluateAll(els => els.map(e => e.dataset.ntab))) === '["inbox","topics","lists","map"]' && (await page.locator('#v-notes #lists').count()) === 1 && (await page.locator('.tab[data-tab=links]').count()) === 0 && (await page.locator('.tab[data-tab=week]').count()) === 0);
   for (const t of ['home', 'upcoming', 'fitness', 'people', 'notes']) {
     await page.click(`.tab[data-tab=${t}]`); await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(OUT, `shot-${t}.png`), fullPage: true });
   }
   await page.click('.tab[data-tab=people]'); await page.click('[data-seen="p1"]'); await page.waitForSelector('#status[data-state=live]');
   check('seen today', db.People[1][3] === serial(T) && db.People[1][4] === false);
-  await page.click('.tab[data-tab=notes]'); await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('.tab[data-tab=notes]'); await page.click('[data-ntab=lists]'); await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button'); await page.waitForSelector('#status[data-state=live]');
   check('list add', db.Lists.some(r => r[2] === 'New Show' && r[3] === 'Up next'));
 
   // setup tab
@@ -658,13 +659,18 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const nt = db.Notes.find(r => r[2] === 'Gift ideas');
   check('quick note: topic and text saved with today\'s date', !!nt && nt[3] === 'a book for Sam' && nt[1] === serial(T) && (await page.inputValue('#ahText')) === '', nt);
   await page.fill('#ahText', 'Remember the bins'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
-  check('quick note: no topic goes under Quick note', db.Notes.some(r => r[2] === 'Quick note' && r[3] === 'Remember the bins'));
-  await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(100);
-  check('quick notes show on the Notes tab', (await page.locator('#notes').innerText()).includes('a book for Sam'));
+  check('quick note: no topic goes to the Inbox', db.Notes.some(r => r[2] === 'Inbox' && r[3] === 'Remember the bins') && !db.Notes.some(r => r[2] === 'Quick note'));
+  await page.click('.tab[data-tab=notes]'); await page.click('#ntTabs [data-ntab=inbox]'); await page.waitForTimeout(100);
+  check('notes: the Inbox lists the quick notes and not the topic ones', (await page.locator('#nInboxBody').innerText()).includes('Remember the bins') && !(await page.locator('#nInboxBody').innerText()).includes('a book for Sam'));
+  check('notes: tabs show counts in the agreed order', JSON.stringify(await page.locator('#ntTabs .nt-tab').evaluateAll(els => els.map(e => e.firstChild.textContent))) === '["Inbox","Topics","Lists","Map"]' && (await page.locator('#ntTabs [data-ntab=inbox] .n').innerText()) === String(await page.locator('#nInboxBody .nt-row').count()));
+  check('notes: filter chips are only on the Map tab', !(await page.isVisible('#ideaFilters')));
+  await page.click('#ntTabs [data-ntab=topics]');
+  check('notes: Topics holds the topic notes', (await page.locator('#ntTopics').innerText()).includes('a book for Sam'));
   // notes: ideas map
+  await page.click('#ntTabs [data-ntab=map]');
   await page.waitForSelector('#ideaMap .inode');
   const nrow = id => db.Notes.find(r => r[0] === id), gid = nt[0], saved = async () => { await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(250); };
-  check('ideas map: opens as the Map view with a hub per topic', (await page.locator('#ideaMap .inode.t').count()) === 3 && (await page.locator('[data-iview=map]').getAttribute('aria-pressed')) === 'true');
+  check('ideas map: the Map tab shows a hub per topic', (await page.locator('#ideaMap .inode.t').count()) === 3 && (await page.locator('[data-ntab=map]').getAttribute('aria-selected')) === 'true');
   check('ideas map: a node per note', (await page.locator('#ideaMap .inode.n').count()) === db.Notes.length - 1);
   check('ideas map: edges drawn, svg hidden from screen readers', (await page.locator('#ideaMap svg[aria-hidden=true] .ie').count()) === 3 && (await page.locator('#ideaMap .ispark').count()) === 3);
   await page.screenshot({ path: path.join(OUT, 'shot-ideas.png'), fullPage: true });
@@ -689,13 +695,164 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const ops = await page.locator('#ideaMap .inode.n').evaluateAll(els => els.map(e => [e.dataset.ik, Number(getComputedStyle(e).opacity)]));
   check('ideas map: colour filter dims non-matching notes and keeps matching ones', ops.find(o => o[0] === 'n:n1')[1] === 1 && ops.some(o => o[1] < 0.5), ops);
   await page.click('[data-icf=""]');
-  await page.click('[data-iview=list]');
-  check('ideas map: List view still shows the notes with the map hidden', (await page.locator('#notes').isVisible()) && (await page.locator('#notes').innerText()).includes('a book for Sam') && !(await page.locator('#ideaMap').isVisible()) && (await page.locator('#notes .note .isw').count()) === 3);
-  await page.click('[data-iview=map]');
+  check('notes: filter chips show on the Map tab', await page.isVisible('#ideaFilters'));
+  // notes: Inbox and sort
+  const nTab = async t => { await page.click('#ntTabs [data-ntab=' + t + ']'); await page.waitForTimeout(120); };
+  const rowOf = txt => page.locator('#nInboxBody .nt-row').filter({ hasText: txt });
+  const seed = (id, note, topic = 'Inbox') => page.evaluate(([id, note, topic]) => withBusy('Seeding…', () => addRows('Notes', [{ id, date: todayIso(), topic, note, links: '', color: '', pos: '' }])), [id, note, topic]);
+  const byId = id => db.Notes.find(r => r[0] === id);
+  const byText = t => db.Notes.find(r => String(r[3]).includes(t));
+  await nTab('inbox');
+  check('notes inbox: empty-state wording is exact when nothing is in the Inbox', await page.evaluate(() => { const keep = state.data.Notes; state.data.Notes = keep.filter(n => !noteIn(n)); renderNotes(); const t = document.getElementById('nInboxBody').innerText; state.data.Notes = keep; renderNotes(); return t.includes('Inbox is clear. New notes from the add bar land here.'); }));
+  // add bar
+  check('notes add bar: Inbox is the default destination, hint says so', (await page.getAttribute('[data-ndest=inbox]', 'aria-pressed')) === 'true' && (await page.innerText('#ntHint')) === 'Adds to the Notes Inbox');
+  await page.fill('#ntText', 'bar inbox note'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes add bar: adds to the Inbox with today\'s date', !!byText('bar inbox note') && byText('bar inbox note')[2] === 'Inbox' && byText('bar inbox note')[1] === serial(T) && (await page.inputValue('#ntText')) === '', byText('bar inbox note'));
+  check('notes add bar: the new note shows in the Inbox', await rowOf('bar inbox note').count() === 1);
+  const chipTexts = await page.locator('#ntDest .chip-t').allInnerTexts();
+  check('notes add bar: Inbox, up to three most-used topics, then Topic…', chipTexts[0] === 'Inbox' && chipTexts[chipTexts.length - 1] === 'Topic…' && chipTexts.length >= 3 && chipTexts.length <= 5, chipTexts);
+  await page.click('[data-ndest="t:Ideas"]'); await page.fill('#ntText', 'bar topic note'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes add bar: a chosen topic files the note under it', !!byText('bar topic note') && byText('bar topic note')[2] === 'Ideas' && (await page.innerText('#ntHint')).includes('Ideas'), byText('bar topic note'));
+  await page.click('[data-ndest=new]'); await page.fill('#ntText', 'bar new topic note'); await page.press('#ntText', 'Enter');
+  check('notes add bar: Topic… needs a topic typed first', !byText('bar new topic note') && await page.isVisible('#ntTopic'));
+  await page.fill('#ntTopic', 'Garden'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes add bar: Topic… files under the typed topic', !!byText('bar new topic note') && byText('bar new topic note')[2] === 'Garden', byText('bar new topic note'));
+  await page.click('[data-ndest=inbox]');
+  // voice-note session
+  const nVoiceRows = () => db.Notes.filter(r => r[2] === 'Voice notes').length;
+  await page.click('#ntVoice');
+  check('notes voice: turning it on shows the Listening to field and a session card with End session', await page.isVisible('#ntListen') && (await page.getAttribute('#ntVoice', 'aria-pressed')) === 'true' && await page.isVisible('#nSession [data-nvend]'));
+  await page.fill('#ntListen', 'Podcast: Test Show'); await page.fill('#ntText', 'first thought'); await page.press('#ntText', 'Enter'); await saved();
+  const vrow = () => db.Notes.find(r => r[2] === 'Voice notes'), vlines = () => String(vrow()[3]).split('\n');
+  check('notes voice: the first entry creates ONE note under Voice notes: Listening to, then a timed line', nVoiceRows() === 1 && vlines()[0] === 'Podcast: Test Show' && /^\d\d:\d\d first thought$/.test(vlines()[1]) && vlines().length === 2, vrow());
+  const putsBefore = calls.filter(c => c.startsWith('PUT /values/Notes!')).length;
+  await page.fill('#ntText', 'second thought'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes voice: the next entry appends a timed line to the same note through updateRow', nVoiceRows() === 1 && vlines().length === 3 && /^\d\d:\d\d second thought$/.test(vlines()[2]) && calls.filter(c => c.startsWith('PUT /values/Notes!')).length === putsBefore + 1, vrow());
+  check('notes voice: the session card shows the lines live', (await page.innerText('#nSession')).includes('second thought') && (await page.innerText('#nSession')).includes('first thought') && !(await page.isVisible('#ntListen')));
+  check('notes voice: the session note is not in the Inbox list', (await page.locator('#nInboxBody').innerText()).includes('bar inbox note') && !(await page.locator('#nInboxBody').innerText()).includes('first thought'));
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-session.png'), fullPage: true });
+  await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
+  check('notes voice: a reload continues the session', await page.isVisible('#nSession [data-nvend]') && (await page.getAttribute('#ntVoice', 'aria-pressed')) === 'true' && (await page.innerText('#nSession')).includes('second thought') && await page.evaluate(() => !!sessionStorage.getItem('brain-voice-session')));
+  await page.fill('#ntText', 'third thought'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes voice: after the reload entries still go to the one note', nVoiceRows() === 1 && vlines().length === 4 && /third thought$/.test(vlines()[3]), vrow());
+  await page.fill('#ntText', 'fourth'); await page.press('#ntText', 'Enter'); await page.fill('#ntText', 'fifth'); await page.press('#ntText', 'Enter'); await page.waitForTimeout(600); await saved(); await page.waitForTimeout(400);
+  check('notes voice: quick entries in a row stay in one note, in order', nVoiceRows() === 1 && vlines().length === 6 && /fourth$/.test(vlines()[4]) && /fifth$/.test(vlines()[5]), vrow());
+  await page.click('#nSession [data-nvend]');
+  check('notes voice: End session clears it and the note stays under Voice notes', !(await page.locator('#nSession').innerText()) && await page.evaluate(() => !sessionStorage.getItem('brain-voice-session')) && (await page.getAttribute('#ntVoice', 'aria-pressed')) === 'false' && nVoiceRows() === 1);
+  await page.fill('#ntText', 'after the session'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes voice: after ending, the bar adds to the Inbox again', byText('after the session')[2] === 'Inbox' && nVoiceRows() === 1);
+  // sort menu: file under topic
+  const sortBtn = txt => rowOf(txt).locator('[data-nsort]');
+  await sortBtn('bar inbox note').click();
+  check('notes sort: the menu is real buttons: File under topic, Move to a list, Make a plan item, Archive', JSON.stringify(await page.locator('#ntPop [role=menuitem]').evaluateAll(els => els.map(e => e.tagName + ':' + e.textContent.replace(/\s*›$/, '')))) === '["BUTTON:File under topic","BUTTON:Move to a list","BUTTON:Make a plan item","BUTTON:Archive"]');
+  await page.keyboard.press('Escape');
+  check('notes sort: Escape closes the menu and returns focus to Sort', !(await page.locator('#ntPop').count()) && await page.evaluate(() => document.activeElement.dataset.nsort != null));
+  await sortBtn('bar inbox note').click(); await page.mouse.click(5, 400);
+  check('notes sort: an outside click closes the menu', !(await page.locator('#ntPop').count()));
+  await sortBtn('bar inbox note').click(); await page.click('#ntPop [data-nm=topic]');
+  const topicItems = await page.locator('#ntPop [data-ntopic]').allInnerTexts();
+  check('notes sort: File under topic lists the existing topics plus New topic…, no Inbox or Quick note', topicItems.length >= 3 && (await page.locator('#ntPop [data-nm=newtopic]').count()) === 1 && !topicItems.some(t => /^Inbox|^Quick/.test(t)), topicItems);
+  await page.click('#ntPop [data-ntopic="Garden"]'); await saved();
+  check('notes sort: File under topic moves the note out of the Inbox', byText('bar inbox note')[2] === 'Garden' && (await rowOf('bar inbox note').count()) === 0);
+  await seed('nz1', 'brand new topic note'); await saved();
+  await sortBtn('brand new topic note').click(); await page.click('#ntPop [data-nm=topic]'); await page.click('#ntPop [data-nm=newtopic]'); await page.fill('#ntPop input', 'Holidays'); await page.press('#ntPop input', 'Enter'); await saved();
+  check('notes sort: New topic… files under the typed topic', byId('nz1')[2] === 'Holidays', byId('nz1'));
+  // move to a list, with undo
+  await seed('nm1', 'move me to a list\nsecond line\nthird line'); await saved();
+  await sortBtn('move me to a list').click(); await page.click('#ntPop [data-nm=list]');
+  check('notes sort: Move to a list offers the existing list names', JSON.stringify(await page.locator('#ntPop [data-nlist]').allInnerTexts()).includes('Watching') && (await page.locator('#ntPop [data-nlist]').count()) >= 4);
+  await page.click('#ntPop [data-nlist="Watching"]'); await saved();
+  const mvRow = () => db.Lists.find(r => r[2] === 'move me to a list');
+  check('notes move: a Lists row is made at once (list, first line as item, rest as notes, open status, added today)', !!mvRow() && mvRow()[1] === 'Watching' && mvRow()[3] === 'Up next' && mvRow()[4] === serial(T) && mvRow()[5] === 'second line\nthird line' && !!byId('nm1'), mvRow());
+  check('notes move: the note leaves the Inbox view and an Undo toast shows', (await rowOf('move me to a list').count()) === 0 && await page.isVisible('.nt-toast .nt-undo'));
+  await page.waitForTimeout(1900); await saved();
+  check('notes move: after the Undo window the note is removed from Notes', !byId('nm1') && !!mvRow());
+  await seed('nm2', 'undo this move'); await saved();
+  await sortBtn('undo this move').click(); await page.click('#ntPop [data-nm=list]'); await page.click('#ntPop [data-nlist="Reading"]'); await saved();
+  check('notes move (undo): the list row exists during the window', db.Lists.some(r => r[2] === 'undo this move'));
+  await page.click('.nt-toast .nt-undo'); await saved(); await page.waitForTimeout(1900);
+  check('notes move (undo): Undo deletes the Lists row again and the note stays', !db.Lists.some(r => r[2] === 'undo this move') && !!byId('nm2') && (await rowOf('undo this move').count()) === 1);
+  // archive, undo, restore
+  await sortBtn('undo this move').click(); await page.click('#ntPop [data-nm=archive]'); await saved();
+  check('notes archive: sets topic Archive and shows an Undo toast', byId('nm2')[2] === 'Archive' && await page.isVisible('.nt-toast .nt-undo') && (await rowOf('undo this move').count()) === 0);
+  await page.click('.nt-toast .nt-undo'); await saved();
+  check('notes archive (undo): restores the previous topic', byId('nm2')[2] === 'Inbox' && (await rowOf('undo this move').count()) === 1, byId('nm2'));
+  await sortBtn('undo this move').click(); await page.click('#ntPop [data-nm=archive]'); await saved(); await page.waitForTimeout(1800);
+  await nTab('topics');
+  check('notes topics: a section per topic with a count, most notes first, Inbox/Quick note/Archive left out, Archive last', await page.evaluate(() => { const hs = [...document.querySelectorAll('#ntTopics .nt-sh')].map(b => [b.querySelector('h3').textContent, +b.querySelector('.nt-cnt').textContent]); const t = hs.slice(0, -1); return hs[hs.length - 1][0] === 'Archive' && t.every((x, i) => !i || t[i - 1][1] >= x[1]) && !t.some(x => /^(Inbox|Quick note|Archive)$/.test(x[0])) && t.length >= 4; }));
+  check('notes topics: the Archive section is collapsed by default', (await page.getAttribute('[data-ntoggle=archive]', 'aria-expanded')) === 'false' && !(await page.locator('#ntTopics [data-nsec=archive] .nt-row').first().isVisible()));
+  await page.click('[data-ntoggle=archive]');
+  check('notes topics: opening Archive shows Restore on each row and saves the open state per device', await page.isVisible('#ntTopics [data-nrestore]') && await page.evaluate(() => JSON.parse(localStorage.getItem('brain-notes-closed')).archive === false));
+  await page.click('#ntTopics [data-nrestore="nm2"]'); await saved();
+  check('notes topics: Restore sends the note back to the Inbox', byId('nm2')[2] === 'Inbox');
+  await page.click('[data-ntoggle="t:Garden"]');
+  await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
+  check('notes topics: collapsed topics stay collapsed after a reload', (await page.getAttribute('[data-ntoggle="t:Garden"]', 'aria-expanded')) === 'false' && (await page.getAttribute('[data-ntoggle="t:Ideas"]', 'aria-expanded')) === 'true' && (await page.getAttribute('[data-ntoggle=archive]', 'aria-expanded')) === 'true');
+  check('notes tabs: the last tab is remembered across a reload', (await page.getAttribute('[data-ntab=topics]', 'aria-selected')) === 'true' && await page.isVisible('#ntTopics') && (await page.evaluate(() => localStorage.getItem('brain-notes-tab'))) === 'topics');
+  await page.click('[data-ntoggle="t:Garden"]');
+  await page.locator('#ntTopics [data-nsec="t:Ideas"] [data-nsort]').first().click();
+  check('notes topics: the menu there offers Back to Inbox', await page.locator('#ntPop [data-nm=inbox]').count() === 1);
+  await page.click('#ntPop [data-nm=topic]'); check('notes topics: File under topic hides the note\'s current topic', !(await page.locator('#ntPop [data-ntopic]').allInnerTexts()).some(t => /^Ideas/.test(t))); await page.keyboard.press('Escape');
+  await page.locator('#ntTopics [data-nsec="t:Ideas"] [data-nedit]').first().click();
+  check('notes topics: Edit opens the note dialog', await page.isVisible('#noteDlg') && (await page.inputValue('#nTopic')) === 'Ideas');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  // make a plan item
+  await nTab('inbox');
+  await seed('np1', 'plan this one\nwith some detail'); await saved();
+  const plans0 = db.Plan.length;
+  await sortBtn('plan this one').click(); await page.click('#ntPop [data-nm=plan]');
+  check('notes plan: Make a plan item opens the Plan dialog prefilled (first line as title, rest as notes)', await page.isVisible('#itemDlg') && (await page.inputValue('#fTitle')) === 'plan this one' && (await page.inputValue('#fNotes')) === 'with some detail' && (await page.inputValue('#fDate')) === T && byId('np1')[2] === 'Inbox');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  check('notes plan: cancelling leaves the note in the Inbox', byId('np1')[2] === 'Inbox' && db.Plan.length === plans0);
+  await sortBtn('plan this one').click(); await page.click('#ntPop [data-nm=plan]'); await page.click('#itemForm button[type=submit]'); await saved(); await page.waitForTimeout(300);
+  check('notes plan: saving adds the Plan item and archives the note', db.Plan.some(r => r[4] === 'plan this one' && r[9] === 'with some detail') && byId('np1')[2] === 'Archive', byId('np1'));
+  await page.waitForTimeout(1700);
+  // screenshots: dark, then Stone
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.click('#ntVoice'); await page.fill('#ntText', 'shot line one'); await page.press('#ntText', 'Enter'); await saved(); await page.fill('#ntText', 'shot line two'); await page.press('#ntText', 'Enter'); await saved();
+  await nTab('inbox');
+  await page.locator('#nInboxBody [data-nsort]').first().click(); await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-dark-inbox-menu.png') }); await page.keyboard.press('Escape');
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-dark-inbox.png'), fullPage: true });
+  await nTab('topics'); await page.screenshot({ path: path.join(OUT, 'shot-notes-dark-topics.png'), fullPage: true }); await nTab('inbox');
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; }); await page.waitForTimeout(150);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-stone-inbox.png'), fullPage: true });
+  await page.locator('#nInboxBody [data-nsort]').first().click(); await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-stone-inbox-menu.png') }); await page.keyboard.press('Escape');
+  await nTab('topics'); await page.screenshot({ path: path.join(OUT, 'shot-notes-stone-topics.png'), fullPage: true }); await nTab('inbox');
+  const contrast = sel => page.evaluate(sel => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+    const px = s => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = s; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+    const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+    return [...document.querySelectorAll(sel)].filter(e => e.offsetParent).map(el => {
+      const chain = []; for (let e = el; e; e = e.parentElement) chain.unshift(e);
+      let bg = [255, 255, 255]; chain.forEach(e => { const c = px(getComputedStyle(e).backgroundColor); if (c[3] > 0) bg = bg.map((v, i) => c[i] * c[3] + v * (1 - c[3])); });
+      const fg = px(getComputedStyle(el).color), f = fg.slice(0, 3).map((v, i) => v * fg[3] + bg[i] * (1 - fg[3])), a = lum(f), b = lum(bg);
+      return Math.round(((Math.max(a, b) + .05) / (Math.min(a, b) + .05)) * 100) / 100; });
+  }, sel);
+  const cRow = await contrast('#nInboxBody .nt-t'), cTab = await contrast('#ntTabs .nt-tab'), cMeta = await contrast('#nInboxBody .nt-m');
+  check('notes Stone: row titles and tab labels have contrast of at least 4.5 (meta lines too)', cRow.length > 0 && cTab.length === 4 && [...cRow, ...cTab, ...cMeta].every(r => r >= 4.5), { cRow, cTab, cMeta });
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'nebula'; r.dataset.mode = 'dark'; }); await page.waitForTimeout(100);
+  await page.click('#nSession [data-nvend]');
+  // phones
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(250);
+  const noSide = async name => check('notes 390px: no sideways page scroll on ' + name, await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]));
+  for (const t of ['inbox', 'topics', 'lists']) { await page.click('#ntTabs [data-ntab=' + t + ']'); await page.waitForTimeout(150); await noSide(t); }
+  await nTab('inbox'); await page.click('#ntVoice'); await page.fill('#ntText', 'phone line one'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes 390px: add bar chips wrap, the session toggle stays visible, tabs fit one row', await page.evaluate(() => { const v = document.getElementById('ntVoice').getBoundingClientRect(), t = [...document.querySelectorAll('#ntTabs .nt-tab')].map(b => Math.round(b.getBoundingClientRect().top)); return v.right <= innerWidth && v.left >= 0 && new Set(t).size === 1 && [...document.querySelectorAll('#ntDest .chip-t')].every(c => c.getBoundingClientRect().right <= innerWidth); }));
+  await page.locator('#nInboxBody [data-nsort]').first().click(); await page.waitForTimeout(100);
+  check('notes 390px: the Sort menu opens as a bottom sheet', await page.evaluate(() => { const r = document.getElementById('ntPop').getBoundingClientRect(); return Math.round(r.left) === 8 && Math.round(innerWidth - r.right) === 8 && Math.round(innerHeight - r.bottom) === 8; }));
+  await noSide('the inbox with a menu open');
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-390-inbox-menu-dark.png') });
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; }); await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-390-inbox-menu.png') });
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'nebula'; r.dataset.mode = 'dark'; });
+  await page.keyboard.press('Escape'); await page.click('#nSession [data-nvend]');
+  check('notes 390px: rows keep their actions inside the card', await page.evaluate(() => [...document.querySelectorAll('#nInboxBody .nt-row')].every(r => r.getBoundingClientRect().right <= innerWidth && [...r.querySelectorAll('button')].every(b => b.getBoundingClientRect().right <= innerWidth))));
+  await nTab('map');
   await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(250);
   check('ideas map: no sideways page scroll at 390px', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth) && (await page.evaluate(() => { const w = document.querySelector('.imapwrap'); return w.scrollWidth > w.clientWidth; })));
   await page.screenshot({ path: path.join(OUT, 'shot-ideas-390.png'), fullPage: true });
-  check('ideas map: phones open Notes as a list until Map is picked', await page.evaluate(() => { state.notesView = null; renderNotes(); const r = document.getElementById('notes').offsetParent !== null && document.querySelector('[data-iview=list]').getAttribute('aria-pressed') === 'true'; state.notesView = 'map'; renderNotes(); return r; }));
   await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(200);
   await page.click('.tab[data-tab=home]');
 
