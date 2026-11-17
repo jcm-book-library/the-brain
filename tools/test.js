@@ -79,6 +79,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
     return r.fulfill({ status: 404, body: '{}' });
   });
   await page.addInitScript(() => { localStorage.setItem('jm-google-token', JSON.stringify({ t: 'x', exp: Date.now() + 3600e3 })); localStorage.setItem('brain_config', JSON.stringify({ backend: 'sheets', clientId: 'abc.apps.googleusercontent.com', sheetId: 'TESTSHEET1234567890abc' })); });
+  await page.addInitScript(() => { window.__TEST_UNDO_MS__ = 1500; });
   await page.goto('https://brain.test/');
   await page.waitForSelector('#status[data-state=live]', { timeout: 8000 });
   await page.waitForTimeout(400);
@@ -90,15 +91,15 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('home is the default tab', await page.isVisible('#v-home') && !(await page.isVisible('#v-upcoming')));
   check('tabs in the agreed order', JSON.stringify(await page.locator('.tabs .tab').allInnerTexts()) === JSON.stringify(['Home', 'Upcoming', 'Paper', 'Fitness', 'Family & Friends', 'Notes', 'Setup']));
   const box = id => page.evaluate(i => { const r = document.getElementById(i).getBoundingClientRect(); return { x: r.x, y: r.y + scrollY, w: r.width, h: r.height }; }, id);
-  { const ys = []; for (const id of ['homeToday', 'addBox', 'homeNext', 'chips', 'homeNews', 'homeStats']) ys.push((await box(id)).y);
-    check('home rows run: today, add, next 6 days, countdowns, headlines/weather, steps and reading', ys.every((y, i) => i === 0 || y > ys[i - 1]), ys); }
+  { const ys = []; for (const id of ['homeWeek', 'chips', 'homeNews', 'homeStats']) ys.push((await box(id)).y);
+    check('home rows run: this week, countdowns, headlines/weather, steps and reading', ys.every((y, i) => i === 0 || y > ys[i - 1]), ys); }
   { const A = await box('homeNews'), B = await box('homeWx');
     check('home: headlines and weather are a matched pair (same width, height and row)', Math.abs(A.w - B.w) < 1 && Math.abs(A.h - B.h) < 1 && Math.abs(A.y - B.y) < 1 && B.x > A.x, [A, B]); }
   { const r = await page.evaluate(() => [...document.querySelectorAll('[data-addmode]')].map(b => { const q = b.getBoundingClientRect(); return [q.width, q.height, q.y]; }));
     check('home: the two add buttons match', r.length === 2 && Math.abs(r[0][0] - r[1][0]) < 1 && Math.abs(r[0][1] - r[1][1]) < 1 && Math.abs(r[0][2] - r[1][2]) < 1, r);
     check('home: the add box starts closed', await page.locator('#addHome').isHidden()); }
-  { const w = await page.evaluate(() => ['chips', 'homeToday', 'addBox', 'homeNext', 'homeStats'].map(i => document.getElementById(i).getBoundingClientRect().width));
-    check('home: today, add, next 6 days, countdowns and stats run the full width', w.every(x => Math.abs(x - w[0]) < 1), w);
+  { const w = await page.evaluate(() => ['chips', 'homeWeek', 'homeStats'].map(i => document.getElementById(i).getBoundingClientRect().width));
+    check('home: this week, countdowns and stats run the full width', w.every(x => Math.abs(x - w[0]) < 1), w);
     const cw = await page.evaluate(() => [...document.querySelectorAll('#chips .cd')].map(c => Math.round(c.getBoundingClientRect().width)));
     check('home: countdown cells are all the same width', cw.length >= 2 && new Set(cw).size === 1, cw); }
   check('countdowns: no payday, at most four', await page.locator('.cd.pay').count() === 0 && !/Payday/.test(await page.locator('#chips').innerText()) && await page.locator('#chips .cd').count() <= 4);
@@ -113,15 +114,40 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
     check('home: average steps (' + avg(1) + ') and average pages (' + avg(4) + ')', (await page.locator('#homeStats [data-stat=steps] .big').innerText()).startsWith(avg(1)) && (await page.locator('#homeStats [data-stat=pages] .big').innerText()).startsWith(avg(4)));
     check('home: steps and reading share one box, each bar says above or under goal', await page.locator('#homeStats .stathalf').count() === 2 && /(Above|Under) goal|Nothing logged|No goal/.test(await page.locator('#homeStats').innerText())); }
   check('home: today shows schedule and to-do', /Strength & Conditioning/.test(await page.locator('#homeToday').innerText()) && /Office/.test(await page.locator('#homeToday').innerText()));
-  // next 6 days: accordion, one open at a time
-  check('home: six day rows, all closed to start', await page.locator('#nextBody .acc').count() === 6 && await page.locator('#nextBody .acc[data-open=true]').count() === 0);
-  { const hd = await page.locator('#nextBody .acc-h').allInnerTexts();
-    check('home: each row is the day plus its task count', /2 tasks/.test(hd[1]) && /1 task\b/.test(hd[0]) && new RegExp(new Date(add(1) + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long' })).test(hd[0]), hd); }
-  check('home: multi-day item counts up across the days', await page.evaluate(() => { const t = document.getElementById('nextBody').textContent; return /Day 1 of 3/.test(t) && /Day 2 of 3/.test(t) && /Day 3 of 3/.test(t); }));
-  await page.click(`[data-acc="${add(2)}"]`); await page.waitForTimeout(80);
-  check('home: opening a day shows its tasks', await page.isVisible(`#acc-${add(2)}`) && (await page.locator(`#acc-${add(2)}`).innerText()).includes('Matchday'));
-  await page.click(`[data-acc="${add(1)}"]`); await page.waitForTimeout(80);
-  check('home: only one day is open at a time', await page.locator('#nextBody .acc[data-open=true]').count() === 1 && !(await page.isVisible(`#acc-${add(2)}`)) && await page.isVisible(`#acc-${add(1)}`));
+  // this week: focus card + six day cards
+  check('home: one "This week" panel replaces the old three', await page.locator('#homeNext, .acc').count() === 0 && /This week/i.test(await page.locator('#homeWeek .wkhead').innerText()) && await page.locator('#homeWeek #planBtn').count() === 1 && await page.locator('#homeWeek [data-addmode]').count() === 2);
+  check('home: six small day cards, today is the focus', await page.locator('#nextBody .daycard').count() === 6 && await page.locator('#nextBody .daycard[data-today=true]').count() === 0 && /TODAY/.test(await page.locator('#homeToday').innerText()) && (await page.locator('#nextBody .daycard').first().getAttribute('data-focus')) === add(1));
+  { const hd = await page.locator('#nextBody .daycard').allInnerTexts();
+    check('home: each card is the day, its task count, weather and titles', /1 task\b/.test(hd[0]) && /Finance Coaching/.test(hd[0]) && /2 tasks/.test(hd[1]) && /Dinner with friends/.test(hd[1]) && /Free/.test(hd[5]) && /\d+° · \d+%/.test(hd[0]) && new RegExp(new Date(add(1) + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short' })).test(hd[0]), hd); }
+  check('home: cards are real buttons, with a category dot per title', await page.evaluate(() => [...document.querySelectorAll('#nextBody .daycard')].every(c => c.tagName === 'BUTTON') && document.querySelectorAll('#nextBody .daycard li i').length > 0));
+  await page.click(`[data-focus="${add(3)}"]`); await page.waitForTimeout(80);
+  check('home: multi-day item counts up across the days', await page.evaluate(() => /Day 1 of 3/.test(document.getElementById('homeToday').textContent)));
+  await page.click(`[data-focus="${add(2)}"]`); await page.waitForTimeout(80);
+  check('home: clicking a card makes it the focus day and today goes to the grid with its TODAY tag', (await page.locator('#homeToday h2').innerText()).includes(new Date(add(2) + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long' })) && (await page.locator('#homeToday').innerText()).includes('Matchday') && await page.locator(`#nextBody [data-focus="${T}"][data-today=true]`).count() === 1 && /TODAY/.test(await page.locator(`#nextBody [data-focus="${T}"]`).innerText()) && !/TODAY/.test(await page.locator('#homeToday').innerText()));
+  check('home: the grid stays in date order with the old focus day put back', JSON.stringify(await page.locator('#nextBody .daycard').evaluateAll(a => a.map(x => x.dataset.focus))) === JSON.stringify([0, 1, 3, 4, 5, 6].map(add)));
+  check('home: a day other than today shows no Tomorrow push buttons and has Back to today', await page.locator('#homeToday [data-push]').count() === 0 && await page.locator('#homeToday [data-focus]').count() === 1);
+  await page.click('#homeToday [data-focus]'); await page.waitForTimeout(80);
+  check('home: Back to today restores the focus', (await page.locator('#nextBody .daycard').count()) === 6 && /TODAY/.test(await page.locator('#homeToday').innerText()) && await page.locator('#homeToday [data-focus]').count() === 0 && await page.locator(`#nextBody [data-focus="${T}"]`).count() === 0 && /Strength/.test(await page.locator('#homeToday').innerText()));
+  { const g = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), f = r(document.getElementById('homeToday')), n = r(document.getElementById('nextBody')), c = [...document.querySelectorAll('#nextBody .daycard')].map(x => { const q = r(x); return [Math.round(q.width), Math.round(q.height), Math.round(q.y)]; });
+      return { f: [f.x, f.y, f.width, f.height], n: [n.x, n.y, n.width, n.height], c }; });
+    check('home 1360: the focus card and the day grid are equal width and height, side by side', Math.abs(g.f[2] - g.n[2]) < 1.5 && Math.abs(g.f[3] - g.n[3]) < 1.5 && Math.abs(g.f[1] - g.n[1]) < 1.5 && g.n[0] > g.f[0], g);
+    check('home 1360: the six small cards are equal size, 2 by 3', g.c.length === 6 && g.c.every(x => Math.abs(x[0] - g.c[0][0]) <= 1 && Math.abs(x[1] - g.c[0][1]) <= 1) && new Set(g.c.map(x => x[2])).size === 3, g.c); }
+  { const lum = c => { const m = c.match(/[\d.]+/g).map(Number); const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(m[0]) + .7152 * f(m[1]) + .0722 * f(m[2]); };
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+    const pill = await page.locator('#homeToday .todaypill').evaluate(e => { const c = getComputedStyle(e); return [c.color, c.backgroundColor]; });
+    const prevS = await page.evaluate(() => { const r = document.documentElement, o = [r.dataset.theme, r.dataset.mode]; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; return o; }); await page.waitForTimeout(150);
+    const ps = await page.locator('#homeToday .todaypill').evaluate(e => { const c = getComputedStyle(e); return [c.color, c.backgroundColor]; });
+    await page.screenshot({ path: path.join(OUT, 'shot-home-1280-stone.png') });
+    check('home Stone: the TODAY pill text is readable on its background (and in the dark theme too)', ratio(ps[0], ps[1]) >= 4.5 && ratio(pill[0], pill[1]) >= 4.5, [ps, pill]);
+    await page.evaluate(p => { const r = document.documentElement; r.dataset.theme = p[0]; r.dataset.mode = p[1]; }, prevS); await page.waitForTimeout(100); }
+  await page.screenshot({ path: path.join(OUT, 'shot-home-1280.png') });
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
+  { const g = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), f = r(document.getElementById('homeToday')), n = r(document.getElementById('nextBody')), c = [...document.querySelectorAll('#nextBody .daycard')].map(x => { const q = r(x); return [Math.round(q.width), Math.round(q.height), Math.round(q.x), Math.round(q.y)]; });
+      return { f: [f.x, f.y, f.width, f.height], n: [n.x, n.y, n.width, n.height], c, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; });
+    check('home 390: focus card first, then the six cards in 2 columns; no sideways scroll', g.n[1] > g.f[1] + g.f[3] - 1 && Math.abs(g.f[2] - g.n[2]) < 1.5 && g.sw <= g.cw && g.c.length === 6 && new Set(g.c.map(x => x[2])).size === 2 && new Set(g.c.map(x => x[3])).size === 3 && g.c.every(x => Math.abs(x[0] - g.c[0][0]) <= 1 && Math.abs(x[1] - g.c[0][1]) <= 1), g);
+    check('home 390: nothing in the week panel overflows its card', await page.evaluate(() => [...document.querySelectorAll('#homeWeek button, #homeWeek .item')].every(e => { const p = e.closest('.daycard, .wkfocus, .wkbtns') || e.parentElement; return e.getBoundingClientRect().right <= document.documentElement.clientWidth + 0.5; }))); }
+  await page.screenshot({ path: path.join(OUT, 'shot-home-390.png'), fullPage: true });
+  await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(150);
   await page.screenshot({ path: path.join(OUT, 'shot-home-open.png'), fullPage: true });
 
   // tick an item
@@ -139,9 +165,10 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('edit saved', db.Plan[2][4] === 'WFH');
 
   // delete
-  if (!(await page.isVisible(`#acc-${add(1)}`))) await page.click(`[data-acc="${add(1)}"]`);
-  await page.click('#nextBody [data-edit="e3"]'); await page.click('#itemDel'); await page.waitForSelector('#status[data-state=live]');
+  await page.click(`[data-focus="${add(1)}"]`);
+  await page.click('#homeToday [data-edit="e3"]'); await page.click('#itemDel'); await page.waitForSelector('#status[data-state=live]');
   check('delete removed row', !db.Plan.some(r => r[0] === 'e3'));
+  await page.click('#homeToday [data-focus]'); await page.waitForTimeout(80);
 
   // plan my week
   const before = db.Plan.length;
@@ -157,7 +184,9 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.click('#homeToday [data-star="e1"]'); await page.waitForSelector('#status[data-state=live]');
   check('star: marks the item as an event (Type keeps its text, gains a ★)', db.Plan[1][6] === 'Gym ★', db.Plan[1][6]);
   check('star: shown pressed, and the type reads as before', (await page.getAttribute('#homeToday [data-star="e1"]', 'aria-pressed')) === 'true' && (await page.locator('#homeToday').innerText()).includes('Gym') && !(await page.locator('#homeToday .ty').first().innerText()).includes('★'));
-  check('star: multi-day items always show, and the star is locked on', await page.evaluate(() => { const b = document.querySelector('#nextBody [data-star="e6"]'); return b && b.hasAttribute('data-auto') && b.getAttribute('aria-pressed') === 'true'; }));
+  await page.click(`[data-focus="${add(3)}"]`); await page.waitForTimeout(80);
+  check('star: multi-day items always show, and the star is locked on', await page.evaluate(() => { const b = document.querySelector('#homeToday [data-star="e6"]'); return b && b.hasAttribute('data-auto') && b.getAttribute('aria-pressed') === 'true'; }));
+  await page.click('#homeToday [data-focus]'); await page.waitForTimeout(80);
   await page.click('#homeToday [data-edit="e2"]'); await page.waitForSelector('#itemDlg[open]');
   check('item pop-up has the event tick, off for a plain item', (await page.isChecked('#fEvent')) === false);
   await page.check('#fEvent'); await page.click('#itemForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
@@ -168,6 +197,23 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   // upcoming: month calendar of events, the selected day, and events coming up
   await page.click('.tab[data-tab=upcoming]'); await page.waitForTimeout(200);
   await page.screenshot({ path: path.join(OUT, 'shot-upcoming.png'), fullPage: true });
+  { // zoom switcher: the default is a rolling 5 weeks starting on last week's Monday
+    const shift = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+    const monOf = d => shift(d, -((new Date(d + 'T12:00:00Z').getUTCDay() + 6) % 7));
+    check('zoom: four zooms, 5 weeks is pressed by default', JSON.stringify(await page.locator('#calPanel [data-calzoom]').allInnerTexts()) === JSON.stringify(['Week', '5 weeks', 'Month', 'Year']) && (await page.getAttribute('#calPanel [data-calzoom=five]', 'aria-pressed')) === 'true');
+    check('zoom 5 weeks: five rows of seven, first row starts on last week\'s Monday', await page.locator('#calPanel .mc').count() === 35 && (await page.locator('#calPanel .mc').first().getAttribute('data-calday')) === shift(monOf(T), -7));
+    check('zoom 5 weeks: row labels Last week, This week, Next week, +2, +3', JSON.stringify(await page.locator('#calPanel .mwk').allTextContents()) === JSON.stringify(['Last week', 'This week', 'Next week', '+2', '+3']));
+    check('zoom 5 weeks: no cell is faded as out-of-month', await page.locator('#calPanel .mc[data-out=true]').count() === 0 && /–/.test(await page.locator('#calPanel h2').innerText()));
+    { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .mc')].map(c => Math.round(c.getBoundingClientRect().width * 10)));
+      check('zoom 5 weeks: seven equal columns', new Set(w).size === 1, w.slice(0, 3)); }
+    await page.click('[data-calnav="1"]'); await page.waitForTimeout(60);
+    check('zoom 5 weeks: next steps one week, labels become dates', (await page.locator('#calPanel .mc').first().getAttribute('data-calday')) === monOf(T) && !/week|\+/i.test((await page.locator('#calPanel .mwk').allTextContents()).join(' ')));
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(60);
+    check('zoom Today: back on this week and selects today', (await page.locator('#calPanel .mc').first().getAttribute('data-calday')) === shift(monOf(T), -7) && await page.locator('#calPanel .mc[data-today=true][data-sel=true]').count() === 1);
+    await page.click('#calPanel [data-calzoom=month]'); await page.waitForTimeout(60);
+    await page.reload(); await page.waitForSelector('#status[data-state=live]', { timeout: 8000 }); await page.click('.tab[data-tab=upcoming]'); await page.waitForTimeout(150);
+    check('zoom: the choice is remembered after a reload', (await page.getAttribute('#calPanel [data-calzoom=month]', 'aria-pressed')) === 'true' && await page.locator('#calPanel .mc').count() === 42 && (await page.evaluate(() => localStorage.getItem('brain-cal-zoom'))) === 'month');
+  }
   check('upcoming: one month, six rows of seven', await page.locator('#calPanel .mc').count() === 42 && await page.locator('#calPanel .mh').count() === 7);
   { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .mc')].map(c => Math.round(c.getBoundingClientRect().width))), pw = await page.evaluate(() => document.getElementById('calPanel').getBoundingClientRect().width);
     check('upcoming: every day cell the same width, calendar full width', new Set(w).size === 1 && w[0] * 7 > pw * 0.8, [w[0], pw]); }
@@ -216,8 +262,85 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   check('upcoming: starring from the day panel adds it to the events list', db.Plan.find(r => r[0] === 'e7')[6] === 'Event ★' && (await page.locator('#evPanel').innerText()).includes('Opera night'));
   await page.screenshot({ path: path.join(OUT, 'shot-upcoming2.png'), fullPage: true });
 
+  { // zoom levels: nav steps, Week, Year, phone widths, Stone pill
+    const shift = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+    const monOf = d => shift(d, -((new Date(d + 'T12:00:00Z').getUTCDay() + 6) % 7));
+    const zoom = async z => { await page.click(`#calPanel [data-calzoom=${z}]`); await page.waitForTimeout(80); };
+    const firstDay = sel => page.locator(sel).first().getAttribute('data-calday');
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(60);
+    // Week
+    await zoom('week');
+    check('week: seven day columns, Monday first, containing today', await page.locator('#calPanel .wd').count() === 7 && (await firstDay('#calPanel .wdh')) === monOf(T) && await page.locator('#calPanel .wd[data-today=true]').count() === 1);
+    { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .wd')].map(c => Math.round(c.getBoundingClientRect().width * 10)));
+      check('week: seven equal-width columns at 1280px+', new Set(w).size === 1 && w[0] > 0, w); }
+    check('week: today column shows the pill, the star and time of an event', await page.locator('#calPanel .wd[data-today=true] .mtoday').count() === 1 && /Strength/.test(await page.locator('#calPanel .wd[data-today=true]').innerText()) && /07:00/.test(await page.locator('#calPanel .wd[data-today=true]').innerText()));
+    await page.click('[data-calnav="1"]'); await page.waitForTimeout(60);
+    check('week: next steps exactly one week', (await firstDay('#calPanel .wdh')) === shift(monOf(T), 7));
+    await page.click('[data-calnav="-1"]'); await page.click('[data-calnav="-1"]'); await page.waitForTimeout(60);
+    check('week: previous steps one week and selects a day in view', (await firstDay('#calPanel .wdh')) === shift(monOf(T), -7) && await page.locator('#calPanel .wd[data-sel=true]').count() === 1);
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(60);
+    check('week: Today returns to this week and selects today', (await firstDay('#calPanel .wdh')) === monOf(T) && await page.locator('#calPanel .wd[data-today=true][data-sel=true]').count() === 1);
+    await page.click(`#calPanel .wdh[data-calday="${shift(monOf(T), 6)}"]`); await page.waitForTimeout(60);
+    check('week: clicking a day header fills the day panel', (await page.locator('#dayPanel h2').innerText()).toLowerCase().includes('sunday') && (await page.getAttribute('#calPanel [data-calzoom=week]', 'aria-pressed')) === 'true');
+    // 5 weeks / Month nav
+    await zoom('five'); await page.click('[data-calnav="-1"]'); await page.waitForTimeout(60);
+    check('5 weeks: previous steps one week', (await firstDay('#calPanel .mc')) === shift(monOf(T), -14)); await page.click('[data-calnav="0"]');
+    await zoom('month'); const l0 = await page.locator('#calPanel h2').innerText(); await page.click('[data-calnav="-1"]'); await page.waitForTimeout(60);
+    check('month: previous steps one month, label is a month', l0 !== await page.locator('#calPanel h2').innerText() && await page.locator('#calPanel .mc').count() === 42); await page.click('[data-calnav="0"]');
+    // Year
+    await zoom('year'); await page.waitForTimeout(100);
+    check('year: twelve mini-months, 365/366 day buttons, label is the year', await page.locator('#calPanel .ym').count() === 12 && [365, 366].includes(await page.locator('#calPanel .yd').count()) && (await page.locator('#calPanel h2').innerText()) === T.slice(0, 4));
+    { const xs = await page.evaluate(() => [...new Set([...document.querySelectorAll('#calPanel .ym')].map(m => Math.round(m.getBoundingClientRect().left)))]);
+      const sz = await page.evaluate(() => [...new Set([...document.querySelectorAll('#calPanel .ymg')].map(m => Math.round(m.getBoundingClientRect().height)))]);
+      check('year: 4 columns of equal mini-months at 1360px', xs.length === 4 && sz.length === 1, [xs, sz]); }
+    check('year: today is outlined in the accent colour, with a legend', await page.locator('#calPanel .yd[data-today=true]').evaluate(e => { const c = getComputedStyle(e); return c.borderTopWidth === '2px' && c.borderTopColor === getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || c.borderTopWidth === '2px'; }) && /Less/.test(await page.locator('#calPanel .yleg').innerText()));
+    check('year: busy days are stronger than empty ones, an event day has a marker', await page.locator('#calPanel .yd[data-lv="1"], #calPanel .yd[data-lv="2"]').count() >= 1 && await page.locator('#calPanel .yd[data-ev=true]').count() >= 1);
+    await page.screenshot({ path: path.join(OUT, 'shot-year.png'), fullPage: true });
+    { const sameYr = add(2).slice(0, 4) === T.slice(0, 4), pick = sameYr ? add(2) : `${T.slice(0, 4)}-06-15`;
+      await page.click(`#calPanel .yd[data-calday="${pick}"]`); await page.waitForTimeout(80);
+      check('year: clicking a day fills the day panel and stays in Year', (sameYr ? (await page.locator('#dayPanel').innerText()).includes('Matchday') : /15 June/.test(await page.locator('#dayPanel h2').innerText())) && await page.locator('#calPanel .yr').count() === 1 && await page.locator(`#calPanel .yd[data-calday="${pick}"][data-sel=true]`).count() === 1); }
+    await page.click('[data-calnav="1"]'); await page.waitForTimeout(80);
+    check('year: next steps one year', (await page.locator('#calPanel h2').innerText()) === String(Number(T.slice(0, 4)) + 1) && await page.locator('#calPanel .ym').count() === 12);
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(80);
+    check('year: Today returns and selects today', (await page.locator('#calPanel h2').innerText()) === T.slice(0, 4) && await page.locator('#calPanel .yd[data-today=true][data-sel=true]').count() === 1);
+    // Stone: the Today pill in every zoom that has one
+    { const lum = c => { const m = c.match(/[\d.]+/g).map(Number); const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(m[0]) + .7152 * f(m[1]) + .0722 * f(m[2]); };
+      const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+      const prevT = await page.evaluate(() => { const r = document.documentElement, o = [r.dataset.theme, r.dataset.mode]; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; return o; });
+      await page.waitForTimeout(150);
+      for (const z of ['week', 'five']) { await zoom(z);
+        const pill = await page.locator('#calPanel .mtoday').first().evaluate(e => { const c = getComputedStyle(e); return [c.color, c.backgroundColor]; });
+        check(`stone ${z}: the Today pill text is readable (>= 4.5)`, ratio(pill[0], pill[1]) >= 4.5, pill);
+        await page.screenshot({ path: path.join(OUT, `shot-${z}-stone.png`), fullPage: true }); }
+      await zoom('year'); await page.screenshot({ path: path.join(OUT, 'shot-year-stone.png'), fullPage: true });
+      { const lv = await page.locator('#calPanel .yd[data-lv="4"]').count() ? await page.locator('#calPanel .yd[data-lv="4"]').first().evaluate(e => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]) : null;
+        if (lv) check('stone year: the busiest day number is readable', ratio(lv[0], lv[1].replace(/color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)\)/, (_, r, g, b) => `rgb(${r * 255},${g * 255},${b * 255})`)) >= 3, lv); }
+      await zoom('month'); await page.screenshot({ path: path.join(OUT, 'shot-month-stone.png'), fullPage: true });
+      await page.evaluate(p => { const r = document.documentElement; if (p[0] == null) delete r.dataset.theme; else r.dataset.theme = p[0]; if (p[1] == null) delete r.dataset.mode; else r.dataset.mode = p[1]; }, prevT); await page.waitForTimeout(100); }
+    for (const z of ['week', 'five', 'month', 'year']) { await zoom(z); await page.screenshot({ path: path.join(OUT, `shot-${z}-dark.png`), fullPage: true }); }
+    // phone
+    await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(150);
+    for (const z of ['week', 'five', 'month', 'year']) { await zoom(z);
+      const o = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth, panel: document.getElementById('calPanel').scrollWidth - document.getElementById('calPanel').clientWidth }));
+      check(`phone ${z}: no sideways scroll at 390px`, o.doc <= 0 && o.panel <= 0, o);
+      const hb = await page.evaluate(() => { const r = document.querySelector('#calPanel .navlabel').getBoundingClientRect(), n = [...document.querySelectorAll('#calPanel .mnav button')].map(b => b.getBoundingClientRect()); return n.every(b => b.right <= innerWidth && b.left >= 0) && r.right <= innerWidth; });
+      check(`phone ${z}: header controls fit on screen`, hb);
+      await page.screenshot({ path: path.join(OUT, `shot-${z}-390.png`), fullPage: true }); }
+    await zoom('five');
+    { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .mc')].map(c => Math.round(c.getBoundingClientRect().width * 10)));
+      check('phone 5 weeks: seven equal columns, labels above rows', new Set(w).size === 1 && w.length === 35, w.slice(0, 3)); }
+    await zoom('week');
+    { const r = await page.evaluate(() => [...document.querySelectorAll('#calPanel .wd')].map(c => { const b = c.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.width), Math.round(b.top)]; }));
+      check('phone week: seven full-width blocks stacked', r.length === 7 && new Set(r.map(x => x[0])).size === 1 && new Set(r.map(x => x[1])).size === 1 && r.every((x, i) => i === 0 || x[2] > r[i - 1][2]), r.slice(0, 2)); }
+    await zoom('year');
+    { const xs = await page.evaluate(() => [...new Set([...document.querySelectorAll('#calPanel .ym')].map(m => Math.round(m.getBoundingClientRect().left)))]);
+      check('phone year: two columns of months', xs.length === 2, xs); }
+    await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(100);
+    await zoom('month');
+  }
+
   // to book: status dropdown on the Notes tab
-  await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(150);
+  await page.click('.tab[data-tab=notes]'); await page.click('[data-ntab=lists]'); await page.waitForTimeout(150);
   await page.selectOption('[data-status="l2"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
   check('to-book set to Done', db.Lists.find(r => r[0] === 'l2')[3] === 'Done');
 
@@ -228,13 +351,36 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   // fitness tab: backdate a log
   await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(200);
   { const ys = []; for (const id of ['monthPanel', 'logPanel']) ys.push((await box(id)).y);
-    check('fitness: monthly progress, then log, then year to date, then the two coming-later cards', ys[0] < ys[1] && (await page.locator('#v-fitness .later-card').count()) === 2 && /Year to date/.test(await page.locator('#v-fitness').innerText()) && /monthly progress/i.test(await page.locator('#monthPanel').innerText())); }
+    check('fitness: log first, then monthly progress, then year to date, then the two coming-later cards', ys[1] < ys[0] && (await page.locator('#v-fitness .later-card').count()) === 2 && /Year to date/.test(await page.locator('#v-fitness').innerText()) && /monthly progress/i.test(await page.locator('#monthPanel').innerText())); }
   { const a = await box('monthPanel'), b = await box('logPanel'), soon = await page.evaluate(() => [...document.querySelectorAll('#v-fitness .later-card')].map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), Math.round(r.top)]; }));
     check('fitness: panels run the full width; the two future cards match', Math.abs(a.w - b.w) < 1 && soon[0][0] === soon[1][0] && soon[0][1] === soon[1][1] && soon[0][2] === soon[1][2], soon); }
+  check('fitness: the log is the first panel on the tab', await page.evaluate(() => document.querySelector('#v-fitness .panel').id === 'logPanel'));
+  { const h = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), p = r(document.getElementById('logPanel')); return { w: p.width, h: p.height, more: document.getElementById('logMore').getAttribute('aria-expanded'), moreHidden: document.getElementById('logMoreRow').hidden, pills: document.querySelectorAll('#logPanel [data-logday]').length, moods: [...document.querySelectorAll('#logPanel .mood')].map(b => [b.getAttribute('aria-label'), b.title, Math.round(r(b).width), Math.round(r(b).height)]), sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth,
+      inRow: ['logDate', 'lSteps', 'lKm', 'lAct', 'lPages', 'logMore'].map(i => Math.round(r(document.getElementById(i)).y + r(document.getElementById(i)).height / 2)) }; });
+    check('fitness 1360: the log strip is compact (<= 110px) with More closed', h.h <= 110 && h.h > 50 && h.more === 'false' && h.moreHidden, h);
+    check('fitness 1360: day, four inputs and More sit on one row; at most 3 day pills', Math.max(...h.inRow) - Math.min(...h.inRow) <= 4 && h.pills <= 3 && h.pills >= 1, h);
+    check('fitness 1360: four round mood buttons, each labelled', JSON.stringify(h.moods.map(m => m[0])) === JSON.stringify(['Good', 'Fair', 'Poor', 'Bad']) && h.moods.every(m => m[1] === m[0] && m[2] === m[3]), h.moods); }
+  check('fitness: the amber dot marks a day not logged', await page.locator('#logPanel [data-logday]').first().evaluate(e => getComputedStyle(e, '::before').backgroundColor !== 'rgba(0, 0, 0, 0)'));
+  await page.screenshot({ path: path.join(OUT, 'shot-fitness-1280.png') });
+  await page.click('#logMore'); await page.waitForTimeout(60);
+  check('fitness: More opens the Max, Min and Note row', await page.isVisible('#lMax') && await page.isVisible('#lMin') && await page.isVisible('#lNote') && (await page.getAttribute('#logMore', 'aria-expanded')) === 'true');
+  await page.screenshot({ path: path.join(OUT, 'shot-fitness-1280-more.png') });
+  await page.click('#logMore'); await page.waitForTimeout(60);
+  check('fitness: More closes it again', !(await page.isVisible('#lNote')) && (await page.getAttribute('#logMore', 'aria-expanded')) === 'false');
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(200);
+  { const h = await page.evaluate(() => { const r = i => document.getElementById(i).getBoundingClientRect(); const f = ['lSteps', 'lKm', 'lAct', 'lPages'].map(i => [Math.round(r(i).x), Math.round(r(i).y)]); const m = document.querySelector('#logPanel .mood').getBoundingClientRect(), sv = document.querySelector('#logForm button[type=submit]').getBoundingClientRect();
+      return { f, my: Math.round(m.y), sy: Math.round(sv.y), sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, sr: sv.right, hidden: document.getElementById('logMoreRow').hidden }; });
+    check('fitness 390: no sideways scroll, four inputs in a 2 by 2, mood and Save on one row, More collapsed', h.sw <= h.cw && h.f[0][1] === h.f[1][1] && h.f[2][1] === h.f[3][1] && h.f[2][1] > h.f[0][1] && h.f[0][0] === h.f[2][0] && h.f[1][0] > h.f[0][0] && Math.abs(h.my - h.sy) < 12 && h.sr <= h.cw && h.hidden, h); }
+  await page.screenshot({ path: path.join(OUT, 'shot-fitness-390.png'), fullPage: true });
+  await page.click('#logMore'); await page.waitForTimeout(60);
+  check('fitness 390: More opens within the screen', await page.isVisible('#lNote') && await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth));
+  await page.screenshot({ path: path.join(OUT, 'shot-fitness-390-more.png'), fullPage: true });
+  await page.click('#logMore');
+  await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(150);
   const missingBtns = await page.locator('[data-logday]').count();
   check('missing days offered', missingBtns >= 1);
   await page.fill('#logDate', add(-5)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
-  await page.fill('#lSteps', '9876'); await page.fill('#lKm', '7.1'); await page.click('.mood[data-m=G]'); await page.fill('#lNote', 'backdated');
+  await page.fill('#lSteps', '9876'); await page.fill('#lKm', '7.1'); await page.click('.mood[data-m=G]'); await page.click('#logMore'); await page.fill('#lNote', 'backdated');
   await page.click('#logForm button[type=submit]'); await page.waitForSelector('#status[data-state=live]');
   const lrow = db.Log.find(r => r[0] === serial(add(-5)));
   check('backdated log saved with mood + weather prefill', !!lrow && lrow[1] === 9876 && lrow[7] === 'G' && lrow[8] === 'backdated' && lrow[5] != null && lrow[5] !== '');
@@ -268,7 +414,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
     const click = async sel => { await page.click(tp + ' ' + sel); await page.waitForTimeout(60); };
     const ymT = T.slice(0, 7), dayNow = today.getDate(), sumSteps = db.Log.slice(1).filter(r => r[0] && r[1] != null && r[1] !== '' && new Date(Date.UTC(1899, 11, 30) + r[0] * 864e5).toISOString().startsWith(ymT)).reduce((a, r) => a + r[1], 0);
     const savedLog = await page.evaluate(() => { const old = state.data.Log; state.data.Log = old.concat(Array.from({ length: 12 }, (_, i) => { const d = new Date(new Date().getFullYear(), new Date().getMonth() - 1 - i, 1), ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); return [10, 11, 12].map(n => ({ date: ym + '-' + String(n).padStart(2, '0'), steps: 6000 + i * 300 + n * 100, km: 4 + i / 4, act: 30 + i, pages: 20 + n, tmax: null, tmin: null, mood: '', note: '' })); }).flat()); renderTrend(); return old; });
-    check('trend: first panel in Fitness', await page.evaluate(() => document.querySelector('#v-fitness .panel').id === 'trendPanel'));
+    check('trend: second panel in Fitness, after the log', await page.evaluate(() => document.querySelectorAll('#v-fitness .panel')[1].id === 'trendPanel'));
     check('trend: title names the stat', /^Steps: this month against earlier months/.test(await page.locator(tp + ' h2').innerText()));
     check('trend: default is this month and last month', (await page.locator(tp + ' .legend span').count()) === 3 && (await nLines()) === 2 && (await page.getAttribute(tp + ' [data-trend-cmp=last]', 'aria-pressed')) === 'true' && (await page.getAttribute(tp + ' [data-trend-view=run]', 'aria-pressed')) === 'true');
     check('trend: svg has a label', /Steps/.test(await page.getAttribute(tp + ' svg', 'aria-label') || ''));
@@ -355,17 +501,17 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const xs = []; for (let i = 0; i < 6; i++) { xs.push(Math.round((await page.locator('[data-month="1"]').boundingBox()).x)); await page.click('[data-month="-1"]'); await page.waitForTimeout(50); }
   check('month arrow stays put (' + [...new Set(xs)].join(',') + ')', new Set(xs).size === 1);
   // lists: status dropdown
-  await page.click('.tab[data-tab=notes]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('.tab[data-tab=notes]'); await page.click('[data-ntab=lists]'); await page.selectOption('[data-status="l1"]', 'Done'); await page.waitForSelector('#status[data-state=live]');
   check('list status dropdown saves', db.Lists.find(r => r[0] === 'l1')[3] === 'Done');
 
-  check('notes tab holds the notes and the lists, and there is no Links tab or Week tab', (await page.locator('#v-notes #notes').count()) === 1 && (await page.locator('#v-notes #lists').count()) === 1 && (await page.locator('.tab[data-tab=links]').count()) === 0 && (await page.locator('.tab[data-tab=week]').count()) === 0);
+  check('notes tab holds the inbox, topics, lists and map, and there is no Links tab or Week tab', (await page.locator('#v-notes #nInboxBody').count()) === 1 && (await page.locator('#v-notes #ntTopics').count()) === 1 && (await page.locator('#v-notes #ideaMap').count()) === 1 && JSON.stringify(await page.locator('#ntTabs .nt-tab').evaluateAll(els => els.map(e => e.dataset.ntab))) === '["inbox","topics","lists","map"]' && (await page.locator('#v-notes #lists').count()) === 1 && (await page.locator('.tab[data-tab=links]').count()) === 0 && (await page.locator('.tab[data-tab=week]').count()) === 0);
   for (const t of ['home', 'upcoming', 'fitness', 'people', 'notes']) {
     await page.click(`.tab[data-tab=${t}]`); await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(OUT, `shot-${t}.png`), fullPage: true });
   }
   await page.click('.tab[data-tab=people]'); await page.click('[data-seen="p1"]'); await page.waitForSelector('#status[data-state=live]');
   check('seen today', db.People[1][3] === serial(T) && db.People[1][4] === false);
-  await page.click('.tab[data-tab=notes]'); await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button'); await page.waitForSelector('#status[data-state=live]');
+  await page.click('.tab[data-tab=notes]'); await page.click('[data-ntab=lists]'); await page.fill('form[data-list="Watching"] input', 'New Show'); await page.click('form[data-list="Watching"] button'); await page.waitForSelector('#status[data-state=live]');
   check('list add', db.Lists.some(r => r[2] === 'New Show' && r[3] === 'Up next'));
 
   // setup tab
@@ -432,7 +578,7 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
       B().querySelector('[data-review-skip]').click(); out.skipHidden = B().hidden; out.skipVal = sessionStorage.getItem('brain-review-skip');
       stub(2026, 10, 11); renderReviewBanner(); out.wedHidden = B().hidden;
       stub(2026, 10, 8); const S = state.data.Settings, keep = S.slice(); S.push({ key: 'review_last', value: '2026-11-08', notes: '' }); sessionStorage.removeItem('brain-review-skip'); renderReviewBanner(); out.doneHidden = B().hidden; state.data.Settings = keep;
-      window.Date = R; sessionStorage.removeItem('brain-review-skip'); renderReviewBanner(); out.first = B() === document.querySelector('#v-home').firstElementChild && B().nextElementSibling.id === 'homeToday';
+      window.Date = R; sessionStorage.removeItem('brain-review-skip'); renderReviewBanner(); out.first = B() === document.querySelector('#v-home').firstElementChild && B().nextElementSibling.id === 'homeWeek';
       return out;
     });
     check('review banner: on a Sunday it shows the title, the line and both buttons', bn.sunHidden === false && /Sunday review/.test(bn.text) && /Look back at this week and set up the next\./.test(bn.text) && bn.btns.length === 2 && bn.btns[0][0] === 'Start review' && bn.btns[0][1].includes('btn-primary') && bn.btns[0][2] && bn.btns[1][0] === 'Not now' && bn.btns[1][1].includes('btn-ghost') && bn.btns[1][3], bn);
@@ -562,15 +708,15 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const backToTab = async () => { await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await page.waitForTimeout(150); await page.waitForSelector('#status[data-state=live]'); };
   await page.click('.tab[data-tab=fitness]'); await page.waitForTimeout(150);
   await page.fill('#logDate', add(-4)); await page.dispatchEvent('#logDate', 'change'); await page.waitForTimeout(100);
-  await page.fill('#lSteps', '7777'); await page.fill('#lNote', 'half typed'); await page.click('.mood[data-m=P]');
+  await page.fill('#lSteps', '7777'); if (!(await page.isVisible('#lNote'))) await page.click('#logMore'); await page.fill('#lNote', 'half typed'); await page.click('.mood[data-m=P]');
   check('unsaved note shows while typing', await page.isVisible('[data-draftflag]'));
   await backToTab();
   check('log typing survives coming back to the tab', (await page.inputValue('#lSteps')) === '7777' && (await page.inputValue('#lNote')) === 'half typed' && (await page.getAttribute('.mood[data-m=P]', 'aria-pressed')) === 'true');
   await page.click('.tab[data-tab=home]'); await page.click('[data-addmode=date]'); await page.fill('#ahText', 'Buy milk 5pm');
   await backToTab();
   check('add box typing survives coming back to the tab', (await page.inputValue('#ahText')) === 'Buy milk 5pm' && await page.isVisible('#addHome'));
-  if (!(await page.isVisible(`#acc-${add(1)}`))) await page.click(`[data-acc="${add(1)}"]`);
-  await page.locator(`#acc-${add(1)} [data-add]`).click(); await page.fill('#fTitle', 'Half-written plan'); await page.fill('#fNotes', 'details');
+  await page.click(`[data-focus="${add(1)}"]`);
+  await page.locator('#homeToday [data-add]').click(); await page.fill('#fTitle', 'Half-written plan'); await page.fill('#fNotes', 'details');
   await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
   check('add-item pop-up comes back after a reload', await page.isVisible('#itemDlg[open]') && (await page.inputValue('#fTitle')) === 'Half-written plan');
   await page.click('#itemDlg [data-close]');
@@ -607,13 +753,18 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const nt = db.Notes.find(r => r[2] === 'Gift ideas');
   check('quick note: topic and text saved with today\'s date', !!nt && nt[3] === 'a book for Sam' && nt[1] === serial(T) && (await page.inputValue('#ahText')) === '', nt);
   await page.fill('#ahText', 'Remember the bins'); await page.press('#ahText', 'Enter'); await page.waitForSelector('#status[data-state=live]');
-  check('quick note: no topic goes under Quick note', db.Notes.some(r => r[2] === 'Quick note' && r[3] === 'Remember the bins'));
-  await page.click('.tab[data-tab=notes]'); await page.waitForTimeout(100);
-  check('quick notes show on the Notes tab', (await page.locator('#notes').innerText()).includes('a book for Sam'));
+  check('quick note: no topic goes to the Inbox', db.Notes.some(r => r[2] === 'Inbox' && r[3] === 'Remember the bins') && !db.Notes.some(r => r[2] === 'Quick note'));
+  await page.click('.tab[data-tab=notes]'); await page.click('#ntTabs [data-ntab=inbox]'); await page.waitForTimeout(100);
+  check('notes: the Inbox lists the quick notes and not the topic ones', (await page.locator('#nInboxBody').innerText()).includes('Remember the bins') && !(await page.locator('#nInboxBody').innerText()).includes('a book for Sam'));
+  check('notes: tabs show counts in the agreed order', JSON.stringify(await page.locator('#ntTabs .nt-tab').evaluateAll(els => els.map(e => e.firstChild.textContent))) === '["Inbox","Topics","Lists","Map"]' && (await page.locator('#ntTabs [data-ntab=inbox] .n').innerText()) === String(await page.locator('#nInboxBody .nt-row').count()));
+  check('notes: filter chips are only on the Map tab', !(await page.isVisible('#ideaFilters')));
+  await page.click('#ntTabs [data-ntab=topics]');
+  check('notes: Topics holds the topic notes', (await page.locator('#ntTopics').innerText()).includes('a book for Sam'));
   // notes: ideas map
+  await page.click('#ntTabs [data-ntab=map]');
   await page.waitForSelector('#ideaMap .inode');
   const nrow = id => db.Notes.find(r => r[0] === id), gid = nt[0], saved = async () => { await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(250); };
-  check('ideas map: opens as the Map view with a hub per topic', (await page.locator('#ideaMap .inode.t').count()) === 3 && (await page.locator('[data-iview=map]').getAttribute('aria-pressed')) === 'true');
+  check('ideas map: the Map tab shows a hub per topic', (await page.locator('#ideaMap .inode.t').count()) === 3 && (await page.locator('[data-ntab=map]').getAttribute('aria-selected')) === 'true');
   check('ideas map: a node per note', (await page.locator('#ideaMap .inode.n').count()) === db.Notes.length - 1);
   check('ideas map: edges drawn, svg hidden from screen readers', (await page.locator('#ideaMap svg[aria-hidden=true] .ie').count()) === 3 && (await page.locator('#ideaMap .ispark').count()) === 3);
   await page.screenshot({ path: path.join(OUT, 'shot-ideas.png'), fullPage: true });
@@ -638,18 +789,169 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   const ops = await page.locator('#ideaMap .inode.n').evaluateAll(els => els.map(e => [e.dataset.ik, Number(getComputedStyle(e).opacity)]));
   check('ideas map: colour filter dims non-matching notes and keeps matching ones', ops.find(o => o[0] === 'n:n1')[1] === 1 && ops.some(o => o[1] < 0.5), ops);
   await page.click('[data-icf=""]');
-  await page.click('[data-iview=list]');
-  check('ideas map: List view still shows the notes with the map hidden', (await page.locator('#notes').isVisible()) && (await page.locator('#notes').innerText()).includes('a book for Sam') && !(await page.locator('#ideaMap').isVisible()) && (await page.locator('#notes .note .isw').count()) === 3);
-  await page.click('[data-iview=map]');
+  check('notes: filter chips show on the Map tab', await page.isVisible('#ideaFilters'));
+  // notes: Inbox and sort
+  const nTab = async t => { await page.click('#ntTabs [data-ntab=' + t + ']'); await page.waitForTimeout(120); };
+  const rowOf = txt => page.locator('#nInboxBody .nt-row').filter({ hasText: txt });
+  const seed = (id, note, topic = 'Inbox') => page.evaluate(([id, note, topic]) => withBusy('Seeding…', () => addRows('Notes', [{ id, date: todayIso(), topic, note, links: '', color: '', pos: '' }])), [id, note, topic]);
+  const byId = id => db.Notes.find(r => r[0] === id);
+  const byText = t => db.Notes.find(r => String(r[3]).includes(t));
+  await nTab('inbox');
+  check('notes inbox: empty-state wording is exact when nothing is in the Inbox', await page.evaluate(() => { const keep = state.data.Notes; state.data.Notes = keep.filter(n => !noteIn(n)); renderNotes(); const t = document.getElementById('nInboxBody').innerText; state.data.Notes = keep; renderNotes(); return t.includes('Inbox is clear. New notes from the add bar land here.'); }));
+  // add bar
+  check('notes add bar: Inbox is the default destination, hint says so', (await page.getAttribute('[data-ndest=inbox]', 'aria-pressed')) === 'true' && (await page.innerText('#ntHint')) === 'Adds to the Notes Inbox');
+  await page.fill('#ntText', 'bar inbox note'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes add bar: adds to the Inbox with today\'s date', !!byText('bar inbox note') && byText('bar inbox note')[2] === 'Inbox' && byText('bar inbox note')[1] === serial(T) && (await page.inputValue('#ntText')) === '', byText('bar inbox note'));
+  check('notes add bar: the new note shows in the Inbox', await rowOf('bar inbox note').count() === 1);
+  const chipTexts = await page.locator('#ntDest .chip-t').allInnerTexts();
+  check('notes add bar: Inbox, up to three most-used topics, then Topic…', chipTexts[0] === 'Inbox' && chipTexts[chipTexts.length - 1] === 'Topic…' && chipTexts.length >= 3 && chipTexts.length <= 5, chipTexts);
+  await page.click('[data-ndest="t:Ideas"]'); await page.fill('#ntText', 'bar topic note'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes add bar: a chosen topic files the note under it', !!byText('bar topic note') && byText('bar topic note')[2] === 'Ideas' && (await page.innerText('#ntHint')).includes('Ideas'), byText('bar topic note'));
+  await page.click('[data-ndest=new]'); await page.fill('#ntText', 'bar new topic note'); await page.press('#ntText', 'Enter');
+  check('notes add bar: Topic… needs a topic typed first', !byText('bar new topic note') && await page.isVisible('#ntTopic'));
+  await page.fill('#ntTopic', 'Garden'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes add bar: Topic… files under the typed topic', !!byText('bar new topic note') && byText('bar new topic note')[2] === 'Garden', byText('bar new topic note'));
+  await page.click('[data-ndest=inbox]');
+  // voice-note session
+  const nVoiceRows = () => db.Notes.filter(r => r[2] === 'Voice notes').length;
+  await page.click('#ntVoice');
+  check('notes voice: turning it on shows the Listening to field and a session card with End session', await page.isVisible('#ntListen') && (await page.getAttribute('#ntVoice', 'aria-pressed')) === 'true' && await page.isVisible('#nSession [data-nvend]'));
+  await page.fill('#ntListen', 'Podcast: Test Show'); await page.fill('#ntText', 'first thought'); await page.press('#ntText', 'Enter'); await saved();
+  const vrow = () => db.Notes.find(r => r[2] === 'Voice notes'), vlines = () => String(vrow()[3]).split('\n');
+  check('notes voice: the first entry creates ONE note under Voice notes: Listening to, then a timed line', nVoiceRows() === 1 && vlines()[0] === 'Podcast: Test Show' && /^\d\d:\d\d first thought$/.test(vlines()[1]) && vlines().length === 2, vrow());
+  const putsBefore = calls.filter(c => c.startsWith('PUT /values/Notes!')).length;
+  await page.fill('#ntText', 'second thought'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes voice: the next entry appends a timed line to the same note through updateRow', nVoiceRows() === 1 && vlines().length === 3 && /^\d\d:\d\d second thought$/.test(vlines()[2]) && calls.filter(c => c.startsWith('PUT /values/Notes!')).length === putsBefore + 1, vrow());
+  check('notes voice: the session card shows the lines live', (await page.innerText('#nSession')).includes('second thought') && (await page.innerText('#nSession')).includes('first thought') && !(await page.isVisible('#ntListen')));
+  check('notes voice: the session note is not in the Inbox list', (await page.locator('#nInboxBody').innerText()).includes('bar inbox note') && !(await page.locator('#nInboxBody').innerText()).includes('first thought'));
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-session.png'), fullPage: true });
+  await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
+  check('notes voice: a reload continues the session', await page.isVisible('#nSession [data-nvend]') && (await page.getAttribute('#ntVoice', 'aria-pressed')) === 'true' && (await page.innerText('#nSession')).includes('second thought') && await page.evaluate(() => !!sessionStorage.getItem('brain-voice-session')));
+  await page.fill('#ntText', 'third thought'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes voice: after the reload entries still go to the one note', nVoiceRows() === 1 && vlines().length === 4 && /third thought$/.test(vlines()[3]), vrow());
+  await page.fill('#ntText', 'fourth'); await page.press('#ntText', 'Enter'); await page.fill('#ntText', 'fifth'); await page.press('#ntText', 'Enter'); await page.waitForTimeout(600); await saved(); await page.waitForTimeout(400);
+  check('notes voice: quick entries in a row stay in one note, in order', nVoiceRows() === 1 && vlines().length === 6 && /fourth$/.test(vlines()[4]) && /fifth$/.test(vlines()[5]), vrow());
+  await page.click('#nSession [data-nvend]');
+  check('notes voice: End session clears it and the note stays under Voice notes', !(await page.locator('#nSession').innerText()) && await page.evaluate(() => !sessionStorage.getItem('brain-voice-session')) && (await page.getAttribute('#ntVoice', 'aria-pressed')) === 'false' && nVoiceRows() === 1);
+  await page.fill('#ntText', 'after the session'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes voice: after ending, the bar adds to the Inbox again', byText('after the session')[2] === 'Inbox' && nVoiceRows() === 1);
+  // sort menu: file under topic
+  const sortBtn = txt => rowOf(txt).locator('[data-nsort]');
+  await sortBtn('bar inbox note').click();
+  check('notes sort: the menu is real buttons: File under topic, Move to a list, Make a plan item, Archive', JSON.stringify(await page.locator('#ntPop [role=menuitem]').evaluateAll(els => els.map(e => e.tagName + ':' + e.textContent.replace(/\s*›$/, '')))) === '["BUTTON:File under topic","BUTTON:Move to a list","BUTTON:Make a plan item","BUTTON:Archive"]');
+  await page.keyboard.press('Escape');
+  check('notes sort: Escape closes the menu and returns focus to Sort', !(await page.locator('#ntPop').count()) && await page.evaluate(() => document.activeElement.dataset.nsort != null));
+  await sortBtn('bar inbox note').click(); await page.mouse.click(5, 400);
+  check('notes sort: an outside click closes the menu', !(await page.locator('#ntPop').count()));
+  await sortBtn('bar inbox note').click(); await page.click('#ntPop [data-nm=topic]');
+  const topicItems = await page.locator('#ntPop [data-ntopic]').allInnerTexts();
+  check('notes sort: File under topic lists the existing topics plus New topic…, no Inbox or Quick note', topicItems.length >= 3 && (await page.locator('#ntPop [data-nm=newtopic]').count()) === 1 && !topicItems.some(t => /^Inbox|^Quick/.test(t)), topicItems);
+  await page.click('#ntPop [data-ntopic="Garden"]'); await saved();
+  check('notes sort: File under topic moves the note out of the Inbox', byText('bar inbox note')[2] === 'Garden' && (await rowOf('bar inbox note').count()) === 0);
+  await seed('nz1', 'brand new topic note'); await saved();
+  await sortBtn('brand new topic note').click(); await page.click('#ntPop [data-nm=topic]'); await page.click('#ntPop [data-nm=newtopic]'); await page.fill('#ntPop input', 'Holidays'); await page.press('#ntPop input', 'Enter'); await saved();
+  check('notes sort: New topic… files under the typed topic', byId('nz1')[2] === 'Holidays', byId('nz1'));
+  // move to a list, with undo
+  await seed('nm1', 'move me to a list\nsecond line\nthird line'); await saved();
+  await sortBtn('move me to a list').click(); await page.click('#ntPop [data-nm=list]');
+  check('notes sort: Move to a list offers the existing list names', JSON.stringify(await page.locator('#ntPop [data-nlist]').allInnerTexts()).includes('Watching') && (await page.locator('#ntPop [data-nlist]').count()) >= 4);
+  await page.click('#ntPop [data-nlist="Watching"]'); await saved();
+  const mvRow = () => db.Lists.find(r => r[2] === 'move me to a list');
+  check('notes move: a Lists row is made at once (list, first line as item, rest as notes, open status, added today)', !!mvRow() && mvRow()[1] === 'Watching' && mvRow()[3] === 'Up next' && mvRow()[4] === serial(T) && mvRow()[5] === 'second line\nthird line' && !!byId('nm1'), mvRow());
+  check('notes move: the note leaves the Inbox view and an Undo toast shows', (await rowOf('move me to a list').count()) === 0 && await page.isVisible('.nt-toast .nt-undo'));
+  await page.waitForTimeout(1900); await saved();
+  check('notes move: after the Undo window the note is removed from Notes', !byId('nm1') && !!mvRow());
+  await seed('nm2', 'undo this move'); await saved();
+  await sortBtn('undo this move').click(); await page.click('#ntPop [data-nm=list]'); await page.click('#ntPop [data-nlist="Reading"]'); await saved();
+  check('notes move (undo): the list row exists during the window', db.Lists.some(r => r[2] === 'undo this move'));
+  await page.click('.nt-toast .nt-undo'); await saved(); await page.waitForTimeout(1900);
+  check('notes move (undo): Undo deletes the Lists row again and the note stays', !db.Lists.some(r => r[2] === 'undo this move') && !!byId('nm2') && (await rowOf('undo this move').count()) === 1);
+  // archive, undo, restore
+  await sortBtn('undo this move').click(); await page.click('#ntPop [data-nm=archive]'); await saved();
+  check('notes archive: sets topic Archive and shows an Undo toast', byId('nm2')[2] === 'Archive' && await page.isVisible('.nt-toast .nt-undo') && (await rowOf('undo this move').count()) === 0);
+  await page.click('.nt-toast .nt-undo'); await saved();
+  check('notes archive (undo): restores the previous topic', byId('nm2')[2] === 'Inbox' && (await rowOf('undo this move').count()) === 1, byId('nm2'));
+  await sortBtn('undo this move').click(); await page.click('#ntPop [data-nm=archive]'); await saved(); await page.waitForTimeout(1800);
+  await nTab('topics');
+  check('notes topics: a section per topic with a count, most notes first, Inbox/Quick note/Archive left out, Archive last', await page.evaluate(() => { const hs = [...document.querySelectorAll('#ntTopics .nt-sh')].map(b => [b.querySelector('h3').textContent, +b.querySelector('.nt-cnt').textContent]); const t = hs.slice(0, -1); return hs[hs.length - 1][0] === 'Archive' && t.every((x, i) => !i || t[i - 1][1] >= x[1]) && !t.some(x => /^(Inbox|Quick note|Archive)$/.test(x[0])) && t.length >= 4; }));
+  check('notes topics: the Archive section is collapsed by default', (await page.getAttribute('[data-ntoggle=archive]', 'aria-expanded')) === 'false' && !(await page.locator('#ntTopics [data-nsec=archive] .nt-row').first().isVisible()));
+  await page.click('[data-ntoggle=archive]');
+  check('notes topics: opening Archive shows Restore on each row and saves the open state per device', await page.isVisible('#ntTopics [data-nrestore]') && await page.evaluate(() => JSON.parse(localStorage.getItem('brain-notes-closed')).archive === false));
+  await page.click('#ntTopics [data-nrestore="nm2"]'); await saved();
+  check('notes topics: Restore sends the note back to the Inbox', byId('nm2')[2] === 'Inbox');
+  await page.click('[data-ntoggle="t:Garden"]');
+  await page.reload(); await page.waitForSelector('#status[data-state=live]'); await page.waitForTimeout(300);
+  check('notes topics: collapsed topics stay collapsed after a reload', (await page.getAttribute('[data-ntoggle="t:Garden"]', 'aria-expanded')) === 'false' && (await page.getAttribute('[data-ntoggle="t:Ideas"]', 'aria-expanded')) === 'true' && (await page.getAttribute('[data-ntoggle=archive]', 'aria-expanded')) === 'true');
+  check('notes tabs: the last tab is remembered across a reload', (await page.getAttribute('[data-ntab=topics]', 'aria-selected')) === 'true' && await page.isVisible('#ntTopics') && (await page.evaluate(() => localStorage.getItem('brain-notes-tab'))) === 'topics');
+  await page.click('[data-ntoggle="t:Garden"]');
+  await page.locator('#ntTopics [data-nsec="t:Ideas"] [data-nsort]').first().click();
+  check('notes topics: the menu there offers Back to Inbox', await page.locator('#ntPop [data-nm=inbox]').count() === 1);
+  await page.click('#ntPop [data-nm=topic]'); check('notes topics: File under topic hides the note\'s current topic', !(await page.locator('#ntPop [data-ntopic]').allInnerTexts()).some(t => /^Ideas/.test(t))); await page.keyboard.press('Escape');
+  await page.locator('#ntTopics [data-nsec="t:Ideas"] [data-nedit]').first().click();
+  check('notes topics: Edit opens the note dialog', await page.isVisible('#noteDlg') && (await page.inputValue('#nTopic')) === 'Ideas');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  // make a plan item
+  await nTab('inbox');
+  await seed('np1', 'plan this one\nwith some detail'); await saved();
+  const plans0 = db.Plan.length;
+  await sortBtn('plan this one').click(); await page.click('#ntPop [data-nm=plan]');
+  check('notes plan: Make a plan item opens the Plan dialog prefilled (first line as title, rest as notes)', await page.isVisible('#itemDlg') && (await page.inputValue('#fTitle')) === 'plan this one' && (await page.inputValue('#fNotes')) === 'with some detail' && (await page.inputValue('#fDate')) === T && byId('np1')[2] === 'Inbox');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  check('notes plan: cancelling leaves the note in the Inbox', byId('np1')[2] === 'Inbox' && db.Plan.length === plans0);
+  await sortBtn('plan this one').click(); await page.click('#ntPop [data-nm=plan]'); await page.click('#itemForm button[type=submit]'); await saved(); await page.waitForTimeout(300);
+  check('notes plan: saving adds the Plan item and archives the note', db.Plan.some(r => r[4] === 'plan this one' && r[9] === 'with some detail') && byId('np1')[2] === 'Archive', byId('np1'));
+  await page.waitForTimeout(1700);
+  // screenshots: dark, then Stone
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.click('#ntVoice'); await page.fill('#ntText', 'shot line one'); await page.press('#ntText', 'Enter'); await saved(); await page.fill('#ntText', 'shot line two'); await page.press('#ntText', 'Enter'); await saved();
+  await nTab('inbox');
+  await page.locator('#nInboxBody [data-nsort]').first().click(); await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-dark-inbox-menu.png') }); await page.keyboard.press('Escape');
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-dark-inbox.png'), fullPage: true });
+  await nTab('topics'); await page.screenshot({ path: path.join(OUT, 'shot-notes-dark-topics.png'), fullPage: true }); await nTab('inbox');
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; }); await page.waitForTimeout(150);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-stone-inbox.png'), fullPage: true });
+  await page.locator('#nInboxBody [data-nsort]').first().click(); await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-stone-inbox-menu.png') }); await page.keyboard.press('Escape');
+  await nTab('topics'); await page.screenshot({ path: path.join(OUT, 'shot-notes-stone-topics.png'), fullPage: true }); await nTab('inbox');
+  const contrast = sel => page.evaluate(sel => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+    const px = s => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = s; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+    const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+    return [...document.querySelectorAll(sel)].filter(e => e.offsetParent).map(el => {
+      const chain = []; for (let e = el; e; e = e.parentElement) chain.unshift(e);
+      let bg = [255, 255, 255]; chain.forEach(e => { const c = px(getComputedStyle(e).backgroundColor); if (c[3] > 0) bg = bg.map((v, i) => c[i] * c[3] + v * (1 - c[3])); });
+      const fg = px(getComputedStyle(el).color), f = fg.slice(0, 3).map((v, i) => v * fg[3] + bg[i] * (1 - fg[3])), a = lum(f), b = lum(bg);
+      return Math.round(((Math.max(a, b) + .05) / (Math.min(a, b) + .05)) * 100) / 100; });
+  }, sel);
+  const cRow = await contrast('#nInboxBody .nt-t'), cTab = await contrast('#ntTabs .nt-tab'), cMeta = await contrast('#nInboxBody .nt-m');
+  check('notes Stone: row titles and tab labels have contrast of at least 4.5 (meta lines too)', cRow.length > 0 && cTab.length === 4 && [...cRow, ...cTab, ...cMeta].every(r => r >= 4.5), { cRow, cTab, cMeta });
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'nebula'; r.dataset.mode = 'dark'; }); await page.waitForTimeout(100);
+  await page.click('#nSession [data-nvend]');
+  // phones
+  await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(250);
+  const noSide = async name => check('notes 390px: no sideways page scroll on ' + name, await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]));
+  for (const t of ['inbox', 'topics', 'lists']) { await page.click('#ntTabs [data-ntab=' + t + ']'); await page.waitForTimeout(150); await noSide(t); }
+  await nTab('inbox'); await page.click('#ntVoice'); await page.fill('#ntText', 'phone line one'); await page.press('#ntText', 'Enter'); await saved();
+  check('notes 390px: add bar chips wrap, the session toggle stays visible, tabs fit one row', await page.evaluate(() => { const v = document.getElementById('ntVoice').getBoundingClientRect(), t = [...document.querySelectorAll('#ntTabs .nt-tab')].map(b => Math.round(b.getBoundingClientRect().top)); return v.right <= innerWidth && v.left >= 0 && new Set(t).size === 1 && [...document.querySelectorAll('#ntDest .chip-t')].every(c => c.getBoundingClientRect().right <= innerWidth); }));
+  await page.locator('#nInboxBody [data-nsort]').first().click(); await page.waitForTimeout(100);
+  check('notes 390px: the Sort menu opens as a bottom sheet', await page.evaluate(() => { const r = document.getElementById('ntPop').getBoundingClientRect(); return Math.round(r.left) === 8 && Math.round(innerWidth - r.right) === 8 && Math.round(innerHeight - r.bottom) === 8; }));
+  await noSide('the inbox with a menu open');
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-390-inbox-menu-dark.png') });
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; }); await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(OUT, 'shot-notes-390-inbox-menu.png') });
+  await page.evaluate(() => { const r = document.documentElement; r.dataset.theme = 'nebula'; r.dataset.mode = 'dark'; });
+  await page.keyboard.press('Escape'); await page.click('#nSession [data-nvend]');
+  check('notes 390px: rows keep their actions inside the card', await page.evaluate(() => [...document.querySelectorAll('#nInboxBody .nt-row')].every(r => r.getBoundingClientRect().right <= innerWidth && [...r.querySelectorAll('button')].every(b => b.getBoundingClientRect().right <= innerWidth))));
+  await nTab('map');
   await page.setViewportSize({ width: 390, height: 900 }); await page.waitForTimeout(250);
   check('ideas map: no sideways page scroll at 390px', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth) && (await page.evaluate(() => { const w = document.querySelector('.imapwrap'); return w.scrollWidth > w.clientWidth; })));
   await page.screenshot({ path: path.join(OUT, 'shot-ideas-390.png'), fullPage: true });
-  check('ideas map: phones open Notes as a list until Map is picked', await page.evaluate(() => { state.notesView = null; renderNotes(); const r = document.getElementById('notes').offsetParent !== null && document.querySelector('[data-iview=list]').getAttribute('aria-pressed') === 'true'; state.notesView = 'map'; renderNotes(); return r; }));
   await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(200);
   await page.click('.tab[data-tab=home]');
 
   // push to tomorrow: today's open items get a button; done or other days don't
-  check('push: shown on today\'s open items only', await page.locator('#homeToday [data-push]').count() > 0 && await page.locator('#homeToday [data-push="e1"]').count() === 0 && await page.locator('#nextBody [data-push]').count() === 0);
+  check('push: shown on today\'s open items only', await page.locator('#homeToday [data-push]').count() > 0 && await page.locator('#homeToday [data-push="e1"]').count() === 0 && await page.locator('#nextBody [data-push]').count() === 0 && await page.locator('#homeWeek [data-push]').count() === await page.locator('#homeToday [data-push]').count());
   await page.click('#homeToday [aria-label="Push to tomorrow: Sort winter clothes"]'); await page.waitForSelector('#status[data-state=live]');
   { const r = db.Plan.find(x => x[4] === 'Sort winter clothes');
     check('push: moves the item to tomorrow in the sheet and off today', !!r && r[1] === serial(add(1)) && !(await page.locator('#homeToday').innerText()).includes('Sort winter clothes'), r); }
