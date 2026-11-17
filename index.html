@@ -321,6 +321,8 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 .addbox{display:flex;flex-direction:column;gap:12px}
 .addbox .qa-row{background:var(--field)}
 .push{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;font-size:12px;padding:3px 10px;white-space:nowrap}
+@media (max-width:520px){.push{padding:3px 9px}.push .pw{display:none}}
+@media (max-width:520px){.logdayrow .pill:nth-last-of-type(n+3){display:none}}
 .push:hover{color:var(--fg);border-color:var(--accent)}
 .stathalf{display:flex;flex-direction:column;gap:6px;padding:4px 0}
 .stathalf .big{font-weight:300;font-size:38px}
@@ -1483,7 +1485,7 @@ function itemHtml(i, d, push) {
   const ev = calEvent(i), auto = ev && !hasStar(i.type), canPush = push && !i.done && i.date === d && !isMulti(i);
   return `<li class="item" data-done="${i.done}"><input type="checkbox" ${i.done ? 'checked' : ''} data-tick="${esc(i.id)}" aria-label="Done: ${esc(i.title)}">
     <span class="tm">${esc(i.time || '')}</span><span class="t" data-edit="${esc(i.id)}" title="${esc(i.notes || i.title)}">${esc(i.title)}${dayOf(i, d) ? ` <span class="dayn">${dayTag(i, d)}</span> <span class="ty">${esc(fmt(i.date, { day: 'numeric', month: 'short' }))} – ${esc(fmt(i.end, { day: 'numeric', month: 'short' }))}</span>` : ''}</span>
-    ${canPush ? `<button type="button" class="push" data-push="${esc(i.id)}" title="Move to tomorrow" aria-label="Push to tomorrow: ${esc(i.title)}">Tomorrow →</button>` : ''}
+    ${canPush ? `<button type="button" class="push" data-push="${esc(i.id)}" title="Move to tomorrow" aria-label="Push to tomorrow: ${esc(i.title)}"><span class="pw">Tomorrow </span>→</button>` : ''}
     <button type="button" class="star" data-star="${esc(i.id)}" aria-pressed="${ev}" ${auto ? 'data-auto' : ''} title="${auto ? 'Multi-day items always show on the calendar' : ev ? 'Event: shows on the calendar. Click to remove.' : 'Mark as an event so it shows on the calendar'}" aria-label="${ev ? 'Event' : 'Mark as an event'}: ${esc(i.title)}">★</button>
     <span class="ty">${esc(plainType(i.type))}</span></li>`;
 }
