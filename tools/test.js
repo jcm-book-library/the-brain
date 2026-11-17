@@ -197,6 +197,23 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   // upcoming: month calendar of events, the selected day, and events coming up
   await page.click('.tab[data-tab=upcoming]'); await page.waitForTimeout(200);
   await page.screenshot({ path: path.join(OUT, 'shot-upcoming.png'), fullPage: true });
+  { // zoom switcher: the default is a rolling 5 weeks starting on last week's Monday
+    const shift = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+    const monOf = d => shift(d, -((new Date(d + 'T12:00:00Z').getUTCDay() + 6) % 7));
+    check('zoom: four zooms, 5 weeks is pressed by default', JSON.stringify(await page.locator('#calPanel [data-calzoom]').allInnerTexts()) === JSON.stringify(['Week', '5 weeks', 'Month', 'Year']) && (await page.getAttribute('#calPanel [data-calzoom=five]', 'aria-pressed')) === 'true');
+    check('zoom 5 weeks: five rows of seven, first row starts on last week\'s Monday', await page.locator('#calPanel .mc').count() === 35 && (await page.locator('#calPanel .mc').first().getAttribute('data-calday')) === shift(monOf(T), -7));
+    check('zoom 5 weeks: row labels Last week, This week, Next week, +2, +3', JSON.stringify(await page.locator('#calPanel .mwk').allTextContents()) === JSON.stringify(['Last week', 'This week', 'Next week', '+2', '+3']));
+    check('zoom 5 weeks: no cell is faded as out-of-month', await page.locator('#calPanel .mc[data-out=true]').count() === 0 && /–/.test(await page.locator('#calPanel h2').innerText()));
+    { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .mc')].map(c => Math.round(c.getBoundingClientRect().width * 10)));
+      check('zoom 5 weeks: seven equal columns', new Set(w).size === 1, w.slice(0, 3)); }
+    await page.click('[data-calnav="1"]'); await page.waitForTimeout(60);
+    check('zoom 5 weeks: next steps one week, labels become dates', (await page.locator('#calPanel .mc').first().getAttribute('data-calday')) === monOf(T) && !/week|\+/i.test((await page.locator('#calPanel .mwk').allTextContents()).join(' ')));
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(60);
+    check('zoom Today: back on this week and selects today', (await page.locator('#calPanel .mc').first().getAttribute('data-calday')) === shift(monOf(T), -7) && await page.locator('#calPanel .mc[data-today=true][data-sel=true]').count() === 1);
+    await page.click('#calPanel [data-calzoom=month]'); await page.waitForTimeout(60);
+    await page.reload(); await page.waitForSelector('#status[data-state=live]', { timeout: 8000 }); await page.click('.tab[data-tab=upcoming]'); await page.waitForTimeout(150);
+    check('zoom: the choice is remembered after a reload', (await page.getAttribute('#calPanel [data-calzoom=month]', 'aria-pressed')) === 'true' && await page.locator('#calPanel .mc').count() === 42 && (await page.evaluate(() => localStorage.getItem('brain-cal-zoom'))) === 'month');
+  }
   check('upcoming: one month, six rows of seven', await page.locator('#calPanel .mc').count() === 42 && await page.locator('#calPanel .mh').count() === 7);
   { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .mc')].map(c => Math.round(c.getBoundingClientRect().width))), pw = await page.evaluate(() => document.getElementById('calPanel').getBoundingClientRect().width);
     check('upcoming: every day cell the same width, calendar full width', new Set(w).size === 1 && w[0] * 7 > pw * 0.8, [w[0], pw]); }
@@ -244,6 +261,83 @@ function userEntered(v) { if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.tes
   await page.click('#dayPanel [data-star="e7"]'); await page.waitForSelector('#status[data-state=live]');
   check('upcoming: starring from the day panel adds it to the events list', db.Plan.find(r => r[0] === 'e7')[6] === 'Event ★' && (await page.locator('#evPanel').innerText()).includes('Opera night'));
   await page.screenshot({ path: path.join(OUT, 'shot-upcoming2.png'), fullPage: true });
+
+  { // zoom levels: nav steps, Week, Year, phone widths, Stone pill
+    const shift = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+    const monOf = d => shift(d, -((new Date(d + 'T12:00:00Z').getUTCDay() + 6) % 7));
+    const zoom = async z => { await page.click(`#calPanel [data-calzoom=${z}]`); await page.waitForTimeout(80); };
+    const firstDay = sel => page.locator(sel).first().getAttribute('data-calday');
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(60);
+    // Week
+    await zoom('week');
+    check('week: seven day columns, Monday first, containing today', await page.locator('#calPanel .wd').count() === 7 && (await firstDay('#calPanel .wdh')) === monOf(T) && await page.locator('#calPanel .wd[data-today=true]').count() === 1);
+    { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .wd')].map(c => Math.round(c.getBoundingClientRect().width * 10)));
+      check('week: seven equal-width columns at 1280px+', new Set(w).size === 1 && w[0] > 0, w); }
+    check('week: today column shows the pill, the star and time of an event', await page.locator('#calPanel .wd[data-today=true] .mtoday').count() === 1 && /Strength/.test(await page.locator('#calPanel .wd[data-today=true]').innerText()) && /07:00/.test(await page.locator('#calPanel .wd[data-today=true]').innerText()));
+    await page.click('[data-calnav="1"]'); await page.waitForTimeout(60);
+    check('week: next steps exactly one week', (await firstDay('#calPanel .wdh')) === shift(monOf(T), 7));
+    await page.click('[data-calnav="-1"]'); await page.click('[data-calnav="-1"]'); await page.waitForTimeout(60);
+    check('week: previous steps one week and selects a day in view', (await firstDay('#calPanel .wdh')) === shift(monOf(T), -7) && await page.locator('#calPanel .wd[data-sel=true]').count() === 1);
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(60);
+    check('week: Today returns to this week and selects today', (await firstDay('#calPanel .wdh')) === monOf(T) && await page.locator('#calPanel .wd[data-today=true][data-sel=true]').count() === 1);
+    await page.click(`#calPanel .wdh[data-calday="${shift(monOf(T), 6)}"]`); await page.waitForTimeout(60);
+    check('week: clicking a day header fills the day panel', (await page.locator('#dayPanel h2').innerText()).toLowerCase().includes('sunday') && (await page.getAttribute('#calPanel [data-calzoom=week]', 'aria-pressed')) === 'true');
+    // 5 weeks / Month nav
+    await zoom('five'); await page.click('[data-calnav="-1"]'); await page.waitForTimeout(60);
+    check('5 weeks: previous steps one week', (await firstDay('#calPanel .mc')) === shift(monOf(T), -14)); await page.click('[data-calnav="0"]');
+    await zoom('month'); const l0 = await page.locator('#calPanel h2').innerText(); await page.click('[data-calnav="-1"]'); await page.waitForTimeout(60);
+    check('month: previous steps one month, label is a month', l0 !== await page.locator('#calPanel h2').innerText() && await page.locator('#calPanel .mc').count() === 42); await page.click('[data-calnav="0"]');
+    // Year
+    await zoom('year'); await page.waitForTimeout(100);
+    check('year: twelve mini-months, 365/366 day buttons, label is the year', await page.locator('#calPanel .ym').count() === 12 && [365, 366].includes(await page.locator('#calPanel .yd').count()) && (await page.locator('#calPanel h2').innerText()) === T.slice(0, 4));
+    { const xs = await page.evaluate(() => [...new Set([...document.querySelectorAll('#calPanel .ym')].map(m => Math.round(m.getBoundingClientRect().left)))]);
+      const sz = await page.evaluate(() => [...new Set([...document.querySelectorAll('#calPanel .ymg')].map(m => Math.round(m.getBoundingClientRect().height)))]);
+      check('year: 4 columns of equal mini-months at 1360px', xs.length === 4 && sz.length === 1, [xs, sz]); }
+    check('year: today is outlined in the accent colour, with a legend', await page.locator('#calPanel .yd[data-today=true]').evaluate(e => { const c = getComputedStyle(e); return c.borderTopWidth === '2px' && c.borderTopColor === getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || c.borderTopWidth === '2px'; }) && /Less/.test(await page.locator('#calPanel .yleg').innerText()));
+    check('year: busy days are stronger than empty ones, an event day has a marker', await page.locator('#calPanel .yd[data-lv="1"], #calPanel .yd[data-lv="2"]').count() >= 1 && await page.locator('#calPanel .yd[data-ev=true]').count() >= 1);
+    await page.screenshot({ path: path.join(OUT, 'shot-year.png'), fullPage: true });
+    { const sameYr = add(2).slice(0, 4) === T.slice(0, 4), pick = sameYr ? add(2) : `${T.slice(0, 4)}-06-15`;
+      await page.click(`#calPanel .yd[data-calday="${pick}"]`); await page.waitForTimeout(80);
+      check('year: clicking a day fills the day panel and stays in Year', (sameYr ? (await page.locator('#dayPanel').innerText()).includes('Matchday') : /15 June/.test(await page.locator('#dayPanel h2').innerText())) && await page.locator('#calPanel .yr').count() === 1 && await page.locator(`#calPanel .yd[data-calday="${pick}"][data-sel=true]`).count() === 1); }
+    await page.click('[data-calnav="1"]'); await page.waitForTimeout(80);
+    check('year: next steps one year', (await page.locator('#calPanel h2').innerText()) === String(Number(T.slice(0, 4)) + 1) && await page.locator('#calPanel .ym').count() === 12);
+    await page.click('[data-calnav="0"]'); await page.waitForTimeout(80);
+    check('year: Today returns and selects today', (await page.locator('#calPanel h2').innerText()) === T.slice(0, 4) && await page.locator('#calPanel .yd[data-today=true][data-sel=true]').count() === 1);
+    // Stone: the Today pill in every zoom that has one
+    { const lum = c => { const m = c.match(/[\d.]+/g).map(Number); const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(m[0]) + .7152 * f(m[1]) + .0722 * f(m[2]); };
+      const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+      const prevT = await page.evaluate(() => { const r = document.documentElement, o = [r.dataset.theme, r.dataset.mode]; r.dataset.theme = 'stone'; r.dataset.mode = 'light'; return o; });
+      await page.waitForTimeout(150);
+      for (const z of ['week', 'five']) { await zoom(z);
+        const pill = await page.locator('#calPanel .mtoday').first().evaluate(e => { const c = getComputedStyle(e); return [c.color, c.backgroundColor]; });
+        check(`stone ${z}: the Today pill text is readable (>= 4.5)`, ratio(pill[0], pill[1]) >= 4.5, pill);
+        await page.screenshot({ path: path.join(OUT, `shot-${z}-stone.png`), fullPage: true }); }
+      await zoom('year'); await page.screenshot({ path: path.join(OUT, 'shot-year-stone.png'), fullPage: true });
+      { const lv = await page.locator('#calPanel .yd[data-lv="4"]').count() ? await page.locator('#calPanel .yd[data-lv="4"]').first().evaluate(e => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]) : null;
+        if (lv) check('stone year: the busiest day number is readable', ratio(lv[0], lv[1].replace(/color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)\)/, (_, r, g, b) => `rgb(${r * 255},${g * 255},${b * 255})`)) >= 3, lv); }
+      await zoom('month'); await page.screenshot({ path: path.join(OUT, 'shot-month-stone.png'), fullPage: true });
+      await page.evaluate(p => { const r = document.documentElement; if (p[0] == null) delete r.dataset.theme; else r.dataset.theme = p[0]; if (p[1] == null) delete r.dataset.mode; else r.dataset.mode = p[1]; }, prevT); await page.waitForTimeout(100); }
+    for (const z of ['week', 'five', 'month', 'year']) { await zoom(z); await page.screenshot({ path: path.join(OUT, `shot-${z}-dark.png`), fullPage: true }); }
+    // phone
+    await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(150);
+    for (const z of ['week', 'five', 'month', 'year']) { await zoom(z);
+      const o = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth, panel: document.getElementById('calPanel').scrollWidth - document.getElementById('calPanel').clientWidth }));
+      check(`phone ${z}: no sideways scroll at 390px`, o.doc <= 0 && o.panel <= 0, o);
+      const hb = await page.evaluate(() => { const r = document.querySelector('#calPanel .navlabel').getBoundingClientRect(), n = [...document.querySelectorAll('#calPanel .mnav button')].map(b => b.getBoundingClientRect()); return n.every(b => b.right <= innerWidth && b.left >= 0) && r.right <= innerWidth; });
+      check(`phone ${z}: header controls fit on screen`, hb);
+      await page.screenshot({ path: path.join(OUT, `shot-${z}-390.png`), fullPage: true }); }
+    await zoom('five');
+    { const w = await page.evaluate(() => [...document.querySelectorAll('#calPanel .mc')].map(c => Math.round(c.getBoundingClientRect().width * 10)));
+      check('phone 5 weeks: seven equal columns, labels above rows', new Set(w).size === 1 && w.length === 35, w.slice(0, 3)); }
+    await zoom('week');
+    { const r = await page.evaluate(() => [...document.querySelectorAll('#calPanel .wd')].map(c => { const b = c.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.width), Math.round(b.top)]; }));
+      check('phone week: seven full-width blocks stacked', r.length === 7 && new Set(r.map(x => x[0])).size === 1 && new Set(r.map(x => x[1])).size === 1 && r.every((x, i) => i === 0 || x[2] > r[i - 1][2]), r.slice(0, 2)); }
+    await zoom('year');
+    { const xs = await page.evaluate(() => [...new Set([...document.querySelectorAll('#calPanel .ym')].map(m => Math.round(m.getBoundingClientRect().left)))]);
+      check('phone year: two columns of months', xs.length === 2, xs); }
+    await page.setViewportSize({ width: 1360, height: 1000 }); await page.waitForTimeout(100);
+    await zoom('month');
+  }
 
   // to book: status dropdown on the Notes tab
   await page.click('.tab[data-tab=notes]'); await page.click('[data-ntab=lists]'); await page.waitForTimeout(150);

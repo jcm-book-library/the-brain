@@ -448,6 +448,58 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 @media (max-width:520px){.mnav .navlabel{width:7.5em !important;font-size:16px}}
 @media (max-width:700px){.cds{grid-template-columns:repeat(2,minmax(0,1fr))}.cds .cd:last-child:nth-child(odd){grid-column:1/-1}}
 @media (max-width:700px){.mcal{gap:3px}.mc{min-height:62px;padding:4px 4px 5px}.mc[data-today=true]{padding:3px 3px 4px}.mn{font-size:13px}.mtoday{display:none}.mc[data-today=true] .mn{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink)}.mc[data-sel=true]{outline-offset:0}.mlist{display:flex;flex-wrap:wrap;gap:3px}.ce{width:7px;height:7px;padding:0;border:0;border-radius:50%;font-size:0;background:var(--c)}.mmore{font-size:10px;padding:0}.mpay{top:4px;right:5px;font-size:11px}}
+.calnav .navlabel{width:14em}
+.mn{white-space:nowrap}.mmon{font-size:.75em;font-weight:500;color:var(--muted)}
+.m5{grid-template-columns:4.6rem repeat(7,minmax(0,1fr))}
+.mwk{align-self:center;font:500 11px/1.2 var(--display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.mwk[data-now=true]{color:var(--fg);font-weight:700}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wd{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:320px;padding:8px;border:1px solid var(--line);background:var(--raise);border-radius:10px;color:var(--fg)}
+.wd[data-past=true]{background-color:color-mix(in srgb,var(--bg) 60%,transparent);background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--line) 70%,transparent) 6px 7px)}
+.wd[data-past=true] .wdn,.wd[data-past=true] .wdw{color:var(--muted)}
+.wd[data-past=true] .we{opacity:.55}
+.wd[data-today=true]{border:2px solid var(--accent);padding:7px;background:color-mix(in srgb,var(--accent) 20%,var(--raise))}
+.wd[data-sel=true]{outline:2px solid var(--fg);outline-offset:1px}
+.wdh{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;font:inherit;width:100%;position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:0 0 6px;text-align:left;color:var(--fg);min-width:0}
+.wdw{font:500 11px/1 var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.wdn{font-size:16px;font-weight:700;line-height:1.1}
+.wdh .mtoday{align-self:flex-start}
+.wpay{position:absolute;top:0;right:0;font-size:12px;color:var(--ok)}
+.wl{list-style:none;margin:0;padding:0;display:grid;gap:5px;align-content:start;min-width:0}
+.we{text-align:left;display:grid;gap:1px;font-size:12.5px;line-height:1.3;padding:3px 6px;border-radius:5px;background:color-mix(in srgb,var(--c) 22%,var(--surface));border-left:3px solid var(--c);overflow-wrap:anywhere;min-width:0}
+.we.done .wxt{text-decoration:line-through;opacity:.6}
+.wt{font-size:11px;font-weight:700;color:var(--muted)}
+.wst{color:var(--c)}
+.wnone{font-size:12px;color:var(--muted)}
+.yr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 16px}
+.ym{min-width:0}
+.ym h3{margin:0 0 6px;font:600 14px/1.2 var(--display);color:var(--fg)}
+.ymg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.ywh{font-size:10px;color:var(--muted);text-align:center}
+.yb{aspect-ratio:1}
+.yd{position:relative;aspect-ratio:1;display:grid;place-items:center;padding:0;min-width:0;font-size:12px;line-height:1;color:var(--fg);border:1px solid var(--line);border-radius:5px;background:var(--raise)}
+.yd[data-lv="1"],.yi[data-lv="1"]{background:color-mix(in srgb,var(--accent) 16%,var(--raise))}
+.yd[data-lv="2"],.yi[data-lv="2"]{background:color-mix(in srgb,var(--accent) 34%,var(--raise))}
+.yd[data-lv="3"],.yi[data-lv="3"]{background:color-mix(in srgb,var(--accent) 58%,var(--raise))}
+.yd[data-lv="4"],.yi[data-lv="4"]{background:color-mix(in srgb,var(--accent) 85%,var(--raise));color:var(--accent-ink);font-weight:700}
+.yd[data-ev=true]::after{content:"";position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}
+.yd[data-past=true]{opacity:.62}
+.yd[data-today=true]{border:2px solid var(--accent);font-weight:700}
+.yd[data-sel=true]{outline:2px solid var(--fg);outline-offset:1px}
+.yleg{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
+.yleg i{display:inline-block;width:14px;height:14px;border:1px solid var(--line);border-radius:3px;background:var(--raise)}
+.yleg i[data-lv="1"]{background:color-mix(in srgb,var(--accent) 16%,var(--raise))}
+.yleg i[data-lv="2"]{background:color-mix(in srgb,var(--accent) 34%,var(--raise))}
+.yleg i[data-lv="3"]{background:color-mix(in srgb,var(--accent) 58%,var(--raise))}
+.yleg i[data-lv="4"]{background:color-mix(in srgb,var(--accent) 85%,var(--raise))}
+.ydot{display:inline-block;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--fg);box-sizing:border-box}
+@media (max-width:1000px){.yr{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:700px){
+  .m5{grid-template-columns:repeat(7,minmax(0,1fr))}.m5 .mhb{display:none}.m5 .mwk{grid-column:1/-1;text-align:left;padding:5px 2px 0}
+  .wk{grid-template-columns:minmax(0,1fr)}.wd{min-height:0;flex-direction:column;gap:6px}
+  .wdh{flex-direction:row;align-items:center;gap:8px;padding-bottom:5px}.wdh .mtoday{align-self:center;display:inline-block}.wpay{position:static;margin-left:auto}
+}
+@media (max-width:520px){.yr{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}.yd{font-size:10px;border-radius:4px}.ymg{gap:2px}.yd[data-ev=true]::after{width:4px;height:4px;top:1px;right:1px;border-width:1px}.calnav{width:100%;flex-wrap:nowrap}.calnav .navlabel{flex:1;width:auto !important;font-size:14px;min-width:0}.panel-head .seg{width:100%}.panel-head .seg .chip-t{flex:1;padding:5px 4px}}
 
 /* notes: ideas map */
 #v-notes{--ic-violet:#a78bfa;--ic-cobalt:#5b8cff;--ic-teal:#2dd4bf;--ic-green:#4ade80;--ic-yellow:#facc15;--ic-orange:#fb923c;--ic-red:#f87171;--ic-pink:#f472b6}
@@ -1806,21 +1858,81 @@ function upGroup(d, t) {
   const we = addDays(mondayOf(t), 6); if (d <= we) return 'This week'; if (d <= addDays(we, 7)) return 'Next week';
   const x = fromIso(d); return x.toLocaleDateString('en-AU', x.getFullYear() === fromIso(t).getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' });
 }
-function renderUpcoming() {
-  const t = todayIso(); if (!state.calMonth) state.calMonth = t.slice(0, 7);
-  if (!state.calDay || !state.calDay.startsWith(state.calMonth)) state.calDay = state.calMonth === t.slice(0, 7) ? t : state.calMonth + '-01';
-  const first = state.calMonth + '-01', start = mondayOf(first), who = whoByPlan(), pay = paydayInfo();
-  const cells = Array.from({ length: 42 }, (_, k) => addDays(start, k)).map(d => {
-    const ev = dayEntries(d, who), show = ev.slice(0, 3), more = ev.length - show.length, out = !d.startsWith(state.calMonth);
-    const label = `${fmt(d, { weekday: 'long', day: 'numeric', month: 'long' })}${ev.length ? ', ' + ev.length + (ev.length === 1 ? ' event' : ' events') : ''}`;
-    return `<button type="button" class="mc" data-calday="${d}" data-out="${out}" data-today="${d === t}" data-past="${d < t}" data-sel="${d === state.calDay}" aria-label="${esc(label)}">
-      <span class="mhd"><span class="mn">${Number(d.slice(8))}</span>${d === t ? '<span class="mtoday">Today</span>' : ''}</span>${pay.is(d) ? '<span class="mpay" title="Payday">$</span>' : ''}
+/* Upcoming calendar zoom: Week, 5 weeks (rolling, the default), Month, Year. state.calAnchor is the window position (not saved), brain-cal-zoom the zoom (saved). */
+const CAL_ZOOMS = [['week', 'Week'], ['five', '5 weeks'], ['month', 'Month'], ['year', 'Year']];
+function calZoom() {
+  if (!state.calZoom) { let z = ''; try { z = localStorage.getItem('brain-cal-zoom') || ''; } catch (e) {} state.calZoom = CAL_ZOOMS.some(x => x[0] === z) ? z : 'five'; }
+  return state.calZoom;
+}
+function calRange(z, a) {
+  if (z === 'week') { const m = mondayOf(a); return [m, addDays(m, 6)]; }
+  if (z === 'five') { const m = addDays(mondayOf(a), -7); return [m, addDays(m, 34)]; }
+  if (z === 'year') return [a.slice(0, 4) + '-01-01', a.slice(0, 4) + '-12-31'];
+  const f = a.slice(0, 7) + '-01', n = fromIso(f); n.setMonth(n.getMonth() + 1); return [f, addDays(iso(n), -1)];
+}
+function calLabel(z, from, to) {
+  if (z === 'year') return from.slice(0, 4);
+  if (z === 'month') return fromIso(from).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  const dm = s => fmt(s, { day: 'numeric', month: 'short' });
+  if (from.slice(0, 4) !== to.slice(0, 4)) return `${dm(from)} ${from.slice(0, 4)} – ${dm(to)} ${to.slice(0, 4)}`;
+  if (from.slice(0, 7) === to.slice(0, 7)) return `${Number(from.slice(8))}–${dm(to)} ${to.slice(0, 4)}`;
+  return `${dm(from)} – ${dm(to)} ${to.slice(0, 4)}`;
+}
+const calAria = (d, n) => `${fmt(d, { weekday: 'long', day: 'numeric', month: 'long' })}${n ? ', ' + n + (n === 1 ? ' event' : ' events') : ''}`;
+function calMonthCell(d, ev, t, pay, out, mon) {
+  const show = ev.slice(0, 3), more = ev.length - show.length;
+  return `<button type="button" class="mc" data-calday="${d}" data-out="${out}" data-today="${d === t}" data-past="${d < t}" data-sel="${d === state.calDay}" aria-label="${esc(calAria(d, ev.length))}">
+      <span class="mhd"><span class="mn">${Number(d.slice(8))}${mon && d.endsWith('-01') ? ' <small class="mmon">' + fmt(d, { month: 'short' }) + '</small>' : ''}</span>${d === t ? '<span class="mtoday">Today</span>' : ''}</span>${pay.is(d) ? '<span class="mpay" title="Payday">$</span>' : ''}
       <span class="mlist">${show.map(x => `<span class="ce${x.done ? ' done' : ''}" style="--c:${CATVAR(x.cat)}" title="${esc(x.title)}">${x.kind === 'birthday' ? '🎂 ' : x.kind === 'catchup' ? '☕ ' : ''}${esc(x.title)}</span>`).join('')}${more > 0 ? `<span class="mmore">+${more} more</span>` : ''}</span></button>`;
-  });
-  const label = fromIso(first).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
-  $('calPanel').innerHTML = `<div class="panel-head"><div class="mnav"><button class="btn" type="button" data-calnav="-1" aria-label="Previous month">‹</button><h2 class="navlabel" style="width:10.5em">${esc(label)}</h2><button class="btn" type="button" data-calnav="1" aria-label="Next month">›</button><button class="btn btn-ghost" type="button" data-calnav="0">Today</button></div></div>
-    <div class="mcal">${DAYS.map(d => `<div class="mh">${d}</div>`).join('')}${cells.join('')}</div>
+}
+function calWeekHtml(from, t, who, pay) {
+  return `<div class="wk">${Array.from({ length: 7 }, (_, k) => addDays(from, k)).map(d => {
+    const ev = dayEntries(d, who);
+    return `<div class="wd" data-today="${d === t}" data-past="${d < t}" data-sel="${d === state.calDay}">
+      <button type="button" class="wdh" data-calday="${d}" aria-label="${esc(calAria(d, ev.length))}"><span class="wdw">${fmt(d, { weekday: 'short' })}</span><span class="wdn">${fmt(d, { day: 'numeric', month: 'short' })}</span>${d === t ? '<span class="mtoday">Today</span>' : ''}${pay.is(d) ? '<span class="wpay" title="Payday">$</span>' : ''}</button>
+      <ul class="wl">${ev.length ? ev.map(x => `<li class="we${x.done ? ' done' : ''}" style="--c:${CATVAR(x.cat)}">${x.time ? `<span class="wt">${esc(x.time)}</span>` : ''}<span class="wxt">${x.kind === 'birthday' ? '🎂 ' : x.kind === 'catchup' ? '☕ ' : ''}${esc(x.title)}${x.kind === 'event' ? ' <span class="wst" title="Event">★</span>' : ''}</span></li>`).join('') : '<li class="wnone">No events</li>'}</ul></div>`;
+  }).join('')}</div>`;
+}
+function calYearHtml(year, t, who) {
+  const cy = t.slice(0, 4) === year, mn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const lvOf = n => n >= 6 ? 4 : n >= 4 ? 3 : n >= 2 ? 2 : n >= 1 ? 1 : 0, months = [];
+  for (let m = 0; m < 12; m++) {
+    const first = `${year}-${pad(m + 1)}-01`, lead = (fromIso(first).getDay() + 6) % 7, nd = new Date(Number(year), m + 1, 0).getDate();
+    let cells = '<span class="yb"></span>'.repeat(lead);
+    for (let k = 1; k <= nd; k++) {
+      const d = `${year}-${pad(m + 1)}-${pad(k)}`, ev = dayEntries(d, who), mark = ev.some(x => x.kind === 'event' || x.kind === 'trip');
+      cells += `<button type="button" class="yd" data-calday="${d}" data-lv="${lvOf(ev.length)}" data-ev="${mark}" data-today="${d === t}" data-past="${cy && d < t}" data-sel="${d === state.calDay}" aria-label="${esc(calAria(d, ev.length))}">${k}</button>`;
+    }
+    cells += '<span class="yb"></span>'.repeat(42 - lead - nd);
+    months.push(`<div class="ym"><h3>${mn[m]}</h3><div class="ymg">${DAYS.map(x => `<span class="ywh" aria-hidden="true">${x[0]}</span>`).join('')}${cells}</div></div>`);
+  }
+  return `<div class="yr">${months.join('')}</div>
+    <p class="mlegend yleg">Less <i data-lv="0"></i><i data-lv="1"></i><i data-lv="2"></i><i data-lv="3"></i><i data-lv="4"></i> More <span class="ysep">·</span> <span class="ydot"></span> event or trip</p>`;
+}
+function renderUpcoming() {
+  const t = todayIso(), z = calZoom(); if (!state.calAnchor) state.calAnchor = t;
+  const [from, to] = calRange(z, state.calAnchor);
+  if (!state.calDay || state.calDay < from || state.calDay > to) state.calDay = t >= from && t <= to ? t : from;
+  const who = whoByPlan(), pay = paydayInfo(), label = calLabel(z, from, to), unit = z === 'month' ? 'month' : z === 'year' ? 'year' : 'week';
+  let body;
+  if (z === 'week') body = calWeekHtml(from, t, who, pay) + '<p class="mlegend">Shows events only: starred ★ items, multi-day items, catch-ups and birthdays. Click a day to see everything on it.</p>';
+  else if (z === 'year') body = calYearHtml(from.slice(0, 4), t, who);
+  else {
+    const start = z === 'month' ? mondayOf(from) : from, n = z === 'month' ? 42 : 35, m5 = z === 'five', thisWk = mondayOf(t);
+    const rel = m5 && from === addDays(thisWk, -7), rl = ['Last week', 'This week', 'Next week', '+2', '+3'];
+    const cells = [];
+    for (let k = 0; k < n; k++) {
+      const d = addDays(start, k);
+      if (m5 && k % 7 === 0) cells.push(`<div class="mwk" data-now="${rel && k === 7}">${esc(rel ? rl[k / 7] : fmt(d, { day: 'numeric', month: 'short' }))}</div>`);
+      cells.push(calMonthCell(d, dayEntries(d, who), t, pay, z === 'month' && !d.startsWith(from.slice(0, 7)), m5));
+    }
+    body = `<div class="mcal${m5 ? ' m5' : ''}">${m5 ? '<div class="mh mhb"></div>' : ''}${DAYS.map(d => `<div class="mh">${d}</div>`).join('')}${cells.join('')}</div>
     <p class="mlegend">Shows events only: starred ★ items, multi-day items, catch-ups and birthdays. Click a day to see everything on it.</p>`;
+  }
+  $('calPanel').dataset.zoom = z;
+  $('calPanel').innerHTML = `<div class="panel-head"><div class="seg" role="group" aria-label="Calendar zoom">${CAL_ZOOMS.map(([k, n]) => `<button type="button" class="chip-t" data-calzoom="${k}" aria-pressed="${k === z}">${n}</button>`).join('')}</div>
+    <div class="mnav calnav"><button class="btn" type="button" data-calnav="-1" aria-label="Previous ${unit}">‹</button><h2 class="navlabel">${esc(label)}</h2><button class="btn" type="button" data-calnav="1" aria-label="Next ${unit}">›</button><button class="btn btn-ghost" type="button" data-calnav="0">Today</button></div></div>
+    ${body}`;
   renderDayPanel(); renderEvents();
 }
 function renderDayPanel() {
@@ -1897,7 +2009,7 @@ document.addEventListener('submit', async e => {
   if (await withBusy('Adding…', () => addRows('Plan', [o]))) { inp.value = ''; quickPreview(f); toast(`Added ${o.title} to ${o.date === todayIso() ? 'today' : fmt(o.date, { weekday: 'long', day: 'numeric', month: 'short' })}`); }
 });
 document.addEventListener('click', e => {
-  const el = e.target.closest('[data-go],[data-qaopen],[data-more],[data-sheetclose],[data-efilter],[data-emore],[data-focus],[data-calday],[data-calnav],[data-ssec]'); if (!el) return;
+  const el = e.target.closest('[data-go],[data-qaopen],[data-more],[data-sheetclose],[data-efilter],[data-emore],[data-focus],[data-calday],[data-calzoom],[data-calnav],[data-ssec]'); if (!el) return;
   const sheet = el.closest('dialog.sheet');
   if (el.dataset.go) { if (sheet) sheet.close(); if (el.dataset.go === 'settings') { openSettings(); return; } showTab(el.dataset.go); window.scrollTo({ top: 0 }); return; }
   if (el.hasAttribute('data-qaopen')) { $('qaDlg').showModal(); previewAll(); setTimeout(() => $('qsText').focus(), 30); return; }
@@ -1906,10 +2018,14 @@ document.addEventListener('click', e => {
   if (el.dataset.efilter != null) { state.eFilter = el.dataset.efilter; renderEvents(); return; }
   if (el.hasAttribute('data-emore')) { state.eMore = !state.eMore; renderEvents(); return; }
   if (el.dataset.focus) { state.homeFocus = el.dataset.focus; renderHomeWeek(); $('homeToday').focus({ preventScroll: true }); return; }
-  if (el.dataset.calday) { state.calDay = el.dataset.calday; if (!state.calDay.startsWith(state.calMonth)) state.calMonth = state.calDay.slice(0, 7); renderUpcoming(); return; }
-  if (el.dataset.calnav != null) { const n = Number(el.dataset.calnav), t = todayIso(); let ym = state.calMonth || t.slice(0, 7);
-    if (n === 0) ym = t.slice(0, 7); else { const [y, m] = ym.split('-').map(Number), d = new Date(y, m - 1 + n, 1); ym = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; }
-    state.calMonth = ym; state.calDay = ''; renderUpcoming(); return; }
+  if (el.dataset.calzoom) { state.calZoom = el.dataset.calzoom; try { localStorage.setItem('brain-cal-zoom', state.calZoom); } catch (e) {} renderUpcoming(); return; }
+  if (el.dataset.calday) { state.calDay = el.dataset.calday; if (calZoom() === 'month' && !state.calDay.startsWith((state.calAnchor || '').slice(0, 7))) state.calAnchor = state.calDay; renderUpcoming(); return; }
+  if (el.dataset.calnav != null) { const n = Number(el.dataset.calnav), z = calZoom(), t = todayIso(), a = state.calAnchor || t;
+    if (n === 0) { state.calAnchor = t; state.calDay = t; renderUpcoming(); return; }
+    if (z === 'week' || z === 'five') state.calAnchor = addDays(a, 7 * n);
+    else if (z === 'year') state.calAnchor = `${Number(a.slice(0, 4)) + n}-01-01`;
+    else { const d = new Date(Number(a.slice(0, 4)), Number(a.slice(5, 7)) - 1 + n, 1); state.calAnchor = iso(d); }
+    state.calDay = ''; renderUpcoming(); return; }
   if (el.dataset.ssec) { state.sSec = el.dataset.ssec; renderSetup(); }
 });
 document.querySelectorAll('dialog.sheet').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
