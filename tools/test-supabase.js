@@ -450,7 +450,7 @@ const writes = w => w.sbCalls.filter(c => c.method !== 'GET');
     let wr = w.sbCalls.slice(b0).filter(c => c.method !== 'GET');
     check('feed: saving an existing day with pages blank -> one PATCH of the changed field, no pages value', wr.length === 1 && wr[0].method === 'PATCH' && wr[0].table === 'log' && JSON.stringify(wr[0].body) === '{"steps":6100}', wr.map(x => [x.method, x.body]));
     await form('2025-03-12'); const b1 = w.sbCalls.length;
-    await page.fill('#lNote', 'quiet day'); await page.click('#logForm button[type=submit]');
+    await page.click('#logMore'); await page.fill('#lNote', 'quiet day'); await page.click('#logForm button[type=submit]');
     await page.waitForFunction(() => document.getElementById('status').dataset.state === 'live' && /Supabase/.test(document.getElementById('statusText').textContent)); await page.waitForTimeout(300);
     wr = w.sbCalls.slice(b1).filter(c => c.method !== 'GET');
     check('feed: saving a feed-only day with pages blank -> new row has no pages value', wr.length === 1 && wr[0].method === 'POST' && wr[0].table === 'log' && wr[0].body.length === 1 && wr[0].body[0].pages == null && wr[0].body[0].date === '2025-03-12', wr.map(x => [x.method, x.body]));

@@ -156,17 +156,36 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 
 .days{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
 
-.logform{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
-@media (max-width:900px){.logform{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.logform .f{display:flex;flex-direction:column;gap:3px;min-width:0}
-.logform label,.field label{font-size:12px;color:var(--muted);font-weight:600}
-.logform input{width:100%}
-.moods{display:flex;gap:6px;grid-column:1/-1;align-items:center;flex-wrap:wrap}
-.mood{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 12px;font-weight:700;font-size:13px}
-.mood[aria-pressed=true]{color:#15141c;border-color:transparent}
-.mood[data-m=G][aria-pressed=true]{background:var(--m-G)} .mood[data-m=F][aria-pressed=true]{background:var(--m-F)}
-.mood[data-m=P][aria-pressed=true]{background:var(--m-P)} .mood[data-m=B][aria-pressed=true]{background:var(--m-B)}
-.logform .note{grid-column:1/-1}
+/* Fitness log: one compact strip on desktop, a few short rows on phones */
+#logPanel{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 22px;align-items:end;padding:12px 16px}
+.logday .lcap,.logform label,.logform .lbl{display:flex;gap:8px;align-items:baseline;font-size:12px;line-height:15px;height:15px;margin-bottom:3px;color:var(--muted);font-weight:600;white-space:nowrap}
+.logday .lstat{font-weight:400}
+.logdayrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-height:34px}
+.logdayrow input{height:34px;padding:5px 8px;font-size:13px}
+.logday .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:12px}
+.logday .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--under)}
+.logform{position:relative;display:grid;grid-template-columns:repeat(4,minmax(64px,1fr)) auto;gap:8px 10px;align-items:end;min-width:0}
+.logform .f{display:flex;flex-direction:column;min-width:0}
+.logform input{width:100%;height:34px;padding:5px 8px}
+.lact{display:flex;align-items:flex-end;gap:10px}
+.lact .btn{height:34px;padding:0 14px}
+.moods{display:flex;gap:6px;align-items:center;height:34px}
+.mood{width:28px;height:28px;padding:0;border-radius:50%;border:2px solid var(--mc);background:color-mix(in srgb,var(--mc) 16%,transparent);flex:none}
+.mood[data-m=G]{--mc:var(--m-G)} .mood[data-m=F]{--mc:var(--m-F)} .mood[data-m=P]{--mc:var(--m-P)} .mood[data-m=B]{--mc:var(--m-B)}
+.mood:hover{background:color-mix(in srgb,var(--mc) 40%,transparent)}
+.mood[aria-pressed=true]{background:var(--mc);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--mc)}
+.lmore{grid-column:1/-1;display:grid;grid-template-columns:110px 110px minmax(0,1fr);gap:8px 10px;align-items:end}
+.lmore .note{min-width:0}
+.logform [data-draftflag]{position:absolute;right:0;top:0;font-size:12px;white-space:nowrap;color:var(--muted)}
+.logform [data-draftflag] button{border:0;background:transparent;color:var(--accent);padding:0;font:inherit;cursor:pointer}
+@media (max-width:899px){
+  #logPanel{grid-template-columns:minmax(0,1fr);padding:12px 14px}
+  .logform{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lact{grid-column:1/-1;justify-content:space-between;gap:8px}
+  .lact .lsave{margin-left:auto}
+  .lmore{grid-template-columns:repeat(2,minmax(0,1fr))}.lmore .note{grid-column:1/-1}
+  .logform [data-draftflag]{position:static;grid-column:1/-1}
+}
 .side-list{list-style:none;margin:0;padding:0;font-size:14px}
 .side-list li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
 .side-list li:first-child{border-top:0}
@@ -296,7 +315,6 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 .themelist small{font-size:12px;font-weight:400;color:var(--muted)}
 @media (max-width:520px){.themelist{grid-template-columns:minmax(0,1fr)}}
 /* home */
-.addbtns{gap:12px}
 .addbtn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;border-radius:16px;border:1px solid var(--line);background:transparent;font-size:16px;font-weight:500}
 .addbtn:hover,.addbtn.on{background:var(--raise)}
 .addbtn.on{border-color:var(--accent)}
@@ -323,27 +341,40 @@ html[data-mode=light] .themedot{box-shadow:0 0 0 1px var(--line)}
 .wx3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:auto}
 .wx3 div{background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:1px;font-size:13px;color:var(--muted)}
 .wx3 b{color:var(--fg);font-weight:500;font-size:15px}
-.acc{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
-.acc:first-of-type{border-top:0}
-.acc-h{width:100%;display:grid;grid-template-columns:minmax(0,190px) 90px minmax(0,1fr) 100px 22px;gap:12px;align-items:center;border:0;background:transparent;padding:11px 4px;text-align:left;font-size:15px}
-.acc-h:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
-.acc-d{font-weight:500}
-.acc-n{color:var(--muted);font-size:13.5px}
-.acc-t{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
-.acc-w{color:var(--muted);font-size:13px;text-align:right;white-space:nowrap}
-.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);justify-self:center;transition:transform .15s}
-.acc[data-open=true] .chev{transform:rotate(-135deg)}
-.acc[data-open=true] .acc-h .acc-d{color:var(--accent)}
-.acc-b{padding:2px 4px 12px 4px}
-.acc-b .add{margin-top:6px;border:0;background:transparent;color:var(--muted);font-size:13px;padding:2px 0}
-.acc-b .add:hover{color:var(--accent)}
+/* This week: focus card + six day cards */
+#homeWeek{display:flex;flex-direction:column;gap:14px}
+.wkhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.wkbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wkbtns .addbtn{min-height:36px;border-radius:10px;padding:0 12px;font-size:14px;gap:8px;width:164px}
+.wkbtns .addbtn svg{width:18px;height:18px}
+.wkbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
+.wkfocus{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0;outline:none}
+.wkfocus .cat-h{margin-top:14px}
+.wkfocus .dtags{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.wkfocus .addday{margin-top:10px;border:0;background:transparent;color:var(--muted);font-size:13px;padding:2px 0}
+.wkfocus .addday:hover{color:var(--accent)}
+.todaypill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:1.4;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink);white-space:nowrap}
+.wkgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:10px;min-width:0}
+.daycard{display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0;min-height:112px;overflow:hidden;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px}
+.daycard:hover{background:var(--raise);border-color:var(--accent)}
+.daycard .dc-h{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+.daycard .dc-h b{font-weight:500;font-size:14px;white-space:nowrap}
+.daycard .dc-m{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:12.5px;white-space:nowrap;min-width:0}
+.daycard .dc-m span{overflow:hidden;text-overflow:ellipsis}
+.daycard ul{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;min-width:0}
+.daycard li{display:flex;align-items:center;gap:6px;font-size:12.5px;min-width:0}
+.daycard li i{flex:none;width:7px;height:7px;border-radius:50%}
+.daycard li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.daycard li.more{color:var(--muted);padding-left:13px}
+@media (max-width:899px){.wkbody{grid-template-columns:minmax(0,1fr)}.wkgrid{grid-template-rows:none;grid-auto-rows:1fr}}
+@media (max-width:520px){.wkfocus .item .ty{display:none}.wkbtns{width:100%}.wkbtns .addbtn{flex:1 1 0;width:auto;padding:0 8px;font-size:13px}.wkbtns #planBtn{flex:1 1 100%}}
 .star{border:0;background:transparent;color:var(--muted);font-size:17px;line-height:1;padding:2px 5px;opacity:.45;border-radius:6px}
 .star:hover{opacity:1;background:var(--raise)}
 .star[aria-pressed=true]{color:var(--c-social);opacity:1}
 .star[data-auto]{cursor:help}
 .later{color:var(--muted);font-size:14px;margin:0}
 .later b{color:var(--fg);font-weight:500}
-@media (max-width:760px){.pair{grid-template-columns:minmax(0,1fr)}.acc-h{grid-template-columns:minmax(0,1fr) auto 22px;gap:8px}.acc-t,.acc-w{display:none}}
+@media (max-width:760px){.pair{grid-template-columns:minmax(0,1fr)}}
 
 /* fitness: trend chart */
 #trendPanel .panel-head{margin-bottom:10px}
@@ -605,7 +636,6 @@ dialog.sheet form{padding:0}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:520px){
-  .logform{grid-template-columns:repeat(2,minmax(0,1fr))}
   .fields{grid-template-columns:minmax(0,1fr)}
   .dayhead h2{font-size:21px}
 }
@@ -652,18 +682,21 @@ dialog.sheet form{padding:0}
 
   <section id="v-home" class="home">
     <div class="panel reviewbar" id="reviewBanner" hidden></div>
-    <div class="panel" id="homeToday"></div>
-    <div class="panel addbox" id="addBox">
-      <div class="pair addbtns">
-        <button type="button" class="addbtn" data-addmode="date" aria-expanded="false" aria-controls="addHome"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to planner</button>
-        <button type="button" class="addbtn" data-addmode="note" aria-expanded="false" aria-controls="addHome"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5h9l4 4v13H6z"/><path d="M15 3.5v4h4M9 12h7M9 16h5"/></svg>Add note</button>
+    <div class="panel" id="homeWeek">
+      <div class="addbox" id="addBox">
+        <div class="wkhead"><div class="eyebrow">This week</div>
+          <div class="wkbtns">
+            <button type="button" class="addbtn" data-addmode="date" aria-expanded="false" aria-controls="addHome"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg>Add to planner</button>
+            <button type="button" class="addbtn" data-addmode="note" aria-expanded="false" aria-controls="addHome"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5h9l4 4v13H6z"/><path d="M15 3.5v4h4M9 12h7M9 16h5"/></svg>Add note</button>
+            <button class="btn btn-primary" id="planBtn" type="button">Plan my week</button>
+          </div></div>
+        <form class="qa" id="addHome" data-qa autocomplete="off" hidden>
+          <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="ahText" aria-label="Add to the planner" placeholder="dinner IV fri 7pm"><button class="btn btn-primary" type="submit">Add</button></div>
+          <div class="qa-prev" aria-live="polite"></div>
+        </form>
       </div>
-      <form class="qa" id="addHome" data-qa autocomplete="off" hidden>
-        <div class="qa-row"><span class="plus" aria-hidden="true">+</span><input id="ahText" aria-label="Add to the planner" placeholder="dinner IV fri 7pm"><button class="btn btn-primary" type="submit">Add</button></div>
-        <div class="qa-prev" aria-live="polite"></div>
-      </form>
+      <div class="wkbody"><div class="wkfocus" id="homeToday" tabindex="-1"></div><div class="wkgrid" id="nextBody"></div></div>
     </div>
-    <div class="panel" id="homeNext"><div class="panel-head"><h2>Next 6 days</h2><button class="btn btn-primary" id="planBtn" type="button">Plan my week</button></div><div id="nextBody"></div></div>
     <div class="cds" id="chips"></div>
     <div class="pair"><div class="panel" id="homeNews"></div><div class="panel" id="homeWx"></div></div>
     <div class="panel" id="homeStats"></div>
@@ -683,9 +716,9 @@ dialog.sheet form{padding:0}
   </section>
 
   <section id="v-fitness" class="home" hidden>
+    <div class="panel" id="logPanel"></div>
     <div class="panel" id="trendPanel"></div>
     <div class="panel" id="monthPanel"></div>
-    <div class="panel" id="logPanel"></div>
     <div class="panel">
       <div class="panel-head"><h2>Year to date</h2><select id="statYear" aria-label="Year"></select></div>
       <div class="table-wrap"><table id="statTable"></table></div>
@@ -1379,24 +1412,27 @@ function renderLog() {
   const missing = []; for (let k = 1; k <= 14; k++) { const d = addDays(t, -k); if (!logged.has(d)) missing.push(d); }
   const row = (state.data.Log || []).find(r => r.date === f) || {}, w = state.wx[f] || {};
   const v = (k, alt) => row[k] != null && row[k] !== '' ? row[k] : (alt ?? '');
-  $('logPanel').innerHTML = `<div class="panel-head"><h2>Log</h2>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label for="logDate" class="muted" style="font-size:13px">Day</label><input type="date" id="logDate" value="${f}" max="${t}">
-      <span class="muted" style="font-size:13px">${row.date ? 'Saved · edit and save again' : 'Not logged yet'}</span></div></div>
-    ${missing.length ? `<div class="chips" style="margin:-2px 0 12px"><span class="muted" style="font-size:13px;align-self:center">Not logged:</span>${missing.slice(0, 7).reverse().map(d => `<button type="button" class="pill" data-logday="${d}" ${d === f ? 'data-s="Current"' : ''}>${esc(fmt(d, { weekday: 'short', day: 'numeric' }))}</button>`).join('')}</div>` : ''}
+  const more = !!row.note || !!state.logMore, MOODS_ = [['G', 'Good'], ['F', 'Fair'], ['P', 'Poor'], ['B', 'Bad']];
+  $('logPanel').innerHTML = `<div class="logday"><div class="lcap"><label for="logDate">Day</label><span class="lstat" title="${row.date ? 'Saved · edit and save again' : 'Not logged yet'}">${row.date ? 'Saved' : 'Not logged yet'}</span></div>
+      <div class="logdayrow"><input type="date" id="logDate" value="${f}" max="${t}">${missing.slice(0, 3).reverse().map(d => `<button type="button" class="pill" data-logday="${d}" title="Not logged yet" ${d === f ? 'data-s="Current"' : ''}>${esc(fmt(d, { weekday: 'short', day: 'numeric' }))}</button>`).join('')}</div></div>
     <form class="logform" id="logForm">
       <div class="f"><label for="lSteps">Steps</label><input id="lSteps" type="number" inputmode="numeric" value="${esc(v('steps'))}"></div>
       <div class="f"><label for="lKm">KM</label><input id="lKm" type="number" step="0.01" inputmode="decimal" value="${esc(v('km'))}"></div>
       <div class="f"><label for="lAct">Active mins</label><input id="lAct" type="number" inputmode="numeric" value="${esc(v('act'))}"></div>
       <div class="f"><label for="lPages">Pages</label><input id="lPages" type="number" inputmode="numeric" value="${esc(v('pages'))}"${v('pages') === '' && feedOn(f) != null ? ` placeholder="${esc(feedOn(f))} from The Library" title="From The Library"` : ''}></div>
-      <div class="f"><label for="lMax">Max °C</label><input id="lMax" type="number" step="0.1" inputmode="decimal" value="${esc(v('tmax', w.max ?? ''))}"></div>
-      <div class="f"><label for="lMin">Min °C</label><input id="lMin" type="number" step="0.1" inputmode="decimal" value="${esc(v('tmin', w.min ?? ''))}"></div>
-      <div class="moods" role="group" aria-label="Mood"><span class="muted" style="font-size:12px;font-weight:600">Mood</span>
-        ${[['G', 'Good'], ['F', 'Fair'], ['P', 'Poor'], ['B', 'Bad']].map(([k, n]) => `<button type="button" class="mood" data-m="${k}" aria-pressed="${row.mood === k}">${n}</button>`).join('')}</div>
-      <div class="f note"><label for="lNote">Note</label><input id="lNote" value="${esc(v('note'))}" placeholder="Meds, sleep, anything"></div>
-      <div style="grid-column:1/-1;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Save ${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'short' }))}</button>
-        <span data-draftflag hidden class="muted" style="font-size:13px">Unsaved changes · <button type="button" class="linkish" data-draftdiscard style="border:0;background:transparent;color:var(--accent);padding:0;font:inherit;cursor:pointer">Discard</button></span></div>
+      <div class="lact"><div><div class="lbl">Mood</div><div class="moods" role="group" aria-label="Mood">
+        ${MOODS_.map(([k, n]) => `<button type="button" class="mood" data-m="${k}" aria-pressed="${row.mood === k}" aria-label="${n}" title="${n}"></button>`).join('')}</div></div>
+        <button type="button" class="btn btn-ghost" id="logMore" aria-expanded="${more}" aria-controls="logMoreRow">More</button>
+        <div class="lsave"><button class="btn btn-primary" type="submit" aria-label="Save ${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'short' }))}" title="Save ${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'short' }))}">Save</button></div></div>
+      <div class="lmore" id="logMoreRow" ${more ? '' : 'hidden'}>
+        <div class="f"><label for="lMax">Max °C</label><input id="lMax" type="number" step="0.1" inputmode="decimal" value="${esc(v('tmax', w.max ?? ''))}"></div>
+        <div class="f"><label for="lMin">Min °C</label><input id="lMin" type="number" step="0.1" inputmode="decimal" value="${esc(v('tmin', w.min ?? ''))}"></div>
+        <div class="f note"><label for="lNote">Note</label><input id="lNote" value="${esc(v('note'))}" placeholder="Meds, sleep, anything"></div></div>
+      <span data-draftflag hidden>Unsaved changes · <button type="button" class="linkish" data-draftdiscard>Discard</button></span>
     </form>`;
 }
+$('logPanel').addEventListener('click', e => { const b = e.target.closest('#logMore'); if (!b) return;
+  const open = b.getAttribute('aria-expanded') !== 'true'; state.logMore = open; b.setAttribute('aria-expanded', String(open)); $('logMoreRow').hidden = !open; });
 /* ---------- themes: five dark ones take turns by month (or one is kept); Stone is the light one ---------- */
 const THEMES = { nebula: ['Nebula', 'beat', '#07061a', 'A slow heartbeat pulse'], ember: ['Ember', 'ripple', '#12050b', 'Rings that spread out'], solar: ['Solar', 'swirl', '#120803', 'A slow turning glow'],
   citrine: ['Citrine', 'zoom', '#110f04', 'A field of dots drawing in'], verdant: ['Verdant', 'flow', '#03110e', 'Two currents drifting'], stone: ['Stone', 'drift', '#e9e7e3', 'Light: soft shapes, barely moving'] };
@@ -1628,31 +1664,33 @@ function renderHomeWx(t) {
 }
 function renderHome() {
   renderReviewBanner();
-  const t = todayIso(), pay = paydayInfo(), its = itemsOn(t);
-  const timed = its.filter(i => i.time).sort((a, b) => a.time.localeCompare(b.time)), rest = its.filter(i => !i.time);
-  const bds = (state.data.People || []).filter(p => { const b = nextBday(p, t); return b && b.days === 0; });
+  const t = todayIso();
   renderHomeNews(); renderHomeWx(t);
   $('homeStats').innerHTML = `<div class="panel-head"><h2>Steps and reading</h2><span class="sub">${esc(fmt(t, { month: 'long' }))} · daily averages</span></div>
     <div class="halves">${statHalf('steps', 'Average steps', t)}${statHalf('pages', 'Average pages read', t)}</div>
     <button type="button" class="go" data-go="fitness">Open Fitness →</button>`;
-  $('homeToday').innerHTML = `<div class="dayhead"><div><div class="eyebrow">Today</div><h2>${esc(fmt(t, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
-      <div>${pay.is(t) ? '<span class="tag pay">Payday</span> ' : ''}${bds.map(p => `<span class="tag">🎂 ${esc(p.name)}'s birthday</span>`).join(' ')}</div></div>
-    <div class="halves">
-      <div><div class="cat-h">Schedule · ${timed.length}</div><ul class="items">${timed.map(i => itemHtml(i, t, true)).join('') || '<li class="empty">Nothing booked.</li>'}</ul></div>
-      <div><div class="cat-h">To do · ${rest.filter(i => !i.done).length} left</div><ul class="items">${rest.map(i => itemHtml(i, t, true)).join('') || '<li class="empty">Nothing else today.</li>'}</ul></div>
-    </div>`;
-  renderHomeNext();
+  renderHomeWeek();
 }
-/* Next 6 days: one row per day, one open at a time. */
-function renderHomeNext() {
+/* This week: one focus day in full (today until another is picked), the other six days as small cards. Not saved: it resets on reload. */
+function renderHomeWeek() {
   const t = todayIso(), pay = paydayInfo(), ppl = state.data.People || [];
-  $('nextBody').innerHTML = Array.from({ length: 6 }, (_, k) => addDays(t, k + 1)).map(d => {
-    const its = itemsOn(d), open = state.acc === d, w = state.wx[d];
-    const tags = (pay.is(d) ? '<span class="tag pay">Payday</span>' : '') + ppl.filter(p => { const b = nextBday(p, d); return b && b.days === 0; }).map(p => `<span class="tag">🎂 ${esc(p.name)}</span>`).join('');
-    return `<div class="acc" data-open="${open}"><button type="button" class="acc-h" data-acc="${d}" aria-expanded="${open}" aria-controls="acc-${d}">
-        <span class="acc-d">${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'short' }))}</span><span class="acc-n">${its.length ? its.length + (its.length === 1 ? ' task' : ' tasks') : 'Free'}</span>
-        <span class="acc-t">${tags}</span><span class="acc-w">${w ? Math.round(w.max) + '° · ' + (w.rain ?? 0) + '%' : ''}</span><span class="chev" aria-hidden="true"></span></button>
-      <div class="acc-b" id="acc-${d}" ${open ? '' : 'hidden'}>${its.length ? `<ul class="items">${its.map(i => itemHtml(i, d)).join('')}</ul>` : '<p class="empty">Nothing planned.</p>'}<button type="button" class="add" data-add="${d}">+ Add to ${esc(fmt(d, { weekday: 'long' }))}</button></div></div>`;
+  if (!state.homeFocus || state.homeFocus < t || state.homeFocus > addDays(t, 6)) state.homeFocus = t;
+  const f = state.homeFocus, isT = f === t, its = itemsOn(f);
+  const timed = its.filter(i => i.time).sort((a, b) => a.time.localeCompare(b.time)), rest = its.filter(i => !i.time);
+  const bds = ppl.filter(p => { const b = nextBday(p, f); return b && b.days === 0; });
+  const PILL = '<span class="todaypill">TODAY</span>';
+  $('homeToday').innerHTML = `<div class="dayhead"><div><div class="eyebrow">${isT ? PILL : esc(inWords(dayDiff(t, f)))}</div><h2>${esc(fmt(f, { weekday: 'long', day: 'numeric', month: 'long' }))}</h2></div>
+      <div class="dtags">${pay.is(f) ? '<span class="tag pay">Payday</span>' : ''}${bds.map(p => `<span class="tag">🎂 ${esc(p.name)}'s birthday</span>`).join('')}${isT ? '' : `<button type="button" class="btn" data-focus="${t}">Back to today</button>`}</div></div>
+    <div class="cat-h">Schedule · ${timed.length}</div><ul class="items">${timed.map(i => itemHtml(i, f, isT)).join('') || '<li class="empty">Nothing booked.</li>'}</ul>
+    <div class="cat-h">To do · ${rest.filter(i => !i.done).length} left</div><ul class="items">${rest.map(i => itemHtml(i, f, isT)).join('') || `<li class="empty">Nothing else ${isT ? 'today' : 'planned'}.</li>`}</ul>
+    <button type="button" class="addday" data-add="${f}">+ Add to ${esc(isT ? 'today' : fmt(f, { weekday: 'long' }))}</button>`;
+  $('nextBody').innerHTML = Array.from({ length: 7 }, (_, k) => addDays(t, k)).filter(d => d !== f).map(d => {
+    const x = itemsOn(d), w = state.wx[d], show = x.slice(0, 3), more = x.length - show.length, n = x.length ? x.length + (x.length === 1 ? ' task' : ' tasks') : 'Free';
+    const wx = w ? Math.round(w.max) + '° · ' + (w.rain ?? 0) + '%' : '';
+    return `<button type="button" class="daycard" data-focus="${d}" data-today="${d === t}" aria-label="${esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long' }) + (d === t ? ' (today)' : '') + ', ' + n)}">
+      <span class="dc-h"><b>${esc(fmt(d, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', ''))}</b>${d === t ? PILL : ''}</span>
+      <span class="dc-m"><span>${n}</span><span>${wx}</span></span>
+      <ul>${show.map(i => `<li><i style="background:${CATVAR(i.cat)}"></i><span>${esc(i.title)}</span></li>`).join('')}${more > 0 ? `<li class="more">+${more} more</li>` : ''}</ul></button>`;
   }).join('');
 }
 
@@ -1776,7 +1814,7 @@ document.addEventListener('submit', async e => {
   if (await withBusy('Adding…', () => addRows('Plan', [o]))) { inp.value = ''; quickPreview(f); toast(`Added ${o.title} to ${o.date === todayIso() ? 'today' : fmt(o.date, { weekday: 'long', day: 'numeric', month: 'short' })}`); }
 });
 document.addEventListener('click', e => {
-  const el = e.target.closest('[data-go],[data-qaopen],[data-more],[data-sheetclose],[data-efilter],[data-emore],[data-acc],[data-calday],[data-calnav],[data-ssec]'); if (!el) return;
+  const el = e.target.closest('[data-go],[data-qaopen],[data-more],[data-sheetclose],[data-efilter],[data-emore],[data-focus],[data-calday],[data-calnav],[data-ssec]'); if (!el) return;
   const sheet = el.closest('dialog.sheet');
   if (el.dataset.go) { if (sheet) sheet.close(); if (el.dataset.go === 'settings') { openSettings(); return; } showTab(el.dataset.go); window.scrollTo({ top: 0 }); return; }
   if (el.hasAttribute('data-qaopen')) { $('qaDlg').showModal(); previewAll(); setTimeout(() => $('qsText').focus(), 30); return; }
@@ -1784,7 +1822,7 @@ document.addEventListener('click', e => {
   if (el.hasAttribute('data-sheetclose')) { sheet.close(); return; }
   if (el.dataset.efilter != null) { state.eFilter = el.dataset.efilter; renderEvents(); return; }
   if (el.hasAttribute('data-emore')) { state.eMore = !state.eMore; renderEvents(); return; }
-  if (el.dataset.acc) { state.acc = state.acc === el.dataset.acc ? '' : el.dataset.acc; renderHomeNext(); return; }
+  if (el.dataset.focus) { state.homeFocus = el.dataset.focus; renderHomeWeek(); $('homeToday').focus({ preventScroll: true }); return; }
   if (el.dataset.calday) { state.calDay = el.dataset.calday; if (!state.calDay.startsWith(state.calMonth)) state.calMonth = state.calDay.slice(0, 7); renderUpcoming(); return; }
   if (el.dataset.calnav != null) { const n = Number(el.dataset.calnav), t = todayIso(); let ym = state.calMonth || t.slice(0, 7);
     if (n === 0) ym = t.slice(0, 7); else { const [y, m] = ym.split('-').map(Number), d = new Date(y, m - 1 + n, 1); ym = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; }
