@@ -14,6 +14,7 @@ create table if not exists brain.exercises (
   name       text not null,
   area       text,                            -- Upper, Core, Legs, Cardio
   muscle     text,                            -- Chest, Back, Shoulders, Biceps, Triceps, Core, Legs, Cardio
+  equipment  text,                            -- Dumbbell, Kettlebell, Ball, Bodyweight, Machine (comma separated)
   measure    text not null default 'reps',    -- reps, time, cardio
   each_side  boolean not null default false,  -- one arm or one side at a time
   weighted   boolean not null default true,
@@ -23,6 +24,9 @@ create table if not exists brain.exercises (
   updated_at timestamptz not null default now(),
   unique (user_id, id)
 );
+
+-- Added 17 Nov 2026 (for anyone who ran the first version of this file).
+alter table brain.exercises add column if not exists equipment text;
 
 create table if not exists brain.workout_routines (
   row_id      bigint generated always as identity primary key,
